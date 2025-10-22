@@ -1,0 +1,45 @@
+# =========================================================
+# ROS 2 Workspace Git Ignore
+# =========================================================
+
+# --- Colcon build artifacts ---
+build/
+install/
+log/
+
+# --- ROS 2 and ament tools cache ---
+.colcon*
+CTestTestfile.cmake
+CMakeFiles/
+ament_cmake_core/
+ament_cmake_environment_hooks/
+ament_index/
+
+# --- Python build artifacts ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.eggs/
+build/lib/
+dist/
+
+# --- VSCode / CLion / IDE junk ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# --- ROS bags, logs, runtime data ---
+*.bag
+*.db3
+*.log
+*.tmp
+
+# --- Custom temporary files ---
+*.launch.py~
+*.old
+*.orig
+*.backup
