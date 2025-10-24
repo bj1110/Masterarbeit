@@ -9,16 +9,47 @@
     <link name="torso">
         <visual>
             <geometry>
-                <box size="1.0 1.0 1.0"/>
+                <box size="1.0 ${0.2+ upperarm_circumference/ (2* math.pi)} 1.0"/>
             </geometry>
         </visual>
     </link>
     
-    <joint name="shoulder_joint" type="continuous">
-        <parent link="torso"/>
-        <child link="upperarm"/>
+    <!-- ___________________ Shoulder joint __________ -->
+
+    <xacro:macro name="shoulder_template" params="suffix parent child:='' *origin *axis *limit">
+        <joint name="shoulder_${suffix}_joint" type="revolute">
+            <parent link="${parent if parent == 'torso' else 'shoulder_'+parent+'_link'}"/>
+            <child link="${child if child != '' else 'shoulder_' + suffix + '_link'}"/>
+            <xacro:insert_block name="origin"/>
+            <xacro:insert_block name="axis"/>
+            <xacro:insert_block name="limit"/>
+        </joint>
+        <xacro:if value="${child == ''}">
+            <link name="shoulder_${suffix}_link">
+            </link>
+        </xacro:if>
+    </xacro:macro>
+
+
+    <xacro:shoulder_template suffix="yaw" parent="torso">
         <origin xyz="0.5 0 0.5"/>
-    </joint>
+        <axis xyz="0 -1 0" />
+        <limit effort="1000" lower="-1.1" upper="1.9" velocity="0.5" />
+    </xacro:shoulder_template>
+
+    <xacro:shoulder_template suffix="pitch" parent="yaw">
+        <origin xyz="0 0 0"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="1000" lower="-0.4" upper="3.3" velocity="0.5" />
+    </xacro:shoulder_template>
+
+    <xacro:shoulder_template suffix="roll" parent="pitch" child="upperarm"> 
+        <origin xyz="0 0 0"/>
+        <axis xyz="1 0 0"/>
+        <!-- Bullshit limit for now  -->
+        <limit effort="1000" lower="-0.4" upper="3.3" velocity="0.5" />
+    </xacro:shoulder_template>
+    
 
     <link name="upperarm">
         <visual>
@@ -29,9 +60,13 @@
         </visual>
     </link>
 
-    <joint name="elbow_joint" type="continuous">
+    <!-- ____________________ Elbow joint ___________ -->
+
+    <joint name="elbow_joint" type="revolute">
         <parent link="upperarm"/>
         <child link="forearm"/>
+        <axis xyz="0 0 1" />
+        <limit effort="1000" lower="0" upper="2.5" velocity="0.5" />
         <origin xyz="${upperarm_length} 0 0"/>
     </joint>
 
@@ -40,6 +75,7 @@
             <geometry>
                 <cylinder length="${elbow_wrist_length}" radius="${forearm_circumference / (2*math.pi)}" />
             </geometry>
+            <origin xyz="${elbow_wrist_length/2} 0 0" rpy="0 ${math.pi/2} 0"/>
         </visual>
 
     </link>
