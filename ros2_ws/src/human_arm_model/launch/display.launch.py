@@ -14,10 +14,7 @@ def generate_launch_description():
     declare_rviz_arg = DeclareLaunchArgument(
         'rviz_config',
         default_value=PathJoinSubstitution([
-            FindPackageShare('human_arm_model'),
-            'rviz',
-            'view_model.rviz'
-        ]),
+            FindPackageShare('human_arm_model'), 'urdf', 'view_model.rviz']),
         description='Path to RViz config file'
     )
 
@@ -30,12 +27,18 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time, 'robot_description': urdf}],
         ),
+        # Node(
+        #     package='joint_state_publisher',
+        #     executable='joint_state_publisher',
+        #     name='joint_state_publisher',
+        #     output='screen',
+        #     parameters=[{'robot_description': urdf}]
+        # ),
         Node(
-            package='joint_state_publisher',
-            executable='joint_state_publisher',
-            name='joint_state_publisher',
+            package='joint_state_publisher_gui',
+            executable='joint_state_publisher_gui',
+            name='joint_state_publisher_gui',
             output='screen',
-            parameters=[{'robot_description': urdf}]
         ),
         Node(
             package='rviz2',
