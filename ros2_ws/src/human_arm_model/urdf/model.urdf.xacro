@@ -14,5 +14,34 @@
         </visual>
     </link>
     
+    <joint name="shoulder_joint" type="continuous">
+        <parent link="torso"/>
+        <child link="upperarm"/>
+        <origin xyz="0.5 0 0.5"/>
+    </joint>
+
+    <link name="upperarm">
+        <visual>
+            <geometry>
+                <cylinder length="${upperarm_length}" radius="${upperarm_circumference/ (2* math.pi)}"/> 
+            </geometry>
+            <origin xyz="${upperarm_length/2} 0 0" rpy="0 ${math.pi/2} 0" />
+        </visual>
+    </link>
+
+    <joint name="elbow_joint" type="continuous">
+        <parent link="upperarm"/>
+        <child link="forearm"/>
+        <origin xyz="${upperarm_length} 0 0"/>
+    </joint>
+
+    <link name="forearm">
+        <visual>
+            <geometry>
+                <cylinder length="${elbow_wrist_length}" radius="${forearm_circumference / (2*math.pi)}" />
+            </geometry>
+        </visual>
+
+    </link>
 
 </robot>
