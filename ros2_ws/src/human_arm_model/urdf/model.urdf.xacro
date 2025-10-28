@@ -16,34 +16,34 @@
     
     <!-- ___________________ Shoulder joint __________ -->
 
-    <xacro:macro name="shoulder_template" params="suffix parent child:='' *origin *axis *limit">
-        <joint name="shoulder_${suffix}_joint" type="revolute">
-            <parent link="${parent if parent == 'torso' else 'shoulder_'+parent+'_link'}"/>
-            <child link="${child if child != '' else 'shoulder_' + suffix + '_link'}"/>
+    <xacro:macro name="shoulder_template" params="bodypart suffix parent child:='' *origin *axis *limit">
+        <joint name="${bodypart}_${suffix}_joint" type="revolute">
+            <parent link="${parent if parent == 'torso' else bodypart+'_'+parent+'_link'}"/>
+            <child link="${child if child != '' else bodypart+'_' + suffix + '_link'}"/>
             <xacro:insert_block name="origin"/>
             <xacro:insert_block name="axis"/>
             <xacro:insert_block name="limit"/>
         </joint>
         <xacro:if value="${child == ''}">
-            <link name="shoulder_${suffix}_link">
+            <link name="${bodypart}_${suffix}_link">
             </link>
         </xacro:if>
     </xacro:macro>
 
 
-    <xacro:shoulder_template suffix="yaw" parent="torso">
+    <xacro:shoulder_template bodypart="shoulder" suffix="yaw" parent="torso">
         <origin xyz="0.5 0 0.5"/>
         <axis xyz="0 -1 0" />
         <limit effort="1000" lower="-1.1" upper="1.9" velocity="0.5" />
     </xacro:shoulder_template>
 
-    <xacro:shoulder_template suffix="pitch" parent="yaw">
+    <xacro:shoulder_template bodypart="shoulder" suffix="pitch" parent="yaw">
         <origin xyz="0 0 0"/>
         <axis xyz="0 0 1"/>
         <limit effort="1000" lower="-0.4" upper="3.3" velocity="0.5" />
     </xacro:shoulder_template>
 
-    <xacro:shoulder_template suffix="roll" parent="pitch" child="upperarm"> 
+    <xacro:shoulder_template bodypart="shoulder" suffix="roll" parent="pitch" child="upperarm"> 
         <origin xyz="0 0 0"/>
         <axis xyz="1 0 0"/>
         <!-- Bullshit limit for now  -->
