@@ -1,54 +1,37 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="human_arm_modell">
-    <xacro:property name="upperarm_length" value="0.3637"/>
-    <xacro:property name="elbow_wrist_length" value="0.2869"/>
-    <xacro:property name="upperarm_circumference" value="0.3581"/>
-    <xacro:property name="wrist_circumference" value="0.1759"/>
-    <xacro:property name="forearm_circumference" value="0.3101"/>
+
+    <xacro:include filename="constants.urdf.xacro" />
 
     <link name="torso">
         <visual>
             <geometry>
+                <!-- Bullshit limit for now  -->
                 <box size="1.0 ${0.2+ upperarm_circumference/ (2* math.pi)} 1.0"/>
             </geometry>
         </visual>
-    </link>
-    
+    </link> 
+
     <!-- ___________________ Shoulder joint __________ -->
 
-    <xacro:macro name="shoulder_template" params="bodypart suffix parent child:='' *origin *axis *limit">
-        <joint name="${bodypart}_${suffix}_joint" type="revolute">
-            <parent link="${parent if parent == 'torso' else bodypart+'_'+parent+'_link'}"/>
-            <child link="${child if child != '' else bodypart+'_' + suffix + '_link'}"/>
-            <xacro:insert_block name="origin"/>
-            <xacro:insert_block name="axis"/>
-            <xacro:insert_block name="limit"/>
-        </joint>
-        <xacro:if value="${child == ''}">
-            <link name="${bodypart}_${suffix}_link">
-            </link>
-        </xacro:if>
-    </xacro:macro>
-
-
-    <xacro:shoulder_template bodypart="shoulder" suffix="yaw" parent="torso">
+    <xacro:bodypart_template bodypart="shoulder" suffix="yaw" parent="torso">
         <origin xyz="0.5 0 0.5"/>
         <axis xyz="0 -1 0" />
         <limit effort="1000" lower="-1.1" upper="1.9" velocity="0.5" />
-    </xacro:shoulder_template>
+    </xacro:bodypart_template>
 
-    <xacro:shoulder_template bodypart="shoulder" suffix="pitch" parent="yaw">
+    <xacro:bodypart_template bodypart="shoulder" suffix="pitch" parent="yaw">
         <origin xyz="0 0 0"/>
         <axis xyz="0 0 1"/>
         <limit effort="1000" lower="-0.4" upper="3.3" velocity="0.5" />
-    </xacro:shoulder_template>
+    </xacro:bodypart_template>
 
-    <xacro:shoulder_template bodypart="shoulder" suffix="roll" parent="pitch" child="upperarm"> 
+    <xacro:bodypart_template bodypart="shoulder" suffix="roll" parent="pitch" child="upperarm"> 
         <origin xyz="0 0 0"/>
         <axis xyz="1 0 0"/>
         <!-- Bullshit limit for now  -->
         <limit effort="1000" lower="-0.4" upper="3.3" velocity="0.5" />
-    </xacro:shoulder_template>
+    </xacro:bodypart_template>
     
 
     <link name="upperarm">
@@ -62,13 +45,18 @@
 
     <!-- ____________________ Elbow joint ___________ -->
 
-    <joint name="elbow_joint" type="revolute">
-        <parent link="upperarm"/>
-        <child link="forearm"/>
+    <xacro:bodypart_template bodypart="elbow" suffix="yaw" parent="upperarm"> 
+        <origin xyz="${upperarm_length} 0 0"/>
         <axis xyz="0 0 1" />
         <limit effort="1000" lower="0" upper="2.5" velocity="0.5" />
-        <origin xyz="${upperarm_length} 0 0"/>
-    </joint>
+    </xacro:bodypart_template>
+
+    <xacro:bodypart_template bodypart="elbow" suffix="roll" parent="yaw" child="forearm">
+        <origin xyz="0 0 0"/>
+        <axis xyz="1 0 0" />
+        <!-- Bullshit limit for now  -->
+        <limit effort="1000" lower="-0.4" upper="3.3" velocity="0.5" />
+    </xacro:bodypart_template>
 
     <link name="forearm">
         <visual>
@@ -77,7 +65,41 @@
             </geometry>
             <origin xyz="${elbow_wrist_length/2} 0 0" rpy="0 ${math.pi/2} 0"/>
         </visual>
-
     </link>
 
+
+    <!-- ___________________ wrist joint __________ -->
+
+    <xacro:bodypart_template bodypart="wrist" suffix="yaw" parent="forearm" child="hand">
+        <origin xyz="${elbow_wrist_length} 0 0"/>
+        <axis xyz="0 0 1" />
+        <!-- Bullshit limit for now  -->
+        <limit effort="1000" lower="${(math.pi/180)*45}" upper="${(math.pi/180)*-90}" velocity="0.5" />
+    </xacro:bodypart_template>
+
+
+    <link name="hand">
+        <visual>
+            <geometry>
+                <!-- Bullshit limit for now  -->
+                <box size="0.1 0.1 0.1"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <joint name="hand_can_joint" type="fixed">
+        <parent link="hand"/>
+        <child link="can"/>
+        <!-- Bullshit limit for now  -->
+        <origin xyz="0.05 0.1 0"/>
+    </joint>
+
+    <link name="can">
+        <visual>
+            <geometry>
+                <!-- Bullshit limit for now  -->
+                <cylinder length="${can_height}" radius="${can_radius}"/>
+            </geometry>
+        </visual>
+    </link>
 </robot>
