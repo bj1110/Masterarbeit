@@ -18,19 +18,22 @@
         <origin xyz="0.5 0 0.5"/>
         <axis xyz="0 -1 0" />
         <limit effort="1000" lower="-1.1" upper="1.9" velocity="0.5" />
+        <!-- <limit effort="1000" lower="${shoulder_ab_min}" upper="${shoulder_ab_max}" velocity="0.5" /> -->
     </xacro:bodypart_template>
 
     <xacro:bodypart_template bodypart="shoulder" suffix="pitch" parent="yaw">
         <origin xyz="0 0 0"/>
         <axis xyz="0 0 1"/>
         <limit effort="1000" lower="-0.4" upper="3.3" velocity="0.5" />
+        <!-- <limit effort="1000" lower="${shoulder_flex_min}" upper="${shoulder_flex_max}" velocity="0.5" /> -->
     </xacro:bodypart_template>
 
     <xacro:bodypart_template bodypart="shoulder" suffix="roll" parent="pitch" child="upperarm"> 
         <origin xyz="0 0 0"/>
         <axis xyz="1 0 0"/>
         <!-- Bullshit limit for now  -->
-        <limit effort="1000" lower="-0.4" upper="3.3" velocity="0.5" />
+        <!-- <limit effort="1000" lower="-0.4" upper="3.3" velocity="0.5" /> -->
+        <limit effort="1000" lower="${shoulder_rot_min}" upper="${shoulder_rot_max}" velocity="0.5" />
     </xacro:bodypart_template>
     
 
@@ -55,7 +58,7 @@
         <origin xyz="0 0 0"/>
         <axis xyz="1 0 0" />
         <!-- Bullshit limit for now  -->
-        <limit effort="1000" lower="-0.4" upper="3.3" velocity="0.5" />
+        <limit effort="1000" lower="${(-math.pi/180)*45}" upper="${(math.pi/180)*0}" velocity="0.5" />
     </xacro:bodypart_template>
 
     <link name="forearm">
@@ -74,32 +77,32 @@
         <origin xyz="${elbow_wrist_length} 0 0"/>
         <axis xyz="0 0 1" />
         <!-- Bullshit limit for now  -->
-        <limit effort="1000" lower="${(math.pi/180)*45}" upper="${(math.pi/180)*-90}" velocity="0.5" />
+        <!-- <limit effort="1000" lower="${(math.pi/180)*45}" upper="${(math.pi/180)*-90}" velocity="0.5" /> -->
+         <limit effort="1000" lower="${(math.pi/180)*45}" upper="${(math.pi/180)*-90}" velocity="0.5" />
     </xacro:bodypart_template>
 
 
     <link name="hand">
         <visual>
             <geometry>
-                <!-- Bullshit limit for now  -->
-                <box size="0.1 0.1 0.1"/>
+                <box size="${hand_thickness} ${hand_lenght} ${hand_width}"/>
             </geometry>
+            <origin xyz="${hand_thickness/2} ${hand_lenght/2} 0" rpy="0 0 0"/>
         </visual>
     </link>
 
     <joint name="hand_can_joint" type="fixed">
         <parent link="hand"/>
         <child link="can"/>
-        <!-- Bullshit limit for now  -->
-        <origin xyz="0.05 0.1 0"/>
+        <origin xyz="${-hand_thickness/2 } ${hand_lenght} 0"/>
     </joint>
 
     <link name="can">
         <visual>
             <geometry>
-                <!-- Bullshit limit for now  -->
                 <cylinder length="${can_height}" radius="${can_radius}"/>
             </geometry>
+            <origin xyz="${-can_radius+hand_thickness/2} 0 0"/>
         </visual>
     </link>
 </robot>
