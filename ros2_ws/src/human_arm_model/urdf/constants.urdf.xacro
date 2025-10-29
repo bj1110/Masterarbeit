@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-    <!-- Längen -->
+    <!-- sizes -->
     <xacro:property name="upperarm_length" value="0.3637"/>
     <xacro:property name="elbow_wrist_length" value="0.2869"/>
     <xacro:property name="upperarm_circumference" value="0.3581"/>
@@ -11,7 +11,7 @@
     <xacro:property name="can_height" value="0.12" />
     <xacro:property name="hand_circumference" value="0.2123"/>
     <!-- Length of handpalm which might be approx. center of can: -->
-    <xacro:property name="hand_lenght" value="0.1165" /> 
+    <xacro:property name="hand_length" value="0.1165" /> 
     <xacro:property name="hand_thickness" value="${(hand_circumference-2*hand_width)/2}" />
     <xacro:property name="hand_width" value="0.0883" />
 
@@ -22,11 +22,14 @@
     <xacro:property name="shoulder_flex_min" value="${-60*math.pi/180}" />
     <xacro:property name="shoulder_flex_max" value="${170*math.pi/180}" />
     <xacro:property name="shoulder_rot_min" value="${-60*math.pi/180}" />
-    <xacro:property name="shoulder_rot_max" value="${90*math.pi/180}" />
-    
+    <xacro:property name="shoulder_rot_max" value="${90*math.pi/180}" />   
     <xacro:property name="elbow_flex_min" value="${-90*math.pi/180}" />
     <xacro:property name="elbow_flex_max" value="${60*math.pi/180}" />
 
+    <!-- angles from anatomy book -->
+     <xacro:property name="hand_palmarflexion" value="${-85*math.pi /180}" />
+     <xacro:property name="hand_dorsalextension" value="${85*math.pi /180}" />
+     
 
 
     <!-- ___________________ Macro for joints __________ -->
