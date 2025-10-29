@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="human_arm_modell">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="human_arm_model">
 
     <xacro:include filename="constants.urdf.xacro" />
+    <xacro:include filename="macros.urdf.xacro" />
 
     <link name="torso">
         <visual>

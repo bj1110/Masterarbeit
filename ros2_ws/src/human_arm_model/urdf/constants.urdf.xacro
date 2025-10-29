@@ -15,8 +15,13 @@
     <xacro:property name="hand_thickness" value="${(hand_circumference-2*hand_width)/2}" />
     <xacro:property name="hand_width" value="0.0883" />
 
+    <xacro:property name="waist_back_length" value="0.4776" />
+    <xacro:property name="shoulder_length" value="0.1498" />
+    <xacro:property name="clavicle_link_length" value="0.2081" />
+    <xacro:property name="sternum_radius" value="${clavicle_link_length - shoulder_length}" />
+
     <!-- Winkel -->
-     <!-- Diese sind Bewegungsamplituden und nicht 1:1 im Model vorwendbar. -->
+    <!-- Diese sind Bewegungsamplituden und nicht 1:1 im Model vorwendbar. -->
     <xacro:property name="shoulder_ab_min" value="${-10*math.pi/180}" />
     <xacro:property name="shoulder_ab_max" value="${170*math.pi/180}" />
     <xacro:property name="shoulder_flex_min" value="${-60*math.pi/180}" />
@@ -27,24 +32,8 @@
     <xacro:property name="elbow_flex_max" value="${60*math.pi/180}" />
 
     <!-- angles from anatomy book -->
-     <xacro:property name="hand_palmarflexion" value="${-85*math.pi /180}" />
-     <xacro:property name="hand_dorsalextension" value="${85*math.pi /180}" />
+    <xacro:property name="hand_palmarflexion" value="${-85*math.pi /180}" />
+    <xacro:property name="hand_dorsalextension" value="${85*math.pi /180}" />
      
 
-
-    <!-- ___________________ Macro for joints __________ -->
-
-    <xacro:macro name="bodypart_template" params="bodypart suffix parent child:='' *origin *axis *limit">
-        <joint name="${bodypart}_${suffix}_joint" type="revolute">
-            <parent link="${parent if (parent in ['torso', 'upperarm', 'forearm']) else bodypart+'_'+parent+'_link'}"/>
-            <child link="${child if child != '' else bodypart+'_' + suffix + '_link'}"/>
-            <xacro:insert_block name="origin"/>
-            <xacro:insert_block name="axis"/>
-            <xacro:insert_block name="limit"/>
-        </joint>
-        <xacro:if value="${child == ''}">
-            <link name="${bodypart}_${suffix}_link">
-            </link>
-        </xacro:if>
-    </xacro:macro>
 </robot>

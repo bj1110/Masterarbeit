@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- ___________________ Macro for joints __________ -->
+
+    <xacro:macro name="bodypart_template" params="bodypart suffix parent child:='' *origin *axis *limit">
+        <joint name="${bodypart}_${suffix}_joint" type="revolute">
+            <parent link="${parent if (parent in ['torso', 'upperarm', 'forearm']) else bodypart+'_'+parent+'_link'}"/>
+            <child link="${child if child != '' else bodypart+'_' + suffix + '_link'}"/>
+            <xacro:insert_block name="origin"/>
+            <xacro:insert_block name="axis"/>
+            <xacro:insert_block name="limit"/>
+        </joint>
+        <xacro:if value="${child == ''}">
+            <link name="${bodypart}_${suffix}_link">
+            </link>
+        </xacro:if>
+    </xacro:macro>
+
+
+
+
+</robot>
