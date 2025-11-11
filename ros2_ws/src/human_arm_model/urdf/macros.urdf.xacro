@@ -20,4 +20,14 @@
 
 
 
+    <xacro:macro name="joint_template" params="bodypart suffix parent child *origin *axis *limit"> 
+        <joint name="${bodypart}_${suffix}_joint" type="revolute">
+            <parent link="${parent}"/>
+            <child link="${child}" />
+            <xacro:insert_block name="origin"/>
+            <xacro:insert_block name="axis"/>
+            <xacro:insert_block name="limit"/>
+        </joint>
+    </xacro:macro>
+
 </robot>

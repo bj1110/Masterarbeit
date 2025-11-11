@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+    <xacro:include filename="macros.urdf.xacro" />
+
     <!-- sizes -->
     <xacro:property name="upperarm_length" value="0.3637"/>
     <xacro:property name="elbow_wrist_length" value="0.2869"/>
@@ -31,9 +33,35 @@
     <xacro:property name="elbow_flex_min" value="${-90*math.pi/180}" />
     <xacro:property name="elbow_flex_max" value="${60*math.pi/180}" />
 
+    <!-- calculated values -->
+    <xacro:property name="upperarm_radius" value="${upperarm_circumference/(2* math.pi)}"/>
+
     <!-- angles from anatomy book -->
     <xacro:property name="hand_palmarflexion" value="${-85*math.pi /180}" />
     <xacro:property name="hand_dorsalextension" value="${85*math.pi /180}" />
-     
+
+    <!-- Sternoklavikularjoint -->
+    <xacro:property name="Sternoklavikularjoint_elevation" value="${30*math.pi/180}"/>
+    <xacro:property name="Sternoklavikularjoint_depression" value="${-5*math.pi/180}" /> 
+    <xacro:property name="Sternoklavikularjoint_protraktion" value="${30*math.pi/180}"/>
+    <xacro:property name="Sternoklavikularjoint_retraktion" value="${-30*math.pi/180}" />
+    <xacro:property name="Sternoklavikularjoint_anteriorrotation" value="${30*math.pi/180}"/>
+    <xacro:property name="Sternoklavikularjoint_posteriorrotation" value="${-30*math.pi/180}" />
+
+    <!-- Glenohumeraljoint -->
+    <xacro:property name="glenohumeraljoint_abduktion" value="${90*math.pi/180}" />
+    <xacro:property name="glenohumeraljoint_adduktion" value="${0*math.pi/180}" />
+    <xacro:property name="glenohumeraljoint_anteversion" value="${80*math.pi/180}" />
+    <xacro:property name="glenohumeraljoint_retroversion" value="${-40*math.pi/180}" />
+    <xacro:property name="glenohumeraljoint_exorotation" value="${60*math.pi/180}" />
+    <xacro:property name="glenohumeraljoint_endorotation" value="${-100*math.pi/180}" />
+
+
+    <!-- Humeroulnarjoint -->
+    <xacro:property name="humeroulnarjoint_flexion" value="${160*math.pi/180}" />
+    <xacro:property name="humeroulnarjoint_extension" value="${-15*math.pi/180}" />
+    <xacro:property name="humeroulnarjoint_pronation" value="${85*math.pi/180}" />
+    <xacro:property name="humeroulnarjoint_supination" value="${-90*math.pi/180}" />
+    
 
 </robot>

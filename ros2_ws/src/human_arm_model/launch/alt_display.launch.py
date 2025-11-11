@@ -12,16 +12,16 @@ def generate_launch_description():
 
     # urdf = FileContent(PathJoinSubstitution([FindPackageShare('human_arm_model'), 'urdf', 'model.urdf.xacro']))
     urdf = ParameterValue(Command(['xacro ', PathJoinSubstitution([FindPackageShare('human_arm_model'), 'urdf', 'alt_model.urdf.xacro'])]), value_type=str)
-    # declare_rviz_arg = DeclareLaunchArgument(
-    #     'rviz_config',
-    #     default_value=PathJoinSubstitution([
-    #         FindPackageShare('human_arm_model'), 'urdf', 'view_model.rviz']),
-    #     description='Path to RViz config file'
-    # )
+    declare_rviz_arg = DeclareLaunchArgument(
+        'rviz_config',
+        default_value=PathJoinSubstitution([
+            FindPackageShare('human_arm_model'), 'urdf', 'alt_view_model.rviz']),
+        description='Path to RViz config file'
+    )
 
 
     return LaunchDescription([
-        #declare_rviz_arg,
+        declare_rviz_arg,
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
@@ -40,7 +40,7 @@ def generate_launch_description():
             executable='rviz2',
             name='rviz2',
             output='screen',
-            # arguments=['-d', LaunchConfiguration('rviz_config')]
+            arguments=['-d', LaunchConfiguration('rviz_config')]
         ),
 
     ])
