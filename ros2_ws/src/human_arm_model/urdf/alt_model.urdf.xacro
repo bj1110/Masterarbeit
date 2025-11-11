@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="human_arm_model">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="alt_human_arm_model">
 
     <xacro:include filename="constants.urdf.xacro" />
     <xacro:include filename="macros.urdf.xacro" />
@@ -16,16 +16,23 @@
             <!-- 9. hand -->
         <!-- 7. and 8. are simplified significantly, both reduced from 2 subparts to 1, as the complexity is not needed here  -->
 
+    <link name="world"/>
+    <joint name="world_to_columna" type="fixed">
+        <parent link="world"/>
+        <child link="columna"/>
+        <origin xyz="0 0 0"/>
+    </joint>
 
     <link name="columna"> <!-- carla columna-->
         <visual>
             <geometry>
-                <box size="${sternum_radius*2} ${sternum_radius*2} ${waist_back_length}"/>
+                <box size="${sternum_radius*2} ${sternum_radius*2} ${waist_back_length}"/> 
+                <box size="1 1 1"/>
             </geometry>
         </visual>
     </link>
 
-    <xacro:bodypart_template bodypart="sternoclavicular" suffix="yaw" parent="columna" child="clavicular" >
+    <!-- <xacro:bodypart_template bodypart="sternoclavicular" suffix="yaw" parent="columna" child="clavicular" >
         <origin xyz="0 ${sternum_radius} ${waist_back_length}" />
         <axis xyz="0 -1 0" />
         <limit effort="1000" lower="-1.1" upper="1.9" velocity="0.5" />
@@ -37,7 +44,7 @@
                 <box size="${sternum_radius*2} ${sternum_radius*2} ${waist_back_length}"/>
             </geometry>
         </visual>
-    </link>
+    </link> -->
 
 
 </robot>
