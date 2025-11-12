@@ -65,9 +65,9 @@
         </visual>
     </link>
 
-    <!-- <xacro:bodypart_template bodypart="wrist" suffix="yaw" parent="forearm" child="hand">
-        <origin xyz="${elbow_wrist_length} 0 0"/>
-        <axis xyz="0 0 1" />
+    <xacro:bodypart_template bodypart="wrist" suffix="yaw" parent="forearm" child="hand">
+        <origin xyz="0 0 ${-elbow_wrist_length}"/>
+        <axis xyz="1 0 0" />
         <limit effort="1000" lower="${hand_palmarflexion}" upper="${hand_dorsalextension}" velocity="0.5" />
     </xacro:bodypart_template>
 
@@ -77,14 +77,14 @@
             <geometry>
                 <box size="${hand_thickness} ${hand_length} ${hand_width}"/>
             </geometry>
-            <origin xyz="${hand_length/2} 0 0" rpy="0 0 ${math.pi/2}"/>
+            <origin xyz="0 0 ${-hand_length/2}" rpy="${90*math.pi/180} 0 ${90*math.pi/180}"/>
         </visual>
     </link>
 
     <joint name="hand_can_joint" type="fixed">
         <parent link="hand"/>
         <child link="can"/>
-        <origin xyz="${hand_length} ${hand_thickness/2} 0"/>
+        <origin xyz="0 ${-hand_thickness} ${-hand_length} "/>
     </joint>
 
     <link name="can">
@@ -92,8 +92,8 @@
             <geometry>
                 <cylinder length="${can_height}" radius="${can_radius}"/>
             </geometry>
-            <origin xyz="0 ${can_radius} 0"/>
+            <origin xyz="0 0 0" rpy="${90*math.pi/180} 0 ${90*math.pi/180}"/>
         </visual>
-    </link> -->
+    </link>
 
 </robot>
