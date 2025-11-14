@@ -64,4 +64,13 @@
     <xacro:property name="humeroulnarjoint_supination" value="${-90*math.pi/180}" />
     
 
+    <!-- weights as percentage of whole body -->
+    <xacro:property name="bodyweight" value="85.8"/> 
+    <xacro:property name="upperarm_weight" value="${bodyweight * 0.029}"/>
+    <xacro:property name="forearm_weight" value="${bodyweight * 0.017}" />
+    <xacro:property name="hand_weight" value="${bodyweight * 0.007}" />
+
+
+    <xacro:property name="can_weight" value="0.45"/>
+
 </robot>

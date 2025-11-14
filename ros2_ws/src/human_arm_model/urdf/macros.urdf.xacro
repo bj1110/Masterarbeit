@@ -35,13 +35,19 @@
 
             <xacro:cylinder_inertia m="${mass}" r="${radius}" h="${height}"/>           
         </link>
-
     </xacro:macro>
 
     <xacro:macro name="cylinder_inertia" params="m r h">
         <inertial>
             <mass value="${m}"/>
             <inertia ixx="${(1/12)* m*(3*r*r + h*h) }" ixy="0.0" ixz="0.0" iyy="${(1/12)* m*(3*r*r + h*h) }" iyz="0.0" izz="${(1/2)*m*r*r}" />
+        </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="box_inertia" params="m x y z">
+        <inertial>
+            <mass value="${m}"/>
+            <inertia ixx="${(1/12)* m*(y*y + z*z) }" ixy="0.0" ixz="0.0" iyy="${(1/12)* m*(x*x + z*z) }" iyz="0.0" izz="${(1/12)*m* (x*x + y*y)}" />
         </inertial>
     </xacro:macro>
 
