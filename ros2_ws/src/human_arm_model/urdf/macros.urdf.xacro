@@ -18,29 +18,32 @@
     </xacro:macro>
 
 
-    <xacro:macro name="cylinder_link_template"  params="name *origin *geometry">
+    <xacro:macro name="cylinder_link_template"  params="name mass radius height *origin ">
         <link name="${name}">
             <visual>
+                <geometry>
+                    <cylinder length="${height}" radius="${radius}"/>
+                </geometry>
                 <xacro:insert_block name="origin"/>
-                <xacro:insert_block name="geometry" />
             </visual>
             <collision>
                 <xacro:insert_block name="origin"/>
-                <xacro:insert_block name="geometry" />
+                <geometry>
+                    <cylinder length="${height}" radius="${radius}"/>
+                </geometry>
             </collision>
-            <!-- <inertial>
-                <xacro:cylinder_inertia>
 
-                </xacro:cylinder_inertia>
-            </inertial> -->
-            
+            <xacro:cylinder_inertia m="${mass}" r="${radius}" h="${height}"/>           
         </link>
 
     </xacro:macro>
 
-    <!-- <xacro:macro name="cylinder_inertia">
-
-    </xacro:macro> -->
+    <xacro:macro name="cylinder_inertia" params="m r h">
+        <inertial>
+            <mass value="${m}"/>
+            <inertia ixx="${(1/12)* m*(3*r*r + h*h) }" ixy="0.0" ixz="0.0" iyy="${(1/12)* m*(3*r*r + h*h) }" iyz="0.0" izz="${(1/2)*m*r*r}" />
+        </inertial>
+    </xacro:macro>
 
 
     <xacro:macro name="joint_template" params="bodypart suffix parent child *origin *axis *limit"> 

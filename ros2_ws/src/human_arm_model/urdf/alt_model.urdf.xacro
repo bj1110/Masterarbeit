@@ -42,25 +42,16 @@
     </link>
 
     
-    <xacro:cylinder_link_template name="clavicular">
-        <geometry>
-            <cylinder length="${clavicle_link_length}" radius="${sternum_radius/2}"/>
-        </geometry>
+    <xacro:cylinder_link_template name="clavicular" mass="1" radius="${sternum_radius/2}" height="${clavicle_link_length}">
         <origin xyz="0 ${clavicle_link_length/2} 0" rpy="${math.pi/2} 0 0"/>
     </xacro:cylinder_link_template>
 
 
-    <xacro:cylinder_link_template name="humerus">
-        <geometry>
-            <cylinder length="${upperarm_length}" radius="${upperarm_radius}"/>
-        </geometry>
+    <xacro:cylinder_link_template name="humerus" mass="1" radius="${upperarm_radius}" height="${upperarm_length}">
         <origin xyz="0 0 ${-upperarm_length/2}" rpy="0 0 0"/>
     </xacro:cylinder_link_template>
 
-    <xacro:cylinder_link_template name="forearm">
-        <geometry>
-            <cylinder length="${elbow_wrist_length}" radius="${forearm_circumference / (2*math.pi)}" />
-        </geometry>
+    <xacro:cylinder_link_template name="forearm" mass="1" radius="${forearm_circumference / (2*math.pi)}" height="${elbow_wrist_length}">
         <origin xyz="0 0 ${-elbow_wrist_length/2}" rpy="0 0 0"/>
     </xacro:cylinder_link_template>
 
@@ -92,10 +83,7 @@
         <origin xyz="0 ${-hand_thickness} ${-hand_length} "/>
     </joint>
 
-    <xacro:cylinder_link_template name="can">
-        <geometry>
-            <cylinder length="${can_height}" radius="${can_radius}"/>
-        </geometry>
+    <xacro:cylinder_link_template name="can" mass="1" radius="${can_radius}" height="${can_height}">
         <origin xyz="0 0 0" rpy="${90*math.pi/180} 0 ${90*math.pi/180}"/>
     </xacro:cylinder_link_template>
 
