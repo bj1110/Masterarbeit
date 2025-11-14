@@ -18,6 +18,29 @@
     </xacro:macro>
 
 
+    <xacro:macro name="cylinder_link_template"  params="name *origin *geometry">
+        <link name="${name}">
+            <visual>
+                <xacro:insert_block name="origin"/>
+                <xacro:insert_block name="geometry" />
+            </visual>
+            <collision>
+                <xacro:insert_block name="origin"/>
+                <xacro:insert_block name="geometry" />
+            </collision>
+            <!-- <inertial>
+                <xacro:cylinder_inertia>
+
+                </xacro:cylinder_inertia>
+            </inertial> -->
+            
+        </link>
+
+    </xacro:macro>
+
+    <!-- <xacro:macro name="cylinder_inertia">
+
+    </xacro:macro> -->
 
 
     <xacro:macro name="joint_template" params="bodypart suffix parent child *origin *axis *limit"> 
