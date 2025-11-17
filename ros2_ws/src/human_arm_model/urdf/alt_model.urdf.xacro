@@ -6,6 +6,7 @@
     <xacro:include filename="sternoclavicular_joint.urdf.xacro" />
     <xacro:include filename="glenohumeral_joint.urdf.xacro" />
     <xacro:include filename="humeroulnar_joint.urdf.xacro" />
+    <xacro:include filename="alt_gazebo.urdf.xacro" />
 
     <!-- layout: -->
             <!-- 1. sternum -->

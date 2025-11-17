@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="alt_human_arm_model">
+    <xacro:include filename="macros.urdf.xacro" />
+
+
+    <ros2_control name="SimHardware" type="system">
+        <hardware>
+            <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+        </hardware>
+
+        <xacro:joint_interfaces joint_name="sternoclavicular_yaw_joint"/>
+        <xacro:joint_interfaces joint_name="sternoclavicular_pitch_joint"/>
+        <xacro:joint_interfaces joint_name="sternoclavicular_roll_joint"/>
+        
+        <xacro:joint_interfaces joint_name="glenohumeral_yaw_joint"/>
+        <xacro:joint_interfaces joint_name="glenohumeral_pitch_joint"/>
+        <xacro:joint_interfaces joint_name="glenohumeral_roll_joint"/>
+
+        <xacro:joint_interfaces joint_name="elbow_roll_joint"/>
+        <xacro:joint_interfaces joint_name="elbow_yaw_joint"/>
+
+        <xacro:joint_interfaces joint_name="wrist_yaw_joint"/>
+
+    </ros2_control>
+
+    <xacro:joint_transmission joint_name="sternoclavicular_yaw_joint" />
+    <xacro:joint_transmission joint_name="sternoclavicular_pitch_joint" />
+    <xacro:joint_transmission joint_name="sternoclavicular_roll_joint" />
+
+    <xacro:joint_transmission joint_name="glenohumeral_yaw_joint" />
+    <xacro:joint_transmission joint_name="glenohumeral_pitch_joint" />
+    <xacro:joint_transmission joint_name="glenohumeral_roll_joint" />
+
+    <xacro:joint_transmission joint_name="elbow_roll_joint" />
+    <xacro:joint_transmission joint_name="elbow_yaw_joint" />
+
+    <xacro:joint_transmission joint_name="wrist_yaw_joint" />
+
+
+</robot>

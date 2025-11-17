@@ -62,4 +62,27 @@
         </joint>
     </xacro:macro>
 
+    <xacro:macro name="joint_interfaces" params="joint_name">
+        <joint name="${joint_name}">
+            <command_interface name="position"/>
+            <state_interface name="position"/>
+            <state_interface name="velocity"/>
+        </joint>
+    </xacro:macro>
+
+    <xacro:macro name="joint_transmission" params="joint_name">
+        <transmission name="${joint_name}_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+
+        <joint name="${joint_name}">
+            <hardwareInterface>hardware_interface/PositionCommandInterface</hardwareInterface>
+        </joint>
+
+        <actuator name="${joint_name}_motor">
+            <hardwareInterface>hardware_interface/PositionCommandInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+        </transmission>
+    </xacro:macro>
+
 </robot>
