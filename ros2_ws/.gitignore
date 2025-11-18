@@ -43,3 +43,6 @@ dist/
 *.old
 *.orig
 *.backup
+
+# --- urdf manually build from xacro ---
+alt_model.urdf

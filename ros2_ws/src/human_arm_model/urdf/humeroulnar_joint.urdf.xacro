@@ -12,7 +12,9 @@
     </xacro:joint_template>
 
 
-    <link name="forearm_yaw"/>
+    <link name="forearm_yaw">
+        <xacro:minimal_interia />
+    </link>
 
     <xacro:joint_template bodypart="elbow" suffix="roll" parent="forearm_yaw" child="forearm">
         <origin xyz="0 0 0"/>

@@ -20,7 +20,9 @@
             <!-- 9. hand -->
         <!-- 7. and 8. are simplified significantly, both reduced from 2 subparts to 1, as the complexity is not needed here  -->
 
-    <link name="base_link"/>
+    <link name="base_link">
+        <xacro:minimal_interia />
+    </link>
     <joint name="world_to_columna" type="fixed">
         <parent link="base_link"/>
         <child link="columna"/>
@@ -30,16 +32,17 @@
     <link name="columna"> <!-- carla columna-->
         <visual>
             <geometry>
-                <box size="${sternum_radius*2} ${sternum_radius*2} ${waist_back_length}"/> 
+                <box size="${sternum_radius*2} ${sternum_radius*2} ${2*waist_back_length}"/> 
             </geometry>
-            <origin xyz="0 0 ${waist_back_length/2}"/>
+            <origin xyz="0 0 ${waist_back_length}"/>
         </visual>
         <collision>
             <geometry>
-                <box size="${sternum_radius*2} ${sternum_radius*2} ${waist_back_length}"/> 
+                <box size="${sternum_radius*2} ${sternum_radius*2} ${2*waist_back_length}"/> 
             </geometry>
-            <origin xyz="0 0 ${waist_back_length/2}"/>
+            <origin xyz="0 0 ${waist_back_length}"/>
         </collision>
+        <xacro:box_inertia m="50" x="${sternum_radius*2}" y="${sternum_radius*2}" z="${2*waist_back_length}" />
     </link>
 
     <!-- placeholder mass here -->
