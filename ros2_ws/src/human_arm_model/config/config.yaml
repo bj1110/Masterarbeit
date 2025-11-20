@@ -1,0 +1,59 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+
+    # The JointTrajectoryController allows you to send joint trajectory commands to a group
+    # of joints on a robot. These commands specify the desired positions for each joint.
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+ 
+    # Controls the gripper
+    #gripper_action_controller:
+    #  type: position_controllers/GripperActionController
+ 
+    # Responsible for publishing the current state of the robot's
+    # joints to the /joint_states ROS 2 topic
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+ 
+
+arm_controller:
+  ros__parameters:
+    joints:
+      - sternoclavicular_yaw_joint
+      - sternoclavicular_pitch_joint
+      - sternoclavicular_roll_joint
+      - glenohumeral_yaw_joint
+      - glenohumeral_pitch_joint
+      - glenohumeral_roll_joint
+      - elbow_roll_joint
+      - elbow_yaw_joint
+      - wrist_yaw_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+
+    # If true, When set to true, the controller will not use any feedback from the system
+    # (e.g., joint positions, velocities, efforts) to compute the control commands.
+    open_loop_control: false
+ 
+    # When set to true, it allows the controller to integrate the trajectory goals it receives.
+    # This means that if the goal trajectory only specifies positions, the controller will
+    # numerically integrate the positions to compute the velocities and accelerations required
+    # to follow the trajectory.
+    allow_integration_in_goal_trajectories: true
+ 
+    # Allow non-zero velocity at the end of the trajectory
+    allow_nonzero_velocity_at_trajectory_end: true
+ 
+    # gains:
+    #   sternoclavicular_yaw_joint: {p: 50.0}
+    #   sternoclavicular_pitch_joint: {p: 50.0}
+    #   sternoclavicular_roll_joint: {p: 50.0}
+    #   glenohumeral_yaw_joint: {p: 50.0}
+    #   glenohumeral_pitch_joint: {p: 50.0}
+    #   glenohumeral_roll_joint: {p: 50.0}
+    #   elbow_roll_joint: {p: 50.0}
+    #   elbow_yaw_joint: {p: 50.0}
+    #   wrist_yaw_joint: {p: 30.0}

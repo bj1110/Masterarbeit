@@ -2,10 +2,27 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="alt_human_arm_model">
     <xacro:include filename="macros.urdf.xacro" />
 
+    <!-- <gazebo>
+        <plugin
+            name="gz_ros2_control"
+            filename="gz_ros2_control-system">
+            <ros2_control>
+                <param>/config/config.yaml</param>
+            </ros2_control>
+        </plugin>
+    </gazebo> -->
+    <gazebo>
+        <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+            <parameters>src/human_arm_model/config/config.yaml</parameters>
+            <ros>
+                <remapping>/controller_manager/robot_description:=/robot_description</remapping>
+            </ros>
+        </plugin>
+    </gazebo>
 
     <ros2_control name="SimHardware" type="system">
         <hardware>
-            <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+            <plugin>gz_ros2_control/GazeboSimSystem</plugin>
         </hardware>
 
         <xacro:joint_interfaces joint_name="sternoclavicular_yaw_joint"/>
@@ -23,7 +40,7 @@
 
     </ros2_control>
 
-    <xacro:joint_transmission joint_name="sternoclavicular_yaw_joint" />
+    <!-- <xacro:joint_transmission joint_name="sternoclavicular_yaw_joint" />
     <xacro:joint_transmission joint_name="sternoclavicular_pitch_joint" />
     <xacro:joint_transmission joint_name="sternoclavicular_roll_joint" />
 
@@ -34,7 +51,7 @@
     <xacro:joint_transmission joint_name="elbow_roll_joint" />
     <xacro:joint_transmission joint_name="elbow_yaw_joint" />
 
-    <xacro:joint_transmission joint_name="wrist_yaw_joint" />
+    <xacro:joint_transmission joint_name="wrist_yaw_joint" /> -->
 
 
 </robot>
