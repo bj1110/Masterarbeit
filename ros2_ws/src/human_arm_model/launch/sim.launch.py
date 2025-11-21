@@ -102,6 +102,12 @@ def generate_launch_description():
         'config.yaml'
     ])
 
+    bridge_config_file = PathJoinSubstitution([
+        this_package,
+        'config',
+        'ros_gz_bridge_config.yaml'
+    ])
+
     start_robot_state_publisher = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
@@ -152,7 +158,7 @@ def generate_launch_description():
         package='ros_gz_bridge',
         executable='parameter_bridge',
         parameters=[{
-            'config_file': config_file,
+            'config_file': bridge_config_file,
         }],
         output='screen'
     )

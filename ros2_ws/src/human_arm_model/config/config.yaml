@@ -22,6 +22,7 @@ controller_manager:
 
 arm_controller:
   ros__parameters:
+    interface_name: position
     joints:
       - sternoclavicular_yaw_joint
       - sternoclavicular_pitch_joint
