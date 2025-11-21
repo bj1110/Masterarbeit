@@ -30,7 +30,7 @@ def generate_launch_description():
 
     declare_use_jsp = DeclareLaunchArgument(
         'use_jsp',
-        default_value='true',
+        default_value='false',
         choices=['true', 'false'],
         description='Flag to enable or disable the usage of JointStatePublisher'
     )
@@ -40,6 +40,13 @@ def generate_launch_description():
         default_value='true',
         choices=['true', 'false'],
         description='Flag to enable or disable the usage of Rviz'
+    )
+
+    declare_use_sim_time = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        choices=['true', 'false'],
+        description='Flag to enable or disable usage of simulation clock (gazebo)'
     )
 
     this_package= FindPackageShare('human_arm_model')
@@ -95,7 +102,8 @@ def generate_launch_description():
         declare_model_arg,
         declare_use_jsp,
         declare_use_jsp_gui,
-        declare_use_rviz,    
+        declare_use_rviz,  
+        declare_use_sim_time,  
         robot_state_publisher_node,
         joint_state_publisher_node,
         joint_state_publisher_gui_node,

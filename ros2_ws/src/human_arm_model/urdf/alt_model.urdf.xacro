@@ -21,7 +21,7 @@
         <!-- 7. and 8. are simplified significantly, both reduced from 2 subparts to 1, as the complexity is not needed here  -->
 
     <link name="base_link">
-        <xacro:minimal_interia />
+        <!-- <xacro:minimal_interia /> -->
     </link>
     <joint name="world_to_columna" type="fixed">
         <parent link="base_link"/>
