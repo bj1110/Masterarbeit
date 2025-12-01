@@ -4,6 +4,13 @@
     <xacro:include filename="constants.urdf.xacro" />
     <xacro:include filename="macros.urdf.xacro" />
 
+    <link name="clavicular_yaw">
+        <xacro:minimal_interia />
+    </link>
+    
+    <link name="clavicular_pitch">
+        <xacro:minimal_interia />
+    </link>
 
     <xacro:joint_template bodypart="sternoclavicular" suffix="yaw" parent="columna" child="clavicular_yaw" >
         <origin xyz="0 ${sternum_radius} ${2*waist_back_length}" rpy="0 0 ${30*math.pi/180}" />
@@ -11,9 +18,6 @@
         <limit effort="1000" lower="${Sternoklavikularjoint_depression}" upper="${Sternoklavikularjoint_elevation}" velocity="0.5" />
     </xacro:joint_template>
 
-    <link name="clavicular_yaw">
-        <xacro:minimal_interia />
-    </link>
 
     <xacro:joint_template bodypart="sternoclavicular" suffix="pitch" parent="clavicular_yaw" child="clavicular_pitch">
         <origin xyz="0 0 0" />
@@ -21,9 +25,6 @@
         <limit effort="1000" lower="${Sternoklavikularjoint_retraktion}" upper="${Sternoklavikularjoint_protraktion}" velocity="0.5" />
     </xacro:joint_template>
 
-    <link name="clavicular_pitch">
-        <xacro:minimal_interia />
-    </link>
 
     <xacro:joint_template bodypart="sternoclavicular" suffix="roll" parent="clavicular_pitch" child="clavicular">
         <origin xyz="0 0 0" />

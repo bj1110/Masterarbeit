@@ -3,10 +3,6 @@
 
     <xacro:include filename="constants.urdf.xacro" />
     <xacro:include filename="macros.urdf.xacro" />
-    <xacro:include filename="sternoclavicular_joint.urdf.xacro" />
-    <xacro:include filename="glenohumeral_joint.urdf.xacro" />
-    <xacro:include filename="humeroulnar_joint.urdf.xacro" />
-    <xacro:include filename="alt_gazebo.urdf.xacro" />
 
     <!-- layout: -->
             <!-- 1. sternum -->
@@ -23,12 +19,7 @@
     <link name="base_link">
         <!-- <xacro:minimal_interia /> -->
     </link>
-    <joint name="world_to_columna" type="fixed">
-        <parent link="base_link"/>
-        <child link="columna"/>
-        <origin xyz="0 0 0"/>
-    </joint>
-
+    
     <link name="columna"> <!-- carla columna-->
         <visual>
             <geometry>
@@ -44,6 +35,13 @@
         </collision>
         <xacro:box_inertia m="50" x="${sternum_radius*2}" y="${sternum_radius*2}" z="${2*waist_back_length}" />
     </link>
+
+    <joint name="world_to_columna" type="fixed">
+        <parent link="base_link"/>
+        <child link="columna"/>
+        <origin xyz="0 0 0"/>
+    </joint>
+
 
     <!-- placeholder mass here -->
     <xacro:cylinder_link_template name="clavicular" mass="1" radius="${sternum_radius/2}" height="${clavicle_link_length}">
@@ -82,14 +80,19 @@
         <xacro:box_inertia m="${hand_weight}" x="${hand_thickness}" y="${hand_length}" z="${hand_width}" />
     </link>
 
+    
+    <xacro:cylinder_link_template name="can" mass="${can_weight}" radius="${can_radius}" height="${can_height}">
+        <origin xyz="0 0 0" rpy="${90*math.pi/180} 0 ${90*math.pi/180}"/>
+    </xacro:cylinder_link_template>
+    
     <joint name="hand_can_joint" type="fixed">
         <parent link="hand"/>
         <child link="can"/>
         <origin xyz="0 ${-hand_thickness} ${-hand_length} "/>
     </joint>
 
-    <xacro:cylinder_link_template name="can" mass="${can_weight}" radius="${can_radius}" height="${can_height}">
-        <origin xyz="0 0 0" rpy="${90*math.pi/180} 0 ${90*math.pi/180}"/>
-    </xacro:cylinder_link_template>
-
+    <xacro:include filename="sternoclavicular_joint.urdf.xacro" />
+    <xacro:include filename="glenohumeral_joint.urdf.xacro" />
+    <xacro:include filename="humeroulnar_joint.urdf.xacro" />
+    <xacro:include filename="alt_gazebo.urdf.xacro" />
 </robot>

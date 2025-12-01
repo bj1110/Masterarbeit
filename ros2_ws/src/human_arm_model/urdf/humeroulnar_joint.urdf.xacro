@@ -4,6 +4,9 @@
     <xacro:include filename="constants.urdf.xacro" />
     <xacro:include filename="macros.urdf.xacro" />
 
+    <link name="forearm_yaw">
+        <xacro:minimal_interia />
+    </link>
 
     <xacro:joint_template bodypart="elbow" suffix="yaw" parent="humerus" child="forearm_yaw">
         <origin xyz="0 0 ${-upperarm_length}"/>
@@ -11,10 +14,6 @@
         <limit effort="1000" lower="${humeroulnarjoint_extension}" upper="${humeroulnarjoint_flexion}" velocity="0.5" />
     </xacro:joint_template>
 
-
-    <link name="forearm_yaw">
-        <xacro:minimal_interia />
-    </link>
 
     <xacro:joint_template bodypart="elbow" suffix="roll" parent="forearm_yaw" child="forearm">
         <origin xyz="0 0 0"/>
