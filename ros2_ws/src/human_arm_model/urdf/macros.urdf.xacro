@@ -87,9 +87,9 @@
 
     <xacro:macro name="minimal_interia">
         <inertial>
-            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
             <mass value="0.01"/>
-            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+            <inertia ixx="0.001" ixy="0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
         </inertial>
     </xacro:macro>
 

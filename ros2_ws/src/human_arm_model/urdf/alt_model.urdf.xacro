@@ -25,42 +25,42 @@
             <geometry>
                 <box size="${sternum_radius*2} ${sternum_radius*2} ${2*waist_back_length}"/> 
             </geometry>
-            <origin xyz="0 0 ${waist_back_length}"/>
+            <origin xyz="0.0 0.0 ${waist_back_length}"/>
         </visual>
         <collision>
             <geometry>
                 <box size="${sternum_radius*2} ${sternum_radius*2} ${2*waist_back_length}"/> 
             </geometry>
-            <origin xyz="0 0 ${waist_back_length}"/>
+            <origin xyz="0.0 0.0 ${waist_back_length}"/>
         </collision>
-        <xacro:box_inertia m="50" x="${sternum_radius*2}" y="${sternum_radius*2}" z="${2*waist_back_length}" />
+        <xacro:box_inertia m="50.0" x="${sternum_radius*2}" y="${sternum_radius*2}" z="${2*waist_back_length}" />
     </link>
 
     <joint name="world_to_columna" type="fixed">
         <parent link="base_link"/>
         <child link="columna"/>
-        <origin xyz="0 0 0"/>
+        <origin xyz="0.0 0.0 0.0"/>
     </joint>
 
 
     <!-- placeholder mass here -->
     <xacro:cylinder_link_template name="clavicular" mass="1" radius="${sternum_radius/2}" height="${clavicle_link_length}">
-        <origin xyz="0 ${clavicle_link_length/2} 0" rpy="${math.pi/2} 0 0"/>
+        <origin xyz="0.0 ${clavicle_link_length/2} 0.0" rpy="${math.pi/2} 0.0 0.0"/>
     </xacro:cylinder_link_template>
 
 
     <xacro:cylinder_link_template name="humerus" mass="${upperarm_weight}" radius="${upperarm_radius}" height="${upperarm_length}">
-        <origin xyz="0 0 ${-upperarm_length/2}" rpy="0 0 0"/>
+        <origin xyz="0.0 0.0 ${-upperarm_length/2}" rpy="0.0 0.0 0.0"/>
     </xacro:cylinder_link_template>
 
     <xacro:cylinder_link_template name="forearm" mass="${forearm_weight}" radius="${forearm_circumference / (2*math.pi)}" height="${elbow_wrist_length}">
-        <origin xyz="0 0 ${-elbow_wrist_length/2}" rpy="0 0 0"/>
+        <origin xyz="0.0 0.0 ${-elbow_wrist_length/2}" rpy="0.0 0.0 0.0"/>
     </xacro:cylinder_link_template>
 
     <xacro:bodypart_template bodypart="wrist" suffix="yaw" parent="forearm" child="hand">
-        <origin xyz="0 0 ${-elbow_wrist_length}"/>
-        <axis xyz="1 0 0" />
-        <limit effort="1000" lower="${hand_palmarflexion}" upper="${hand_dorsalextension}" velocity="0.5" />
+        <origin xyz="0.0 0.0 ${-elbow_wrist_length}"/>
+        <axis xyz="1.0 0.0 0.0" />
+        <limit effort="1000.0" lower="${hand_palmarflexion}" upper="${hand_dorsalextension}" velocity="0.5" />
     </xacro:bodypart_template>
 
 
@@ -69,26 +69,26 @@
             <geometry>
                 <box size="${hand_thickness} ${hand_length} ${hand_width}"/>
             </geometry>
-            <origin xyz="0 0 ${-hand_length/2}" rpy="${90*math.pi/180} 0 ${90*math.pi/180}"/>
+            <origin xyz="0.0 0.0 ${-hand_length/2}" rpy="${90*math.pi/180} 0.0 ${90*math.pi/180}"/>
         </visual>
         <collision>
             <geometry>
                 <box size="${hand_thickness} ${hand_length} ${hand_width}"/>
             </geometry>
-            <origin xyz="0 0 ${-hand_length/2}" rpy="${90*math.pi/180} 0 ${90*math.pi/180}"/>
+            <origin xyz="0.0 0.0 ${-hand_length/2}" rpy="${90*math.pi/180} 0.0 ${90*math.pi/180}"/>
         </collision>
         <xacro:box_inertia m="${hand_weight}" x="${hand_thickness}" y="${hand_length}" z="${hand_width}" />
     </link>
 
     
     <xacro:cylinder_link_template name="can" mass="${can_weight}" radius="${can_radius}" height="${can_height}">
-        <origin xyz="0 0 0" rpy="${90*math.pi/180} 0 ${90*math.pi/180}"/>
+        <origin xyz="0.0 0.0 0.0" rpy="${90*math.pi/180} 0.0 ${90*math.pi/180}"/>
     </xacro:cylinder_link_template>
     
     <joint name="hand_can_joint" type="fixed">
         <parent link="hand"/>
         <child link="can"/>
-        <origin xyz="0 ${-hand_thickness} ${-hand_length} "/>
+        <origin xyz="0.0 ${-hand_thickness} ${-hand_length} "/>
     </joint>
 
     <xacro:include filename="sternoclavicular_joint.urdf.xacro" />

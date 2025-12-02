@@ -13,23 +13,23 @@
     </link>
 
     <xacro:joint_template bodypart="sternoclavicular" suffix="yaw" parent="columna" child="clavicular_yaw" >
-        <origin xyz="0 ${sternum_radius} ${2*waist_back_length}" rpy="0 0 ${30*math.pi/180}" />
-        <axis xyz="1 0 0" />
-        <limit effort="1000" lower="${Sternoklavikularjoint_depression}" upper="${Sternoklavikularjoint_elevation}" velocity="0.5" />
+        <origin xyz="0.0 ${sternum_radius} ${2*waist_back_length}" rpy="0.0 0.0 ${30*math.pi/180}" />
+        <axis xyz="1.0 0.0 0.0" />
+        <limit effort="1000.0" lower="${Sternoklavikularjoint_depression}" upper="${Sternoklavikularjoint_elevation}" velocity="0.5" />
     </xacro:joint_template>
 
 
     <xacro:joint_template bodypart="sternoclavicular" suffix="pitch" parent="clavicular_yaw" child="clavicular_pitch">
-        <origin xyz="0 0 0" />
-        <axis xyz="0 0 1" />
-        <limit effort="1000" lower="${Sternoklavikularjoint_retraktion}" upper="${Sternoklavikularjoint_protraktion}" velocity="0.5" />
+        <origin xyz="0.0 0.0 0.0" />
+        <axis xyz="0.0 0.0 1.0" />
+        <limit effort="1000.0" lower="${Sternoklavikularjoint_retraktion}" upper="${Sternoklavikularjoint_protraktion}" velocity="0.5" />
     </xacro:joint_template>
 
 
     <xacro:joint_template bodypart="sternoclavicular" suffix="roll" parent="clavicular_pitch" child="clavicular">
-        <origin xyz="0 0 0" />
-        <axis xyz="0 1 0" />
-        <limit effort="1000" lower="${Sternoklavikularjoint_posteriorrotation}" upper="${Sternoklavikularjoint_anteriorrotation}" velocity="0.5" />
+        <origin xyz="0.0 0.0 0.0" />
+        <axis xyz="0.0 1.0 0.0" />
+        <limit effort="1000.0" lower="${Sternoklavikularjoint_posteriorrotation}" upper="${Sternoklavikularjoint_anteriorrotation}" velocity="0.5" />
     </xacro:joint_template>
 
 </robot>
