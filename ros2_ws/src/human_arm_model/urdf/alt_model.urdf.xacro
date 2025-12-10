@@ -91,8 +91,8 @@
         <origin xyz="0.0 ${-hand_thickness} ${-hand_length} "/>
     </joint>
 
-    <xacro:include filename="sternoclavicular_joint.urdf.xacro" />
-    <xacro:include filename="glenohumeral_joint.urdf.xacro" />
-    <xacro:include filename="humeroulnar_joint.urdf.xacro" />
-    <xacro:include filename="alt_gazebo.urdf.xacro" />
+    <xacro:include filename="alt_folder/sternoclavicular_joint.urdf.xacro" />
+    <xacro:include filename="alt_folder/glenohumeral_joint.urdf.xacro" />
+    <xacro:include filename="alt_folder/humeroulnar_joint.urdf.xacro" />
+    <xacro:include filename="alt_folder/alt_gazebo.urdf.xacro" />
 </robot>
