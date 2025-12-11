@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="human_arm_model3">
+
+    <xacro:include filename="model_folder/macros2.urdf.xacro"/> 
+    <xacro:include filename="$(find human_arm_model)/urdf/constants.urdf.xacro" />
+    
+    <link name="${prefix}torso">
+        <visual>
+            <geometry>
+                <!-- Bullshit limit for now  -->
+                <box size="${2*clavicle_link_length} ${0.2+ upperarm_circumference/ (2* math.pi)} ${2*waist_back_length}"/>
+            </geometry>
+            <origin xyz="0.0 0.0 ${waist_back_length}"/>
+        </visual>
+    </link> 
+
+    <xacro:cylinder_link_template2 name="upperarm" mass="${upperarm_weight}" radius="${upperarm_radius}" height="${upperarm_length}">
+        <origin xyz="0.0 0.0 ${-upperarm_length/2}" rpy="0.0 0.0 0.0"/>
+    </xacro:cylinder_link_template2>
+    
+    <xacro:include filename="model_folder/shoulder.urdf.xacro"/>
+
+    <xacro:cylinder_link_template2 name="forearm" mass="${forearm_weight}" radius="${forearm_circumference / (2*math.pi)}" height="${elbow_wrist_length}">
+        <origin xyz="0.0 0.0 ${-elbow_wrist_length/2}" rpy="0.0 0.0 0.0"/>
+    </xacro:cylinder_link_template2>
+
+    <xacro:include filename="model_folder/elbow.urdf.xacro"/>
+    
+    
+    <xacro:include filename="model_folder/endeffector.urdf.xacro"/>
+    
+    
+</robot>
