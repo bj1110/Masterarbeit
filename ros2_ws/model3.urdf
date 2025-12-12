@@ -222,6 +222,6 @@
   <joint name="model1_right_hand_can_joint" type="fixed">
     <parent link="model1_right_hand"/>
     <child link="model1_right_can"/>
-    <origin xyz="0.0 -0.01784999999999999 -0.1165"/>
+    <origin xyz="0.0 0.0 -0.1165"/>
   </joint>
 </robot>

@@ -51,7 +51,10 @@
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
     <disable_collisions link1="model1_right_can" link2="model1_right_forearm" reason="Never"/>
     <disable_collisions link1="model1_right_can" link2="model1_right_hand" reason="Adjacent"/>
-    <!-- <disable_collisions link1="columna" link2="model1_right_upperarm" reason="Never"/> -->
+    <disable_collisions link1="model1_right_torso" link2="model1_right_upperarm" reason="Never"/>
+    <disable_collisions link1="model1_right_torso" link2="model1_right_forearm" reason="Never"/>
+    <disable_collisions link1="model1_right_torso" link2="model1_right_hand" reason="Never"/>
+    <disable_collisions link1="model1_right_torso" link2="model1_right_can" reason="Never"/>
     <disable_collisions link1="model1_right_forearm" link2="model1_right_hand" reason="Adjacent"/>
     <disable_collisions link1="model1_right_forearm" link2="model1_right_upperarm" reason="Adjacent"/>
 </robot>
