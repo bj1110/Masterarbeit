@@ -14,18 +14,26 @@ int main(int argc, char *argv[]) {
 
     moveit::planning_interface::MoveGroupInterface move_group(move_group_node, PLANNING_GROUP);
 
-    geometry_msgs::msg::Pose target_pose = move_group.getCurrentPose().pose;
-    // move_group.setStartStateToCurrentState(); 
+    // geometry_msgs::msg::Pose target_pose = move_group.getCurrentPose().pose;
+    move_group.setStartStateToCurrentState(); 
     // auto const target_pose = []{
     // geometry_msgs::msg::Pose msg;
     //     msg.orientation.w = 1.0;
-    //     msg.position.x = 0.39;
-    //     msg.position.y = 0.22;
-    //     msg.position.z = 0.93;
+    //     msg.position.x = 0.15;
+    //     msg.position.y = 0.5;
+    //     msg.position.z = 0.78;
     //     return msg;
     // }();
-    move_group.setPoseTarget(target_pose);
-    
+    // move_group.setPoseTarget(target_pose);
+    std::map<std::string, double> joint_goal;
+    joint_goal["model1_right_shoulder_rotation_joint"] = 0.7;
+    joint_goal["model1_right_shoulder_abduction_joint"] = 1.0;
+    joint_goal["model1_right_shoulder_flexion_joint"] = 0.0;
+    joint_goal["model1_right_elbow_flexion_joint"] = 1.6113;
+    joint_goal["model1_right_elbow_rotation_joint"] = 0.0;
+    joint_goal["model1_right_wrist_flexion_joint"] = 0.0;
+    move_group.setJointValueTarget(joint_goal);
+
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
     
     bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
