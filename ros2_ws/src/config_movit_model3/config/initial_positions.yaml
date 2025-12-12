@@ -1,0 +1,9 @@
+# Default initial positions for human_arm_model3's ros2_control fake system
+
+initial_positions:
+  model1_right_shoulder_rotation_joint: 0
+  model1_right_shoulder_abduction_joint: 0
+  model1_right_shoulder_flexion_joint: 0
+  model1_right_elbow_flexion_joint: 0
+  model1_right_elbow_rotation_joint: 0
+  model1_right_wrist_flexion_joint: 0
