@@ -16,23 +16,33 @@ int main(int argc, char *argv[]) {
 
     // geometry_msgs::msg::Pose target_pose = move_group.getCurrentPose().pose;
     move_group.setStartStateToCurrentState(); 
-    // auto const target_pose = []{
-    // geometry_msgs::msg::Pose msg;
-    //     msg.orientation.w = 1.0;
-    //     msg.position.x = 0.15;
-    //     msg.position.y = 0.5;
-    //     msg.position.z = 0.78;
-    //     return msg;
-    // }();
-    // move_group.setPoseTarget(target_pose);
-    std::map<std::string, double> joint_goal;
-    joint_goal["model1_right_shoulder_rotation_joint"] = 0.7;
-    joint_goal["model1_right_shoulder_abduction_joint"] = 1.0;
-    joint_goal["model1_right_shoulder_flexion_joint"] = 0.0;
-    joint_goal["model1_right_elbow_flexion_joint"] = 1.6113;
-    joint_goal["model1_right_elbow_rotation_joint"] = 0.0;
-    joint_goal["model1_right_wrist_flexion_joint"] = 0.0;
-    move_group.setJointValueTarget(joint_goal);
+    moveit::core::RobotState start_state(*move_group.getCurrentState());
+
+    start_state.printStatePositions();
+    start_state.printStateInfo();
+
+    auto const target_pose = []{
+    geometry_msgs::msg::Pose msg;
+        msg.orientation.w = 1.0;
+        msg.position.x = -0.0197;
+        msg.position.y = -0.309;
+        msg.position.z = 0.38;
+        return msg;
+    }();
+
+    move_group.setMaxVelocityScalingFactor(0.5);
+    move_group.setMaxAccelerationScalingFactor(0.5);
+
+    move_group.setPoseTarget(target_pose);
+    move_group.setPlanningTime(30.0);
+    // std::map<std::string, double> joint_goal;
+    // joint_goal["model1_right_shoulder_rotation_joint"] = 0.7;
+    // joint_goal["model1_right_shoulder_abduction_joint"] = 1.0;
+    // joint_goal["model1_right_shoulder_flexion_joint"] = 0.0;
+    // joint_goal["model1_right_elbow_flexion_joint"] = 1.6113;
+    // joint_goal["model1_right_elbow_rotation_joint"] = 0.0;
+    // joint_goal["model1_right_wrist_flexion_joint"] = 0.0;
+    // move_group.setJointValueTarget(joint_goal);
 
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
     

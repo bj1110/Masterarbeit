@@ -16,6 +16,7 @@ find_package(moveit_core REQUIRED)
 find_package(moveit_visual_tools REQUIRED)
 
 add_executable(solver src/solver.cpp)
+add_executable(fullsim src/fullsim.cpp)
 
 ament_target_dependencies(solver
   rclcpp
@@ -27,7 +28,21 @@ ament_target_dependencies(solver
   moveit_visual_tools
 )
 
+ament_target_dependencies(fullsim
+  rclcpp
+  geometry_msgs
+  sensor_msgs
+  tf2_ros
+  moveit_ros_planning_interface
+  moveit_core
+  moveit_visual_tools
+)
+
+
 install(TARGETS solver
+  DESTINATION lib/${PROJECT_NAME}
+)
+install(TARGETS fullsim
   DESTINATION lib/${PROJECT_NAME}
 )
 
