@@ -10,6 +10,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_core REQUIRED)
@@ -17,6 +18,7 @@ find_package(moveit_visual_tools REQUIRED)
 
 add_executable(solver src/solver.cpp)
 add_executable(fullsim src/fullsim.cpp)
+add_executable(parser src/parser.cpp)
 
 ament_target_dependencies(solver
   rclcpp
@@ -38,6 +40,21 @@ ament_target_dependencies(fullsim
   moveit_visual_tools
 )
 
+ament_target_dependencies(parser
+  rclcpp
+  ament_index_cpp
+  # geometry_msgs
+  # sensor_msgs
+  # tf2_ros
+  # moveit_ros_planning_interface
+  # moveit_core
+  # moveit_visual_tools
+)
+
+install(DIRECTORY
+  data
+  DESTINATION share/${PROJECT_NAME}
+)
 
 install(TARGETS solver
   DESTINATION lib/${PROJECT_NAME}
@@ -45,5 +62,7 @@ install(TARGETS solver
 install(TARGETS fullsim
   DESTINATION lib/${PROJECT_NAME}
 )
-
+install(TARGETS parser
+  DESTINATION lib/${PROJECT_NAME}
+)
 ament_package()
