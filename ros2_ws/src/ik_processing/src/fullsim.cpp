@@ -50,7 +50,7 @@ int main(int argc, char** argv)
     // Visualization
     // ^^^^^^^^^^^^^
     namespace rvt = rviz_visual_tools;
-    moveit_visual_tools::MoveItVisualTools visual_tools(move_group_node, "model1_right_torso", "move_group_tutorial", //this name is topic in RVIZ
+    moveit_visual_tools::MoveItVisualTools visual_tools(move_group_node, "model1_right_torso", rviz_visual_tools::RVIZ_MARKER_TOPIC, //this name is topic in RVIZ
                                                         move_group.getRobotModel());
 
     visual_tools.deleteAllMarkers();
@@ -77,9 +77,9 @@ int main(int argc, char** argv)
     RCLCPP_INFO(LOGGER, "End effector link: %s", move_group.getEndEffectorLink().c_str());
 
     // We can get a list of all the groups in the robot:
-    RCLCPP_INFO(LOGGER, "Available Planning Groups:");
-    std::copy(move_group.getJointModelGroupNames().begin(), move_group.getJointModelGroupNames().end(),
-            std::ostream_iterator<std::string>(std::cout, ", "));
+    // RCLCPP_INFO(LOGGER, "Available Planning Groups:");
+    // std::copy(move_group.getJointModelGroupNames().begin(), move_group.getJointModelGroupNames().end(),
+    //         std::ostream_iterator<std::string>(std::cout, ", "));
 
     // Start the demo
     // ^^^^^^^^^^^^^^^^^^^^^^^^^
