@@ -11,15 +11,15 @@
 #include <chrono>
 #include <thread>
 
-static const rclcpp::Logger LOGGER = rclcpp::get_logger("move_group_demo");
+// static const rclcpp::Logger LOGGER = rclcpp::get_logger("move_group_demo");
 
 int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
     rclcpp::NodeOptions node_options;
     node_options.automatically_declare_parameters_from_overrides(true);
-    auto move_group_node = rclcpp::Node::make_shared("move_group_interface_tutorial", node_options);
-
+    auto move_group_node = rclcpp::Node::make_shared("Fullsim_Node", node_options);
+    const auto LOGGER = move_group_node->get_logger(); 
     // We spin up a SingleThreadedExecutor for the current state monitor to get information
     // about the robot's state.
     rclcpp::executors::SingleThreadedExecutor executor;
@@ -50,7 +50,7 @@ int main(int argc, char** argv)
     // Visualization
     // ^^^^^^^^^^^^^
     namespace rvt = rviz_visual_tools;
-    moveit_visual_tools::MoveItVisualTools visual_tools(move_group_node, "model1_right_torso", "move_group_tutorial",
+    moveit_visual_tools::MoveItVisualTools visual_tools(move_group_node, "model1_right_torso", "move_group_tutorial", //this name is topic in RVIZ
                                                         move_group.getRobotModel());
 
     visual_tools.deleteAllMarkers();
@@ -103,6 +103,9 @@ int main(int argc, char** argv)
 
     RCLCPP_INFO(LOGGER, "Visualizing plan 1 (pose goal) %s", success ? "" : "FAILED");
 
+    move_group.move();
+
+
      // Visualizing plans
     // ^^^^^^^^^^^^^^^^^
     // We can also visualize the plan as a line with markers in RViz.
@@ -112,6 +115,15 @@ int main(int argc, char** argv)
     visual_tools.publishTrajectoryLine(my_plan.trajectory, joint_model_group);
     visual_tools.trigger();
     
+
+    /*
+    Printing the joint values to the console:
+    */
+    const std::vector< std::string > &  jointnames = move_group.getJointNames();
+    std::vector<double> jointstates = move_group.getCurrentJointValues();
+    for(size_t i=0; i< jointnames.size(); ++i){
+        RCLCPP_INFO(LOGGER, "joint state %s: %f", jointnames[i].c_str(), jointstates[i]); 
+    }
     
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(5s); 
