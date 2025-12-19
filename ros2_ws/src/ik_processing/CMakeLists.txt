@@ -21,6 +21,8 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(moveit_visual_tools REQUIRED)
 
+find_package(rosidl_default_generators REQUIRED)
+
 add_executable(solver src/solver.cpp)
 add_executable(fullsim src/fullsim.cpp)
 add_executable(parser src/parser.cpp)
@@ -57,6 +59,21 @@ ament_target_dependencies(parser
 )
 
 target_link_libraries(fullsim nlohmann_json::nlohmann_json)
+
+set(msg_files
+  "msg/Datapoint.msg"
+)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${msg_files}
+)
+
+ament_export_dependencies(rosidl_default_runtime)
+
+rosidl_get_typesupport_target(cpp_typesupport_target
+  ${PROJECT_NAME} rosidl_typesupport_cpp)
+
+target_link_libraries(parser "${cpp_typesupport_target}")
 
 install(DIRECTORY
   data

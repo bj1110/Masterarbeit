@@ -10,6 +10,8 @@
 #include <filesystem>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
+#include "ik_processing/msg/datapoint.hpp"
+
 struct Baseline_point{
     float time;
     float x, y, z, error; 
@@ -84,7 +86,11 @@ class Parser: public rclcpp::Node{
     bool _is_dat1; 
     std::variant<std::vector<Baseline_point>, std::vector<Interaction_point>> data; 
     
-    std::variant<std::vector<Baseline_point>, std::vector<Interaction_point>> create_baseline(std::ifstream& file){
+    std::variant<std::vector<Baseline_point>, std::vector<Interaction_point>> create_baseline(std::ifstream& file);
+
+};
+
+std::variant<std::vector<Baseline_point>, std::vector<Interaction_point>> Parser::create_baseline(std::ifstream& file){
         std::variant<std::vector<Baseline_point>, std::vector<Interaction_point>> result; 
         std::vector<std::stringstream> vss; 
         std::string line;
@@ -118,47 +124,9 @@ class Parser: public rclcpp::Node{
         return result; 
     }
 
-};
-
-
 int main(int argc, char* argv[]){
-
     rclcpp::init(argc, argv);
     auto node =(std::make_shared<Parser>());
-    
-    
-    // rclcpp::NodeOptions node_options;
-    // node_options.automatically_declare_parameters_from_overrides(true);
-    // const auto parser_node = std::make_shared<rclcpp::Node>("parser", node_options);
-
-
-    
-
-
-    // if(argc<2){
-    //     std::printf("No File has been given. Please provide location of file.\n");
-    //     return 1;
-    // }
-    // std::string filename = argv[1];
-    // std::ifstream file{filename};
-    // std::string line;
-
-    // std::printf("Printing number of elements per line:\n");
-
-    // int len=0, row=0;
-    // while(std::getline(file, line)){
-    //     ++row; 
-    //     std::cout<< "\t"<< row << ": ";
-    //     std::stringstream ss {line};   
-    //     float a; 
-    //     while(ss >> a){
-    //         ++len; 
-    //     }
-    //     std::cout << len << std::endl; 
-    //     len=0; 
-    // }
-
-
     rclcpp::shutdown(); 
     return 0; 
 }
