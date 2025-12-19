@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.8)
 project(ik_processing)
 
+
+include(FetchContent)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_MakeAvailable(json)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -50,6 +55,8 @@ ament_target_dependencies(parser
   # moveit_core
   # moveit_visual_tools
 )
+
+target_link_libraries(fullsim nlohmann_json::nlohmann_json)
 
 install(DIRECTORY
   data

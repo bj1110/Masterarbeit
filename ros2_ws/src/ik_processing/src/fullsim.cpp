@@ -11,7 +11,45 @@
 #include <chrono>
 #include <thread>
 
-// static const rclcpp::Logger LOGGER = rclcpp::get_logger("move_group_demo");
+#include <filesystem>
+#include <stdexcept>
+
+#include <nlohmann/json.hpp>
+
+// for convenience
+using json = nlohmann::json;
+
+std::ofstream create_file(const rclcpp::Logger& LOGGER ){
+    const char* home = std::getenv("HOME");
+    if (!home) {
+        RCLCPP_ERROR(LOGGER, "HOME environment variable not set");
+        return {};
+    }
+    std::filesystem::path dir( std::filesystem::path(home) / "Projects/Masterarbeit/simdata");
+    std::error_code ec; 
+    std::filesystem::create_directories(dir, ec);
+    if (ec) {
+        RCLCPP_ERROR(
+            LOGGER,
+            "Failed to create %s: %s",
+            dir.c_str(),
+            ec.message().c_str()
+        );
+        return {};
+    }
+    std::filesystem::path filepath (dir / "data.json");
+    std::ofstream file(filepath);
+    if(!file.is_open()){
+        RCLCPP_ERROR(
+            LOGGER,
+            "Failed to open: %s",
+            filepath.c_str()
+        );
+        return {}; 
+    }
+    RCLCPP_INFO(LOGGER, "Output file opened");
+    return file; 
+}
 
 int main(int argc, char** argv)
 {
@@ -115,6 +153,15 @@ int main(int argc, char** argv)
     visual_tools.publishTrajectoryLine(my_plan.trajectory, joint_model_group);
     visual_tools.trigger();
     
+    /*
+        Creating the Path towards the desired output folder:
+    */
+
+    std::ofstream outputfile = create_file(LOGGER); 
+
+    json outputdata; 
+
+
 
     /*
     Printing the joint values to the console:
@@ -123,7 +170,10 @@ int main(int argc, char** argv)
     std::vector<double> jointstates = move_group.getCurrentJointValues();
     for(size_t i=0; i< jointnames.size(); ++i){
         RCLCPP_INFO(LOGGER, "joint state %s: %f", jointnames[i].c_str(), jointstates[i]); 
+        outputdata[jointnames[i].c_str()] =  jointstates[i]; 
     }
+
+    outputfile << std::setw(4) <<outputdata <<std::endl; 
     
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(5s); 
