@@ -3,7 +3,7 @@ float32 x1
 float32 y1
 float32 z1
 float32 error1
-float32 x2
-float32 y2
-float32 z2
-float32 error2
+float32 x2 0
+float32 y2 0
+float32 z2 0
+float32 error2 0
