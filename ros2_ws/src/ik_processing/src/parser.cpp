@@ -12,15 +12,7 @@
 
 #include "ik_processing/msg/datapoint.hpp"
 
-struct Baseline_point{
-    float time;
-    float x, y, z, error; 
-};
-struct Interaction_point{
-    float time;
-    float x1, y1, z1, error1, x2, y2, z2, error2; 
-};
-
+using Datapoint = ik_processing::msg::Datapoint; 
 
 class Parser: public rclcpp::Node{
     public:
@@ -59,19 +51,22 @@ class Parser: public rclcpp::Node{
             filepath /= (_exnum < 10) ? "00"+ std::to_string(_exnum): "0"+ std::to_string(_exnum);
             filepath /= "1.dat"; 
         }
+
+        std::string file_info =
+            (_is_baseline ? "Baseline " : "Interaction ") +
+            std::string("Positions: ") +
+            std::to_string(_startpos1) + "-" + std::to_string(_goalpos1) +
+            (!_is_baseline ? ("_" + std::to_string(_startpos2) + "-" + std::to_string(_goalpos2)) : "") +
+            " Experiment Number: " + std::to_string(_exnum) +
+            (_is_baseline ? (" run: " + std::string(_is_dat1 ? "1" : "2")) : "");
         
-        RCLCPP_INFO(this->get_logger(), "Default baseline value: %s", _is_baseline ? "true": "false"); 
-        RCLCPP_INFO(this->get_logger(), "Filepath: %s", filepath.c_str());
+        RCLCPP_INFO(this->get_logger(), "Opening: %s", file_info.c_str()); 
 
         std::ifstream file{filepath};
         if(file.is_open()){
             RCLCPP_INFO(this->get_logger(), "Successfully opened file");
-            data = create_baseline(file); 
-            std::visit([this](const auto& vec){
-                const auto& first = vec.at(2);
-                RCLCPP_INFO(this->get_logger(), "time: %f", first.time); 
-            }, data); 
-            
+            data = create_datapoints(file, _is_baseline); 
+            RCLCPP_INFO(this->get_logger(), "time: %f", data[0].time ); 
         }
         else{
             RCLCPP_INFO(this->get_logger(), "Failed to open file");
@@ -84,14 +79,14 @@ class Parser: public rclcpp::Node{
     bool _is_agent1;
     u_short _startpos1, _startpos2, _goalpos1, _goalpos2, _exnum;
     bool _is_dat1; 
-    std::variant<std::vector<Baseline_point>, std::vector<Interaction_point>> data; 
+    std::vector<Datapoint> data; 
     
-    std::variant<std::vector<Baseline_point>, std::vector<Interaction_point>> create_baseline(std::ifstream& file);
+    std::vector<Datapoint> create_datapoints(std::ifstream& file, const bool _is_baseline);
 
 };
 
-std::variant<std::vector<Baseline_point>, std::vector<Interaction_point>> Parser::create_baseline(std::ifstream& file){
-        std::variant<std::vector<Baseline_point>, std::vector<Interaction_point>> result; 
+std::vector<Datapoint> Parser::create_datapoints(std::ifstream& file, const bool _is_baseline){
+        std::vector<Datapoint> data; 
         std::vector<std::stringstream> vss; 
         std::string line;
         while(std::getline(file, line)){
@@ -99,29 +94,40 @@ std::variant<std::vector<Baseline_point>, std::vector<Interaction_point>> Parser
         }
         if(_is_baseline){
             std::array<float, 5> f;
-            std::vector<Baseline_point> points;
             while(vss[0]>>f[0]){
                 for(size_t i=1; i<5; ++i){
                     vss[i] >> f[i]; 
 
                 }
-                Baseline_point bp {f[0], f[1], f[2], f[3], f[4]};
-                points.emplace_back(bp);
+                Datapoint d;
+                d.time=f[0];
+                d.x1= f[1];
+                d.y1= f[2];
+                d.z1= f[3];
+                d.error1= f[4];
+                data.push_back(d);
             }
-            result= points; 
+            return data; 
         }else{
             std::array<float,9> f;
-            std::vector<Interaction_point> points; 
             while(vss[0]>>f[0]){
                 for(size_t i=1; i<9; i++){
                     vss[i] >> f[i];
                 }
-                Interaction_point ip {f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7], f[8]};
-                points.emplace_back(ip);
-            }
-            result= points; 
+                Datapoint d;
+                d.time=f[0];
+                d.x1= f[1];
+                d.y1= f[2];
+                d.z1= f[3];
+                d.error1= f[4];
+                d.x2=f[5];
+                d.y2=f[6];
+                d.z2=f[7];
+                d.error2=f[8]; 
+                data.push_back(d); 
+            } 
         }
-        return result; 
+        return data; 
     }
 
 int main(int argc, char* argv[]){
