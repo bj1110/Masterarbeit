@@ -74,6 +74,8 @@ rosidl_get_typesupport_target(cpp_typesupport_target
   ${PROJECT_NAME} rosidl_typesupport_cpp)
 
 target_link_libraries(parser "${cpp_typesupport_target}")
+target_link_libraries(fullsim "${cpp_typesupport_target}")
+
 
 install(DIRECTORY
   data

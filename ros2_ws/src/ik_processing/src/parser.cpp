@@ -71,6 +71,14 @@ class Parser: public rclcpp::Node{
         else{
             RCLCPP_INFO(this->get_logger(), "Failed to open file");
         }
+        _datapoint_publisher = this->create_publisher<Datapoint> ("datapoint", 100);
+
+        for(Datapoint d: data){
+            using namespace std::chrono_literals;
+            _datapoint_publisher->publish(d); 
+            std::this_thread::sleep_for(10ms);
+        }
+
     }
     
     private:
@@ -80,8 +88,8 @@ class Parser: public rclcpp::Node{
     u_short _startpos1, _startpos2, _goalpos1, _goalpos2, _exnum;
     bool _is_dat1; 
     std::vector<Datapoint> data; 
-    
     std::vector<Datapoint> create_datapoints(std::ifstream& file, const bool _is_baseline);
+    rclcpp::Publisher<Datapoint>::SharedPtr _datapoint_publisher;
 
 };
 

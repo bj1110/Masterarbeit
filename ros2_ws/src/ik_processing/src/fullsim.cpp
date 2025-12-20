@@ -15,9 +15,11 @@
 #include <stdexcept>
 
 #include <nlohmann/json.hpp>
+#include "ik_processing/msg/datapoint.hpp"
 
 // for convenience
 using json = nlohmann::json;
+using Datapoint = ik_processing::msg::Datapoint; 
 
 std::ofstream create_file(const rclcpp::Logger& LOGGER ){
     const char* home = std::getenv("HOME");
