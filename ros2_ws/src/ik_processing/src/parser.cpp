@@ -78,6 +78,7 @@ class Parser: public rclcpp::Node{
             _datapoint_publisher->publish(d); 
             std::this_thread::sleep_for(10ms);
         }
+        RCLCPP_INFO(this->get_logger(), "Number of packets send: %ld", data.size());
 
     }
     

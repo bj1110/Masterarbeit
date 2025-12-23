@@ -17,6 +17,8 @@
 #include <nlohmann/json.hpp>
 #include "ik_processing/msg/datapoint.hpp"
 
+#include <mutex>
+
 // for convenience
 using json = nlohmann::json;
 using Datapoint = ik_processing::msg::Datapoint; 
@@ -120,6 +122,42 @@ int main(int argc, char** argv)
     // RCLCPP_INFO(LOGGER, "Available Planning Groups:");
     // std::copy(move_group.getJointModelGroupNames().begin(), move_group.getJointModelGroupNames().end(),
     //         std::ostream_iterator<std::string>(std::cout, ", "));
+
+    std::vector<Datapoint> data;
+    std::shared_mutex mu; 
+    int i=0; 
+    std::atomic<bool> started_receiving_data=false;
+    std::atomic<bool> timer_done=false;
+    rclcpp::TimerBase::SharedPtr receivingTimer;
+    RCLCPP_INFO(LOGGER, "Waiting for Position Data from Parser ...");
+    auto sub_callback = [&data, &mu, &i, &LOGGER, &started_receiving_data, &timer_done, &receivingTimer, &move_group_node](Datapoint::SharedPtr msg){
+        started_receiving_data=true; 
+        std::unique_lock<std::shared_mutex> lock(mu);
+        data.push_back(*msg);
+        
+        RCLCPP_INFO(LOGGER, "Received packet number: %d", ++i);
+        
+        if (!started_receiving_data.exchange(true)) {
+
+            receivingTimer = move_group_node->create_wall_timer(
+                std::chrono::seconds(2),
+                [&]() {
+                RCLCPP_INFO(LOGGER, "Collection window ended");
+
+                receivingTimer.reset();   // stop timer
+                timer_done.store(true);   // signal main thread
+                });
+            }
+    };
+    
+    auto _data_subsriber = move_group_node->create_subscription<Datapoint>("datapoint", 100, sub_callback);
+
+
+    
+    while (!timer_done.load() && rclcpp::ok()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+
 
     // Start the demo
     // ^^^^^^^^^^^^^^^^^^^^^^^^^
