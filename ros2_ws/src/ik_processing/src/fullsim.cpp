@@ -143,10 +143,23 @@ int main(int argc, char** argv)
     }
 
     auto result = result_future.get();
-    int numElements = result->len;
+    [[maybe_unused]] int numElements = result->len;
     std::vector<Datapoint> data = result->data; 
 
     RCLCPP_INFO(LOGGER, "Data received from Parser");
+
+    /*
+        Der Tisch hat 80cm Durchmesser.
+        Die Punkte sind je 15cm vom Rand weg. 
+        Punkt 9 liegt in der Mitte.
+        Dh. Punkt 9 liegt bei mindestens 25cm vor dem Bauch :D -> Nehmen wir die 15cm und sagen bei 40cm
+        Der Arm kann gerade so die 65cm erreichen. 
+        Frage: Welche Höhe sollte das sein? möglichst hoch ist praktisch... 
+        In den Daten: erster Wert lateral, zweiter vert ventral, dritter wert kranial
+            d.h. ich muss die ersten 2 Werte vertauschen. 
+        Koordinaten für die Position 9 scheinen sehr verschieden zu sein... 
+
+    */
 
 
     // Start the demo
@@ -155,11 +168,15 @@ int main(int argc, char** argv)
     // ^^^^^^^^^^^^^^^^^^^^^^^
     // We can plan a motion for this group to a desired pose for the
     // end-effector.
+
+    Datapoint dp1 = data[0];
+
+
     geometry_msgs::msg::Pose target_pose1;
     target_pose1.orientation.w = 1.0;
-    target_pose1.position.x = 0.28;
-    target_pose1.position.y = -0.2;
-    target_pose1.position.z = 0.5;
+    target_pose1.position.x = (dp1.y1 +300)/1000;
+    target_pose1.position.y = (dp1.x1 +300)/1000;
+    target_pose1.position.z = (dp1.z1 +477)/1000;
     move_group.setPoseTarget(target_pose1);
 
     // Now, we call the planner to compute the plan and visualize it.

@@ -18,7 +18,7 @@ def generate_launch_description():
     declare_model_arg = DeclareLaunchArgument(
         'model',
         default_value='alt_model',
-        description='Model to load, chose either "alt_model" or "model"'
+        description='Model to load, chose either "alt_model", "model3" or "model"'
     )
 
     declare_use_jsp_gui = DeclareLaunchArgument(
