@@ -11,13 +11,16 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "ik_processing/msg/datapoint.hpp"
+#include "ik_processing/srv/data.hpp"
 
 using Datapoint = ik_processing::msg::Datapoint; 
+using Data = ik_processing::srv::Data;
 
 class Parser: public rclcpp::Node{
     public:
     Parser(): Node("parser_node")
     {
+        RCLCPP_INFO(this->get_logger(), "Starting to parse..."); 
         this->declare_parameter("is_baseline", true);
         _is_baseline = this->get_parameter("is_baseline").as_bool();
 
@@ -71,14 +74,19 @@ class Parser: public rclcpp::Node{
         else{
             RCLCPP_INFO(this->get_logger(), "Failed to open file");
         }
-        _datapoint_publisher = this->create_publisher<Datapoint> ("datapoint", 100);
 
-        for(Datapoint d: data){
-            using namespace std::chrono_literals;
-            _datapoint_publisher->publish(d); 
-            std::this_thread::sleep_for(10ms);
-        }
-        RCLCPP_INFO(this->get_logger(), "Number of packets send: %ld", data.size());
+
+        auto handle_service= [this](const std::shared_ptr<rmw_request_id_t> request_header,
+                            const std::shared_ptr<Data::Request> request,
+                            const std::shared_ptr<Data::Response> response){
+            (void)request_header; 
+            (void)request; 
+            response ->len = data.size();
+            response->data = data; 
+            RCLCPP_INFO(this->get_logger(), "Packets send");
+        };
+        _service_server = this->create_service<Data>("parse_data", handle_service);
+        RCLCPP_INFO(this->get_logger(), "Ready for requests");
 
     }
     
@@ -90,7 +98,8 @@ class Parser: public rclcpp::Node{
     bool _is_dat1; 
     std::vector<Datapoint> data; 
     std::vector<Datapoint> create_datapoints(std::ifstream& file, const bool _is_baseline);
-    rclcpp::Publisher<Datapoint>::SharedPtr _datapoint_publisher;
+    rclcpp::Service<Data>::SharedPtr _service_server;
+
 
 };
 
@@ -141,7 +150,8 @@ std::vector<Datapoint> Parser::create_datapoints(std::ifstream& file, const bool
 
 int main(int argc, char* argv[]){
     rclcpp::init(argc, argv);
-    auto node =(std::make_shared<Parser>());
+    auto node= std::make_shared<Parser>();
+    rclcpp::spin(node); 
     rclcpp::shutdown(); 
     return 0; 
 }

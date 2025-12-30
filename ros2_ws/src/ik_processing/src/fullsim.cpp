@@ -16,12 +16,14 @@
 
 #include <nlohmann/json.hpp>
 #include "ik_processing/msg/datapoint.hpp"
+#include "ik_processing/srv/data.hpp"
 
 #include <mutex>
 
 // for convenience
 using json = nlohmann::json;
 using Datapoint = ik_processing::msg::Datapoint; 
+using Data = ik_processing::srv::Data; 
 
 std::ofstream create_file(const rclcpp::Logger& LOGGER ){
     const char* home = std::getenv("HOME");
@@ -123,40 +125,28 @@ int main(int argc, char** argv)
     // std::copy(move_group.getJointModelGroupNames().begin(), move_group.getJointModelGroupNames().end(),
     //         std::ostream_iterator<std::string>(std::cout, ", "));
 
-    std::vector<Datapoint> data;
-    std::shared_mutex mu; 
-    int i=0; 
-    std::atomic<bool> started_receiving_data=false;
-    std::atomic<bool> timer_done=false;
-    rclcpp::TimerBase::SharedPtr receivingTimer;
-    RCLCPP_INFO(LOGGER, "Waiting for Position Data from Parser ...");
-    auto sub_callback = [&data, &mu, &i, &LOGGER, &started_receiving_data, &timer_done, &receivingTimer, &move_group_node](Datapoint::SharedPtr msg){
-        started_receiving_data=true; 
-        std::unique_lock<std::shared_mutex> lock(mu);
-        data.push_back(*msg);
-        
-        RCLCPP_INFO(LOGGER, "Received packet number: %d", ++i);
-        
-        if (!started_receiving_data.exchange(true)) {
-
-            receivingTimer = move_group_node->create_wall_timer(
-                std::chrono::seconds(2),
-                [&]() {
-                RCLCPP_INFO(LOGGER, "Collection window ended");
-
-                receivingTimer.reset();   // stop timer
-                timer_done.store(true);   // signal main thread
-                });
-            }
-    };
-    
-    auto _data_subsriber = move_group_node->create_subscription<Datapoint>("datapoint", 100, sub_callback);
-
-
-    
-    while (!timer_done.load() && rclcpp::ok()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    auto client = move_group_node->create_client<Data>("parse_data");
+    while(!client->wait_for_service(std::chrono::seconds(1))){
+        if(!rclcpp::ok()){
+            RCLCPP_INFO(LOGGER, "Client interupted while waiting for service to be available");
+            return 1;
+        }
+        RCLCPP_INFO(LOGGER, "Waiting for data...");
     }
+    auto request = std::make_shared<Data::Request>();
+    request->str = "Req";
+    auto result_future = client->async_send_request(request);
+    if (result_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
+    {
+        RCLCPP_ERROR(LOGGER, "Service call timed out");
+        return 1;
+    }
+
+    auto result = result_future.get();
+    int numElements = result->len;
+    std::vector<Datapoint> data = result->data; 
+
+    RCLCPP_INFO(LOGGER, "Data received from Parser");
 
 
     // Start the demo

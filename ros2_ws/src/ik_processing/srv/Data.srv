@@ -1,0 +1,8 @@
+#request - later maybe request packet here?
+string str
+
+---
+
+#response
+int8 len
+Datapoint[] data
