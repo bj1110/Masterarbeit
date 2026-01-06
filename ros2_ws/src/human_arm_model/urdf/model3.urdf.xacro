@@ -19,7 +19,7 @@
             </geometry>
             <origin xyz="0.0 0.0 ${waist_back_length}"/>
         </collision>
-        <xacro:box_inertia m="${hand_weight}" x="${2*clavicle_link_length}" y="${0.2+ upperarm_circumference/ (2* math.pi)}" z="${2*waist_back_length}" />
+        <!-- <xacro:box_inertia m="${hand_weight}" x="${2*clavicle_link_length}" y="${0.2+ upperarm_circumference/ (2* math.pi)}" z="${2*waist_back_length}" /> -->
     </link> 
 
     <xacro:cylinder_link_template2 name="upperarm" mass="${upperarm_weight}" radius="${upperarm_radius}" height="${upperarm_length}">

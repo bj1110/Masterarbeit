@@ -34,10 +34,7 @@
       </geometry>
       <origin xyz="0.0 0.0 0.4776"/>
     </collision>
-    <inertial>
-      <mass value="0.6006"/>
-      <inertia ixx="0.04897155463180267" ixy="0.0" ixz="0.0" iyy="0.054335755474000005" iyz="0.0" izz="0.011975365401802671"/>
-    </inertial>
+    <!-- <xacro:box_inertia m="${hand_weight}" x="${2*clavicle_link_length}" y="${0.2+ upperarm_circumference/ (2* math.pi)}" z="${2*waist_back_length}" /> -->
   </link>
   <link name="model1_right_upperarm">
     <visual>

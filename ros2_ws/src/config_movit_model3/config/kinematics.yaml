@@ -4,4 +4,4 @@ arm:
   kinematics_solver_timeout: 0.05
   kinematics_solver_attempts: 3
   base_link: model1_right_torso
-  tip_link: model1_right_hand
+  tip_link: model1_right_can
