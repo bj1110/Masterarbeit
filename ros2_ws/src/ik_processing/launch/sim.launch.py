@@ -43,12 +43,22 @@ def generate_launch_description():
         ])
     )
 
+    start_joint_state_broadcaster_cmd = Node(
+    package="controller_manager",
+    executable="spawner",
+    arguments=[
+      "joint_state_broadcaster",
+      "--controller-manager",
+      "/controller_manager"
+      ]
+    )
+
     start_move_group = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
                 moveit_package,
                 'launch',
-                'move_group.launch.py'
+                'custom_move_group.launch.py'
             ])
         ])
     )
@@ -76,7 +86,8 @@ def generate_launch_description():
     return LaunchDescription([
         start_parser_node,
         start_rsp,
-        # start_controllers,
+        start_controllers,
+        start_joint_state_broadcaster_cmd,
         start_move_group,
         start_rviz,
         # start_demo, 

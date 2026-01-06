@@ -25,6 +25,38 @@ using json = nlohmann::json;
 using Datapoint = ik_processing::msg::Datapoint; 
 using Data = ik_processing::srv::Data; 
 
+namespace geometry_msgs::msg
+{
+    inline void to_json(nlohmann::json& j, const Pose& p)
+    {
+        j = {
+            {"position", {
+                {"x", p.position.x},
+                {"y", p.position.y},
+                {"z", p.position.z}
+            }},
+            {"orientation", {
+                {"x", p.orientation.x},
+                {"y", p.orientation.y},
+                {"z", p.orientation.z},
+                {"w", p.orientation.w}
+            }}
+        };
+    }
+
+    inline void from_json(const nlohmann::json& j, Pose& p)
+    {
+        j.at("position").at("x").get_to(p.position.x);
+        j.at("position").at("y").get_to(p.position.y);
+        j.at("position").at("z").get_to(p.position.z);
+
+        j.at("orientation").at("x").get_to(p.orientation.x);
+        j.at("orientation").at("y").get_to(p.orientation.y);
+        j.at("orientation").at("z").get_to(p.orientation.z);
+        j.at("orientation").at("w").get_to(p.orientation.w);
+    }
+}
+
 std::ofstream create_file(const rclcpp::Logger& LOGGER ){
     const char* home = std::getenv("HOME");
     if (!home) {
@@ -59,11 +91,16 @@ std::ofstream create_file(const rclcpp::Logger& LOGGER ){
 
 int main(int argc, char** argv)
 {
+    // std::this_thread::sleep_for(std::chrono::seconds(20)); 
     rclcpp::init(argc, argv);
     rclcpp::NodeOptions node_options;
     node_options.automatically_declare_parameters_from_overrides(true);
     auto move_group_node = rclcpp::Node::make_shared("Fullsim_Node", node_options);
     const auto LOGGER = move_group_node->get_logger(); 
+
+    static const std::string PLANNING_GROUP = "arm";
+    moveit::planning_interface::MoveGroupInterface move_group(move_group_node, PLANNING_GROUP);
+
     // We spin up a SingleThreadedExecutor for the current state monitor to get information
     // about the robot's state.
     rclcpp::executors::SingleThreadedExecutor executor;
@@ -71,20 +108,17 @@ int main(int argc, char** argv)
     std::thread([&executor]() { executor.spin(); }).detach();
 
 
-    std::string urdf;
-    {
-    std::ifstream urdf_file("model3.urdf");
-    urdf.assign((std::istreambuf_iterator<char>(urdf_file)),
-                std::istreambuf_iterator<char>());
-    }
+    // std::string urdf;
+    // {
+    // std::ifstream urdf_file("model3.urdf");
+    // urdf.assign((std::istreambuf_iterator<char>(urdf_file)),
+    //             std::istreambuf_iterator<char>());
+    // }
 
-    move_group_node->declare_parameter("robot_description", urdf);
+    // move_group_node->declare_parameter("robot_description", urdf);
+    
 
-
-
-    static const std::string PLANNING_GROUP = "arm";
-    moveit::planning_interface::MoveGroupInterface move_group(move_group_node, PLANNING_GROUP);
-
+    
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
     // Raw pointers are frequently used to refer to the planning group for improved performance.
@@ -93,23 +127,23 @@ int main(int argc, char** argv)
 
     // Visualization
     // ^^^^^^^^^^^^^
-    namespace rvt = rviz_visual_tools;
-    moveit_visual_tools::MoveItVisualTools visual_tools(move_group_node, "model1_right_torso", rviz_visual_tools::RVIZ_MARKER_TOPIC, //this name is topic in RVIZ
-                                                        move_group.getRobotModel());
+    //namespace rvt = rviz_visual_tools;
+    //moveit_visual_tools::MoveItVisualTools visual_tools(move_group_node, "model1_right_torso", rviz_visual_tools::RVIZ_MARKER_TOPIC, //this name is topic in RVIZ
+    //                                                    move_group.getRobotModel());
 
-    visual_tools.deleteAllMarkers();
+    //visual_tools.deleteAllMarkers();
 
     /* Remote control is an introspection tool that allows users to step through a high level script */
     /* via buttons and keyboard shortcuts in RViz */
-    visual_tools.loadRemoteControl();
+    //visual_tools.loadRemoteControl();
 
     // RViz provides many types of markers, in this demo we will use text, cylinders, and spheres
-    Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-    text_pose.translation().z() = 1.0;
-    visual_tools.publishText(text_pose, "MoveGroupInterface_Demo", rvt::WHITE, rvt::XLARGE);
+    //Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
+    //text_pose.translation().z() = 1.0;
+    //visual_tools.publishText(text_pose, "MoveGroupInterface_Demo", rvt::WHITE, rvt::XLARGE);
 
     // Batch publishing is used to reduce the number of messages being sent to RViz for large visualizations
-    visual_tools.trigger();
+    //visual_tools.trigger();
 
      // Getting Basic Information
     // ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -169,15 +203,32 @@ int main(int argc, char** argv)
     // We can plan a motion for this group to a desired pose for the
     // end-effector.
 
+    //remember starting position:
+    geometry_msgs::msg::Pose startPos = move_group.getCurrentPose().pose; 
+
     Datapoint dp1 = data[0];
 
-
     geometry_msgs::msg::Pose target_pose1;
-    target_pose1.orientation.w = 1.0;
     target_pose1.position.x = (dp1.y1 +300)/1000;
     target_pose1.position.y = (dp1.x1 +300)/1000;
     target_pose1.position.z = (dp1.z1 +477)/1000;
     move_group.setPoseTarget(target_pose1);
+
+    RCLCPP_INFO(LOGGER, "First Target Pose: w=%f, x=%f, x=%f, z=%f",target_pose1.orientation.w, 
+     target_pose1.position.x,  target_pose1.position.y,  target_pose1.position.z);
+
+    geometry_msgs::msg::Pose target_pose2;
+    target_pose2.position.x = 0.28;
+    target_pose2.position.y = 0.2;
+    target_pose2.position.z = 0.5;
+    move_group.setPoseTarget(target_pose2);
+    
+    move_group.setGoalOrientationTolerance(M_PI);
+
+    RCLCPP_INFO(LOGGER, "Second Target Pose: w=%f, x=%f, x=%f, z=%f",target_pose2.orientation.w, 
+     target_pose2.position.x,  target_pose2.position.y,  target_pose2.position.z);
+
+
 
     // Now, we call the planner to compute the plan and visualize it.
     // Note that we are just planning, not asking move_group
@@ -194,11 +245,11 @@ int main(int argc, char** argv)
      // Visualizing plans
     // ^^^^^^^^^^^^^^^^^
     // We can also visualize the plan as a line with markers in RViz.
-    RCLCPP_INFO(LOGGER, "Visualizing plan 1 as trajectory line");
-    visual_tools.publishAxisLabeled(target_pose1, "pose1");
-    visual_tools.publishText(text_pose, "Pose_Goal", rvt::WHITE, rvt::XLARGE);
-    visual_tools.publishTrajectoryLine(my_plan.trajectory, joint_model_group);
-    visual_tools.trigger();
+    // RCLCPP_INFO(LOGGER, "Visualizing plan 1 as trajectory line");
+    // visual_tools.publishAxisLabeled(target_pose1, "pose1");
+    // visual_tools.publishText(text_pose, "Pose_Goal", rvt::WHITE, rvt::XLARGE);
+    // visual_tools.publishTrajectoryLine(my_plan.trajectory, joint_model_group);
+    // visual_tools.trigger();
     
     /*
         Creating the Path towards the desired output folder:
@@ -220,18 +271,17 @@ int main(int argc, char** argv)
         outputdata[jointnames[i].c_str()] =  jointstates[i]; 
     }
 
+    geometry_msgs::msg::Pose endPos = move_group.getCurrentPose().pose; 
+    outputdata["start"]= startPos;
+    outputdata["end"]= endPos; 
+
     outputfile << std::setw(4) <<outputdata <<std::endl; 
     
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(5s); 
     // END_TUTORIAL
-    visual_tools.deleteAllMarkers();
-    visual_tools.trigger();
+    //visual_tools.deleteAllMarkers();
+    //visual_tools.trigger();
 
     rclcpp::shutdown();
     return 0;
 }
-
-
-
 
