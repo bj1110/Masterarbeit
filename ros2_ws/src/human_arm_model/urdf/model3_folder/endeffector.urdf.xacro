@@ -28,13 +28,13 @@
 
     
     <xacro:cylinder_link_template2 name="can" mass="${can_weight}" radius="${can_radius}" height="${can_height}">
-        <origin xyz="${-can_radius} 0.0 0.0" rpy="${90*math.pi/180} 0.0 0.0"/>
+        <origin xyz="0.0 ${-can_height/2} 0.0" rpy="${90*math.pi/180} 0.0 0.0"/>
     </xacro:cylinder_link_template2>
     
     <joint name="${prefix}hand_can_joint" type="fixed">
         <parent link="${prefix}hand"/>
         <child link="${prefix}can"/>
-        <origin xyz="0.0 0.0 ${-hand_length}"/>
+        <origin xyz="${-can_radius} ${can_height/2} ${-hand_length}"/>
     </joint>
 
 
