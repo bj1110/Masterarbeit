@@ -209,30 +209,31 @@ int main(int argc, char** argv)
     Datapoint dp1 = data[0];
 
     geometry_msgs::msg::Pose target_pose1;
+    target_pose1.orientation.w=1; 
     target_pose1.position.x = (dp1.y1 +300)/1000;
     target_pose1.position.y = (dp1.x1 +300)/1000;
     target_pose1.position.z = (dp1.z1 +477)/1000;
     move_group.setPoseTarget(target_pose1);
-
-    RCLCPP_INFO(LOGGER, "First Target Pose: w=%f, x=%f, x=%f, z=%f",target_pose1.orientation.w, 
-     target_pose1.position.x,  target_pose1.position.y,  target_pose1.position.z);
-
-    geometry_msgs::msg::Pose target_pose2;
-    target_pose2.position.x = 0.28;
-    target_pose2.position.y = 0.2;
-    target_pose2.position.z = 0.5;
-    move_group.setPoseTarget(target_pose2);
     
-    move_group.setGoalOrientationTolerance(M_PI);
+    move_group.setGoalOrientationTolerance(0.5);
+    // // RCLCPP_INFO(LOGGER, "First Target Pose: w=%f, x=%f, x=%f, z=%f",target_pose1.orientation.w, 
+    // //  target_pose1.position.x,  target_pose1.position.y,  target_pose1.position.z);
 
-    RCLCPP_INFO(LOGGER, "Second Target Pose: w=%f, x=%f, x=%f, z=%f",target_pose2.orientation.w, 
-     target_pose2.position.x,  target_pose2.position.y,  target_pose2.position.z);
+    // // geometry_msgs::msg::Pose target_pose2;
+    // // target_pose2.position.x = 0.28;
+    // // target_pose2.position.y = -0.2;
+    // // target_pose2.position.z = 0.5;
+    // // move_group.setPoseTarget(target_pose2);
+    
+
+    // // RCLCPP_INFO(LOGGER, "Second Target Pose: w=%f, x=%f, x=%f, z=%f",target_pose2.orientation.w, 
+    // //  target_pose2.position.x,  target_pose2.position.y,  target_pose2.position.z);
 
 
 
-    // Now, we call the planner to compute the plan and visualize it.
-    // Note that we are just planning, not asking move_group
-    // to actually move the robot.
+    // // Now, we call the planner to compute the plan and visualize it.
+    // // Note that we are just planning, not asking move_group
+    // // to actually move the robot.
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
     bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
@@ -250,6 +251,21 @@ int main(int argc, char** argv)
     // visual_tools.publishText(text_pose, "Pose_Goal", rvt::WHITE, rvt::XLARGE);
     // visual_tools.publishTrajectoryLine(my_plan.trajectory, joint_model_group);
     // visual_tools.trigger();
+
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+    for(auto dp: data){
+        geometry_msgs::msg::Pose p;
+        p.position.x = (dp.y1 +300)/1000;
+        p.position.y = (dp.x1 +300)/1000;
+        p.position.z = (dp.z1 +477)/1000;
+        waypoints.push_back(p);
+    }
+
+    const double eef_step = 0.001;
+    moveit_msgs::msg::RobotTrajectory trajectory;
+    double fraction = move_group.computeCartesianPath(waypoints, eef_step, trajectory);
+    RCLCPP_INFO(LOGGER, "Number of Waypoints: %ld", waypoints.size());
+    RCLCPP_INFO(LOGGER, "Visualizing plan 4 (Cartesian path) (%.2f%% achieved)", fraction * 100.0);
     
     /*
         Creating the Path towards the desired output folder:
@@ -267,7 +283,7 @@ int main(int argc, char** argv)
     const std::vector< std::string > &  jointnames = move_group.getJointNames();
     std::vector<double> jointstates = move_group.getCurrentJointValues();
     for(size_t i=0; i< jointnames.size(); ++i){
-        RCLCPP_INFO(LOGGER, "joint state %s: %f", jointnames[i].c_str(), jointstates[i]); 
+        // RCLCPP_INFO(LOGGER, "joint state %s: %f", jointnames[i].c_str(), jointstates[i]); 
         outputdata[jointnames[i].c_str()] =  jointstates[i]; 
     }
 

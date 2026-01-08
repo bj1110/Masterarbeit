@@ -39,12 +39,12 @@
         <joint name="model1_right_wrist_flexion_joint" value="0"/>
     </group_state>
     <group_state name="Position1" group="arm">
-        <joint name="model1_right_shoulder_rotation_joint" value="	-0.3278708767738535"/>
-        <joint name="model1_right_shoulder_abduction_joint" value="0.00815527322056087"/>
-        <joint name="model1_right_shoulder_flexion_joint" value="-0.15960692234754334"/>
-        <joint name="model1_right_elbow_flexion_joint" value="1.3887355595075972"/>
-        <joint name="model1_right_elbow_rotation_joint" value="0.11382155175246804"/>
-        <joint name="model1_right_wrist_flexion_joint" value="-0.9412148961698271"/>
+        <joint name="model1_right_shoulder_rotation_joint" value="-1.687299498289108"/>
+        <joint name="model1_right_shoulder_abduction_joint" value="2.211789087118679"/>
+        <joint name="model1_right_shoulder_flexion_joint" value="2.958516774420269"/>
+        <joint name="model1_right_elbow_flexion_joint" value="1.4939539526625745"/>
+        <joint name="model1_right_elbow_rotation_joint" value="-0.7493669760212722"/>
+        <joint name="model1_right_wrist_flexion_joint" value="0"/>
     </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="model1_right_can" parent_link="model1_right_hand" group="can" parent_group="arm"/>
