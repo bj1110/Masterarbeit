@@ -34,7 +34,7 @@
     <joint name="${prefix}hand_can_joint" type="fixed">
         <parent link="${prefix}hand"/>
         <child link="${prefix}can"/>
-        <origin xyz="${-can_radius} ${can_height/2} ${-hand_length}"/>
+        <origin xyz="${-can_radius-(hand_thickness/2)} ${can_height/2} ${-hand_length}"/>
     </joint>
 
 
