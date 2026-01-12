@@ -205,6 +205,7 @@ int main(int argc, char** argv)
 
     //remember starting position:
     geometry_msgs::msg::Pose startPos = move_group.getCurrentPose().pose; 
+    move_group.setEndEffectorLink("can");
 
     Datapoint dp1 = data[0];
 
