@@ -261,11 +261,19 @@ int main(int argc, char** argv)
         waypoints.push_back(p);
     }
 
-    const double eef_step = 0.001;
+    const double eef_step = 0.01;
     moveit_msgs::msg::RobotTrajectory trajectory;
-    double fraction = move_group.computeCartesianPath(waypoints, eef_step, trajectory);
+    moveit_msgs::msg::Constraints path_contraints;
+    const bool avoid_collisions=true; 
+    moveit_msgs::msg::MoveItErrorCodes* errorcode = nullptr; 
+
+    double fraction = move_group.computeCartesianPath(waypoints, eef_step, trajectory, /*path_contraints, */ avoid_collisions, errorcode);
     RCLCPP_INFO(LOGGER, "Number of Waypoints: %ld", waypoints.size());
     RCLCPP_INFO(LOGGER, "Visualizing plan 4 (Cartesian path) (%.2f%% achieved)", fraction * 100.0);
+    if(errorcode && errorcode->val != moveit::core::MoveItErrorCode::SUCCESS){
+        RCLCPP_INFO(LOGGER, "Error in Carthesian Path: "); 
+        RCLCPP_INFO(LOGGER, "Error in Carthesian Path: %s", (errorcode->message).c_str());
+    }
     
     /*
         Creating the Path towards the desired output folder:
@@ -284,7 +292,7 @@ int main(int argc, char** argv)
     std::vector<double> jointstates = move_group.getCurrentJointValues();
     for(size_t i=0; i< jointnames.size(); ++i){
         // RCLCPP_INFO(LOGGER, "joint state %s: %f", jointnames[i].c_str(), jointstates[i]); 
-        outputdata[jointnames[i].c_str()] =  jointstates[i]; 
+        outputdata["end_jointstates"][jointnames[i].c_str()] =  jointstates[i]; 
     }
 
     geometry_msgs::msg::Pose endPos = move_group.getCurrentPose().pose; 
