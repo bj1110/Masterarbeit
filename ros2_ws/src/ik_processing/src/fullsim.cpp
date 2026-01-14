@@ -18,7 +18,7 @@
 #include "ik_processing/msg/datapoint.hpp"
 #include "ik_processing/srv/data.hpp"
 
-#include <mutex>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 // for convenience
 using json = nlohmann::json;
@@ -206,17 +206,24 @@ int main(int argc, char** argv)
     //remember starting position:
     geometry_msgs::msg::Pose startPos = move_group.getCurrentPose().pose; 
     move_group.setEndEffectorLink("can");
+    move_group.setStartStateToCurrentState(); 
 
     Datapoint dp1 = data[0];
 
+    tf2::Quaternion q;
+    q.setRPY(0.0, M_PI , 0.0);  // roll, pitch, yaw
+    q.normalize();
+
+    
     geometry_msgs::msg::Pose target_pose1;
-    target_pose1.orientation.w=1; 
-    target_pose1.position.x = (dp1.y1 +300)/1000;
+    // target_pose1.orientation.w=1; 
+    target_pose1.orientation = tf2::toMsg(q);
+    target_pose1.position.x = (dp1.y1 +300)/1000 + 0.5;
     target_pose1.position.y = (dp1.x1 +300)/1000;
     target_pose1.position.z = (dp1.z1 +477)/1000;
     move_group.setPoseTarget(target_pose1);
     
-    move_group.setGoalOrientationTolerance(0.5);
+    move_group.setGoalOrientationTolerance(0.25);
     // // RCLCPP_INFO(LOGGER, "First Target Pose: w=%f, x=%f, x=%f, z=%f",target_pose1.orientation.w, 
     // //  target_pose1.position.x,  target_pose1.position.y,  target_pose1.position.z);
 
@@ -255,8 +262,11 @@ int main(int argc, char** argv)
 
     std::vector<geometry_msgs::msg::Pose> waypoints;
     for(auto dp: data){
+        if(dp==data[1] || dp==data[2]){
+            continue; 
+        }
         geometry_msgs::msg::Pose p;
-        p.position.x = (dp.y1 +300)/1000;
+        p.position.x = (dp.y1 +300)/1000 + 0.5;
         p.position.y = (dp.x1 +300)/1000;
         p.position.z = (dp.z1 +477)/1000;
         waypoints.push_back(p);
@@ -275,6 +285,7 @@ int main(int argc, char** argv)
         RCLCPP_INFO(LOGGER, "Error in Carthesian Path: "); 
         RCLCPP_INFO(LOGGER, "Error in Carthesian Path: %s", (errorcode->message).c_str());
     }
+    move_group.execute(trajectory); 
     
     /*
         Creating the Path towards the desired output folder:
