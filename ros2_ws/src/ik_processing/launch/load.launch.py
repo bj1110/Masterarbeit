@@ -15,8 +15,6 @@ def generate_launch_description():
     this_package = FindPackageShare('ik_processing')
     moveit_package = FindPackageShare("moveit_config")
 
-    robot_desc_path = "~/Projects/Masterarbeit/moveit_ws/src/moveit_config/config/alt_human_arm_model.urdf.xacro"
-
     moveit_config = MoveItConfigsBuilder("alt_human_arm_model", package_name="moveit_config") \
         .robot_description(file_path="config/alt_human_arm_model.urdf.xacro") \
         .robot_description_semantic(file_path="config/alt_human_arm_model.srdf") \
