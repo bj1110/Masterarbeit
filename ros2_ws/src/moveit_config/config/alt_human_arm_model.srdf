@@ -48,6 +48,17 @@
         <joint name="sternoclavicular_yaw_joint" value="0.2165"/>
         <joint name="wrist_yaw_joint" value="0"/>
     </group_state>
+    <group_state name="Pos1" group="arm">
+        <joint name="elbow_roll_joint" value="0.052360"/>
+        <joint name="elbow_yaw_joint" value="1.605703"/>
+        <joint name="glenohumeral_pitch_joint" value="0.104720"/>
+        <joint name="glenohumeral_roll_joint" value="-0.453786"/>
+        <joint name="glenohumeral_yaw_joint" value="0.000000"/>
+        <joint name="sternoclavicular_pitch_joint" value="-0.209440"/>
+        <joint name="sternoclavicular_roll_joint" value="0.000000"/>
+        <joint name="sternoclavicular_yaw_joint" value="0.069813"/>
+        <joint name="wrist_yaw_joint" value="0.000000"/>
+    </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="can" parent_link="hand" group="can_group" parent_group="arm"/>
     <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->

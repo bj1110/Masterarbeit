@@ -216,9 +216,9 @@ int main(int argc, char** argv)
 
     
     geometry_msgs::msg::Pose target_pose1;
-    // target_pose1.orientation.w=1; 
-    target_pose1.orientation = tf2::toMsg(q);
-    target_pose1.position.x = (dp1.y1 +300)/1000 + 0.5;
+    target_pose1.orientation.w=1; 
+    // target_pose1.orientation = tf2::toMsg(q);
+    target_pose1.position.x = (dp1.y1 +300)/1000;
     target_pose1.position.y = (dp1.x1 +300)/1000;
     target_pose1.position.z = (dp1.z1 +477)/1000;
     move_group.setPoseTarget(target_pose1);
@@ -266,7 +266,7 @@ int main(int argc, char** argv)
             continue; 
         }
         geometry_msgs::msg::Pose p;
-        p.position.x = (dp.y1 +300)/1000 + 0.5;
+        p.position.x = (dp.y1 +300)/1000;
         p.position.y = (dp.x1 +300)/1000;
         p.position.z = (dp.z1 +477)/1000;
         waypoints.push_back(p);
