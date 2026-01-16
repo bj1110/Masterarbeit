@@ -199,6 +199,14 @@ int main(int argc, char** argv)
         der Punkt 1 liegt bei ca x= -25 und y=-220
     */
 
+    std::map<std::string, double> states_values;
+    if (joint_model_group->getVariableDefaultPositions("Pos1", states_values)){
+        move_group.setJointValueTarget(states_values); 
+    }else{
+        RCLCPP_WARN(LOGGER, "Default state not found."); 
+    }
+
+
     // Start the demo
     // ^^^^^^^^^^^^^^^^^^^^^^^^^
     // Planning to a Pose goal
@@ -216,8 +224,8 @@ int main(int argc, char** argv)
     float roll = -2.47;
     float pitch = 0.0; 
     float yaw = -1.57;
-    tf2::Quaternion q;
-    q.setRPY(roll, pitch , yaw);  // roll, pitch, yaw
+    tf2::Quaternion q {-0.23278, -0.69127,-0.23118, 0.64383};
+    // q.setRPY(roll, pitch , yaw);  // roll, pitch, yaw
     q.normalize();
 
 
@@ -234,7 +242,7 @@ int main(int argc, char** argv)
     target_pose1.position.z = (dp1.z1 +690)/1000;
     move_group.setPoseTarget(target_pose1);
     
-    move_group.setGoalOrientationTolerance(1);
+    move_group.setGoalOrientationTolerance(0.01);
 
     RCLCPP_INFO(LOGGER, "First Target Pose: w=%f, x=%f m, y=%f m , z=%f m ",target_pose1.orientation.w, 
         target_pose1.position.x,  target_pose1.position.y,  target_pose1.position.z);
