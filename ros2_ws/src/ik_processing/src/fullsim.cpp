@@ -91,7 +91,6 @@ std::ofstream create_file(const rclcpp::Logger& LOGGER ){
 
 int main(int argc, char** argv)
 {
-    // std::this_thread::sleep_for(std::chrono::seconds(20)); 
     rclcpp::init(argc, argv);
     rclcpp::NodeOptions node_options;
     node_options.automatically_declare_parameters_from_overrides(true);
@@ -125,39 +124,6 @@ int main(int argc, char** argv)
     const moveit::core::JointModelGroup* joint_model_group =
         move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
 
-    // Visualization
-    // ^^^^^^^^^^^^^
-    //namespace rvt = rviz_visual_tools;
-    //moveit_visual_tools::MoveItVisualTools visual_tools(move_group_node, "model1_right_torso", rviz_visual_tools::RVIZ_MARKER_TOPIC, //this name is topic in RVIZ
-    //                                                    move_group.getRobotModel());
-
-    //visual_tools.deleteAllMarkers();
-
-    /* Remote control is an introspection tool that allows users to step through a high level script */
-    /* via buttons and keyboard shortcuts in RViz */
-    //visual_tools.loadRemoteControl();
-
-    // RViz provides many types of markers, in this demo we will use text, cylinders, and spheres
-    //Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-    //text_pose.translation().z() = 1.0;
-    //visual_tools.publishText(text_pose, "MoveGroupInterface_Demo", rvt::WHITE, rvt::XLARGE);
-
-    // Batch publishing is used to reduce the number of messages being sent to RViz for large visualizations
-    //visual_tools.trigger();
-
-     // Getting Basic Information
-    // ^^^^^^^^^^^^^^^^^^^^^^^^^
-    //
-    // We can print the name of the reference frame for this robot.
-    RCLCPP_INFO(LOGGER, "Planning frame: %s", move_group.getPlanningFrame().c_str());
-
-    // We can also print the name of the end-effector link for this group.
-    RCLCPP_INFO(LOGGER, "End effector link: %s", move_group.getEndEffectorLink().c_str());
-
-    // We can get a list of all the groups in the robot:
-    // RCLCPP_INFO(LOGGER, "Available Planning Groups:");
-    // std::copy(move_group.getJointModelGroupNames().begin(), move_group.getJointModelGroupNames().end(),
-    //         std::ostream_iterator<std::string>(std::cout, ", "));
 
     auto client = move_group_node->create_client<Data>("parse_data");
     while(!client->wait_for_service(std::chrono::seconds(1))){
@@ -209,13 +175,6 @@ int main(int argc, char** argv)
     }
 
 
-    // Start the demo
-    // ^^^^^^^^^^^^^^^^^^^^^^^^^
-    // Planning to a Pose goal
-    // ^^^^^^^^^^^^^^^^^^^^^^^
-    // We can plan a motion for this group to a desired pose for the
-    // end-effector.
-
     //remember starting position:
     geometry_msgs::msg::Pose startPos = move_group.getCurrentPose().pose; 
     move_group.setEndEffectorLink("can");
@@ -227,7 +186,7 @@ int main(int argc, char** argv)
     float pitch = 0.0; 
     float yaw = -1.57;
     tf2::Quaternion q {-0.23278, -0.69127,-0.23118, 0.64383};
-    // q.setRPY(roll, pitch , yaw);  // roll, pitch, yaw
+    // q.setRPY(roll, pitch , yaw); 
     q.normalize();
 
 
@@ -242,7 +201,7 @@ int main(int argc, char** argv)
     geometry_msgs::msg::Pose target_pose1;
     // target_pose1.orientation.y=-0.69; 
     target_pose1.orientation = tf2::toMsg(q);
-    target_pose1.position.x = (dp1.y1 +x_offset )/1000;
+    target_pose1.position.x = (dp1.y1 +x_offset)/1000;
     target_pose1.position.y = (dp1.x1 +y_offset)/1000;
     target_pose1.position.z = (dp1.z1 +z_offset)/1000;
     move_group.setPoseTarget(target_pose1);
@@ -264,9 +223,6 @@ int main(int argc, char** argv)
 
 
 
-    // // Now, we call the planner to compute the plan and visualize it.
-    // // Note that we are just planning, not asking move_group
-    // // to actually move the robot.
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
     bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
@@ -276,14 +232,7 @@ int main(int argc, char** argv)
     move_group.move();
 
 
-     // Visualizing plans
-    // ^^^^^^^^^^^^^^^^^
-    // We can also visualize the plan as a line with markers in RViz.
-    // RCLCPP_INFO(LOGGER, "Visualizing plan 1 as trajectory line");
-    // visual_tools.publishAxisLabeled(target_pose1, "pose1");
-    // visual_tools.publishText(text_pose, "Pose_Goal", rvt::WHITE, rvt::XLARGE);
-    // visual_tools.publishTrajectoryLine(my_plan.trajectory, joint_model_group);
-    // visual_tools.trigger();
+
 
     // std::vector<geometry_msgs::msg::Pose> waypoints;
     // int cnt=0; 
@@ -325,7 +274,6 @@ int main(int argc, char** argv)
     json outputdata; 
 
 
-
     /*
     Printing the joint values to the console:
     */
@@ -342,9 +290,6 @@ int main(int argc, char** argv)
 
     outputfile << std::setw(4) <<outputdata <<std::endl; 
     
-    // END_TUTORIAL
-    //visual_tools.deleteAllMarkers();
-    //visual_tools.trigger();
 
     rclcpp::shutdown();
     return 0;
