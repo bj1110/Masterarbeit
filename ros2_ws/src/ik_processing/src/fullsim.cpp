@@ -201,7 +201,9 @@ int main(int argc, char** argv)
 
     std::map<std::string, double> states_values;
     if (joint_model_group->getVariableDefaultPositions("Pos1", states_values)){
+        RCLCPP_INFO(LOGGER, "Moving to default position \"Pos1\" ");
         move_group.setJointValueTarget(states_values); 
+        move_group.move(); 
     }else{
         RCLCPP_WARN(LOGGER, "Default state not found."); 
     }
@@ -230,16 +232,19 @@ int main(int argc, char** argv)
 
 
 
-    
+    float x_offset= 220 + 250;
+    float y_offset=0;
+    float z_offset=690;
+
     RCLCPP_INFO(LOGGER, "First Dataset: t=%f s, x= %f mm, y=%f mm, z=%f mm", dp1.time, dp1.x1, dp1.y1, dp1.z1); 
 
     // Aufgrund der Achsenwahl: tausche x und y 
     geometry_msgs::msg::Pose target_pose1;
     // target_pose1.orientation.y=-0.69; 
     target_pose1.orientation = tf2::toMsg(q);
-    target_pose1.position.x = (dp1.y1 +220 +250 )/1000;
-    target_pose1.position.y = (dp1.x1)/1000;
-    target_pose1.position.z = (dp1.z1 +690)/1000;
+    target_pose1.position.x = (dp1.y1 +x_offset )/1000;
+    target_pose1.position.y = (dp1.x1 +y_offset)/1000;
+    target_pose1.position.z = (dp1.z1 +z_offset)/1000;
     move_group.setPoseTarget(target_pose1);
     
     move_group.setGoalOrientationTolerance(0.01);
@@ -281,14 +286,18 @@ int main(int argc, char** argv)
     // visual_tools.trigger();
 
     // std::vector<geometry_msgs::msg::Pose> waypoints;
+    // int cnt=0; 
     // for(auto dp: data){
     //     if(dp==data[1] || dp==data[2]){
     //         continue; 
     //     }
+    //     if((++cnt)%5!=0){
+    //         continue; 
+    //     }
     //     geometry_msgs::msg::Pose p;
-    //     p.position.x = (dp.y1 +300)/1000;
-    //     p.position.y = (dp.x1 +300)/1000;
-    //     p.position.z = (dp.z1 +477)/1000;
+    //     p.position.x = (dp.y1 +x_offset)/1000;
+    //     p.position.y = (dp.x1 +y_offset)/1000;
+    //     p.position.z = (dp.z1 +z_offset)/1000;
     //     waypoints.push_back(p);
     // }
 
