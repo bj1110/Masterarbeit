@@ -162,7 +162,16 @@ int main(int argc, char** argv)
     */
 
     /*
-        der Punkt 1 liegt bei ca x= -25 und y=-220
+        Setting Startstate & remember Position before initial Movement to store in output file 
+    */
+
+    move_group.setEndEffectorLink("can");
+    move_group.setStartStateToCurrentState(); 
+    geometry_msgs::msg::Pose startPos = move_group.getCurrentPose().pose; 
+
+    /*
+        Move to Position 1 
+        Position 1 lies approx. x= -25 & y=-220       
     */
 
     std::map<std::string, double> states_values;
@@ -175,13 +184,12 @@ int main(int argc, char** argv)
     }
 
 
-    //remember starting position:
-    geometry_msgs::msg::Pose startPos = move_group.getCurrentPose().pose; 
-    move_group.setEndEffectorLink("can");
-    move_group.setStartStateToCurrentState(); 
 
     Datapoint dp1 = data[0];
 
+    /*
+        Setting orientation
+    */
     float roll = -2.47;
     float pitch = 0.0; 
     float yaw = -1.57;
@@ -189,7 +197,9 @@ int main(int argc, char** argv)
     // q.setRPY(roll, pitch , yaw); 
     q.normalize();
 
-
+    /*
+        Offset dataset -> model
+    */
 
     float x_offset= 220 + 250;
     float y_offset=0;
@@ -197,7 +207,10 @@ int main(int argc, char** argv)
 
     RCLCPP_INFO(LOGGER, "First Dataset: t=%f s, x= %f mm, y=%f mm, z=%f mm", dp1.time, dp1.x1, dp1.y1, dp1.z1); 
 
-    // Aufgrund der Achsenwahl: tausche x und y 
+    /*
+        Aufgrund der Achsenwahl: tausche x und y 
+    */
+    
     geometry_msgs::msg::Pose target_pose1;
     // target_pose1.orientation.y=-0.69; 
     target_pose1.orientation = tf2::toMsg(q);
@@ -275,12 +288,11 @@ int main(int argc, char** argv)
 
 
     /*
-    Printing the joint values to the console:
+        Saving Joint values in output file 
     */
     const std::vector< std::string > &  jointnames = move_group.getJointNames();
     std::vector<double> jointstates = move_group.getCurrentJointValues();
     for(size_t i=0; i< jointnames.size(); ++i){
-        // RCLCPP_INFO(LOGGER, "joint state %s: %f", jointnames[i].c_str(), jointstates[i]); 
         outputdata["end_jointstates"][jointnames[i].c_str()] =  jointstates[i]; 
     }
 
