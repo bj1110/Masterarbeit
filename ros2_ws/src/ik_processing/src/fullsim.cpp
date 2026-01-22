@@ -165,7 +165,7 @@ int main(int argc, char** argv)
         Setting Startstate & remember Position before initial Movement to store in output file 
     */
 
-    move_group.setEndEffectorLink("hand");
+    move_group.setEndEffectorLink("can");
     move_group.setStartStateToCurrentState(); 
     geometry_msgs::msg::Pose startPos = move_group.getCurrentPose().pose; 
     RCLCPP_INFO(LOGGER, "Endeffector link: %s", move_group.getEndEffectorLink().c_str()); 
@@ -175,14 +175,14 @@ int main(int argc, char** argv)
         Position 1 lies approx. x= -25 & y=-220       
     */
 
-    // std::map<std::string, double> states_values;
-    // if (joint_model_group->getVariableDefaultPositions("Pos1", states_values)){
-    //     RCLCPP_INFO(LOGGER, "Moving to default position \"Pos1\" ");
-    //     move_group.setJointValueTarget(states_values); 
-    //     move_group.move(); 
-    // }else{
-    //     RCLCPP_WARN(LOGGER, "Default state not found."); 
-    // }
+    std::map<std::string, double> states_values;
+    if (joint_model_group->getVariableDefaultPositions("Pos1", states_values)){
+        RCLCPP_INFO(LOGGER, "Moving to default position \"Pos1\" ");
+        move_group.setJointValueTarget(states_values); 
+        move_group.move(); 
+    }else{
+        RCLCPP_WARN(LOGGER, "Default state not found."); 
+    }
 
 
 
@@ -209,83 +209,47 @@ int main(int argc, char** argv)
     /*
         add Offset wrist -> can to the wrist to account for it being used as endeffector 
     */
-    x_offset += 116; 
+    // x_offset += 116; 
 
     RCLCPP_INFO(LOGGER, "First Dataset: t=%f s, x= %f mm, y=%f mm, z=%f mm", dp1.time, dp1.x1, dp1.y1, dp1.z1); 
+
+    move_group.setGoalOrientationTolerance(2*M_PI);
 
     /*
         Aufgrund der Achsenwahl: tausche x und y 
     */
     
-    geometry_msgs::msg::Pose target_pose1;
-    // target_pose1.orientation.y=-0.69; 
-    target_pose1.orientation = tf2::toMsg(q);
-    target_pose1.position.x = (dp1.y1 +x_offset)/1000;
-    target_pose1.position.y = (dp1.x1 +y_offset)/1000;
-    target_pose1.position.z = (dp1.z1 +z_offset)/1000;
-    move_group.setPoseTarget(target_pose1);
-    
-    move_group.setGoalOrientationTolerance(2*M_PI);
-
-    RCLCPP_INFO(LOGGER, "First Target Pose: w=%f, x=%f m, y=%f m , z=%f m ",target_pose1.orientation.w, 
-        target_pose1.position.x,  target_pose1.position.y,  target_pose1.position.z);
-
-    // // geometry_msgs::msg::Pose target_pose2;
-    // // target_pose2.position.x = 0.28;
-    // // target_pose2.position.y = -0.2;
-    // // target_pose2.position.z = 0.5;
-    // // move_group.setPoseTarget(target_pose2);
-    
-
-    // // RCLCPP_INFO(LOGGER, "Second Target Pose: w=%f, x=%f, x=%f, z=%f",target_pose2.orientation.w, 
-    // //  target_pose2.position.x,  target_pose2.position.y,  target_pose2.position.z);
-
-
-
-    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-
-    bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-
-    RCLCPP_INFO(LOGGER, "Visualizing plan 1 (pose goal) %s", success ? "" : "FAILED");
-
-    move_group.move();
-
-
-
-
     std::vector<geometry_msgs::msg::Pose> waypoints;
     int cnt=0; 
     for(auto dp: data){
         if(dp==data[1] || dp==data[2]){
             continue; 
         }
-        if((++cnt)%5!=0){
-            continue; 
-        }
+        // if((++cnt)%3!=0){
+        //     continue; 
+        // }
         geometry_msgs::msg::Pose p;
         p.position.x = (dp.y1 +x_offset)/1000;
         p.position.y = (dp.x1 +y_offset)/1000;
         p.position.z = (dp.z1 +z_offset)/1000;
+        p.orientation =tf2::toMsg(q); 
         waypoints.push_back(p);
     }
 
-    
+    int numPoints= waypoints.size();
+    int currPoint=0;
+    for(const auto& wp: waypoints){
+        move_group.setPoseTarget(wp);
+        moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
+        bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
 
-    const double eef_step = 0.01;
-    moveit_msgs::msg::RobotTrajectory trajectory;
-    moveit_msgs::msg::Constraints path_contraints;
-    const bool avoid_collisions=true; 
-    moveit_msgs::msg::MoveItErrorCodes* errorcode = nullptr; 
+        RCLCPP_INFO(LOGGER, "Visualizing plan %d/%d (pose goal) %s", ++currPoint, numPoints,  success ? "" : "FAILED");
 
-    double fraction = move_group.computeCartesianPath(waypoints, eef_step, trajectory, /*path_contraints, */ avoid_collisions, errorcode);
-    RCLCPP_INFO(LOGGER, "Number of Waypoints: %ld", waypoints.size());
-    RCLCPP_INFO(LOGGER, "Visualizing plan 4 (Cartesian path) (%.2f%% achieved)", fraction * 100.0);
-    if(errorcode && errorcode->val != moveit::core::MoveItErrorCode::SUCCESS){
-        RCLCPP_INFO(LOGGER, "Error in Carthesian Path: "); 
-        RCLCPP_INFO(LOGGER, "Error in Carthesian Path: %s", (errorcode->message).c_str());
+        move_group.move();
+
     }
-    move_group.execute(trajectory); 
+
     
     /*
         Creating the Path towards the desired output folder:
