@@ -57,12 +57,17 @@
         <origin xyz="0.0 0.0 ${-elbow_wrist_length/2}" rpy="0.0 0.0 0.0"/>
     </xacro:cylinder_link_template>
 
-    <xacro:bodypart_template bodypart="wrist" suffix="yaw" parent="forearm" child="hand">
+    <!-- <xacro:bodypart_template bodypart="wrist" suffix="yaw" parent="forearm" child="hand">
         <origin xyz="0.0 0.0 ${-elbow_wrist_length}"/>
         <axis xyz="1.0 0.0 0.0" />
         <limit effort="1000.0" lower="${hand_palmarflexion}" upper="${hand_dorsalextension}" velocity="0.5" />
-    </xacro:bodypart_template>
+    </xacro:bodypart_template> -->
 
+    <joint name="forearm_hand_joint" type="fixed">
+        <parent link="forearm"/>
+        <child link="hand"/>
+        <origin xyz="0.0 0.0 ${-elbow_wrist_length}"/>
+    </joint>
 
     <link name="hand">
         <visual>

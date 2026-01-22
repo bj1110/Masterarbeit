@@ -19,7 +19,7 @@
         <joint name="glenohumeral_roll_joint"/>
         <joint name="elbow_yaw_joint"/>
         <joint name="elbow_roll_joint"/>
-        <joint name="wrist_yaw_joint"/>
+        <joint name="forearm_hand_joint"/>
         <joint name="hand_can_joint"/>
     </group>
     <group name="can_group">
@@ -35,7 +35,7 @@
         <joint name="sternoclavicular_pitch_joint" value="0"/>
         <joint name="sternoclavicular_roll_joint" value="0"/>
         <joint name="sternoclavicular_yaw_joint" value="0"/>
-        <joint name="wrist_yaw_joint" value="0"/>
+        <!-- <joint name="wrist_yaw_joint" value="0"/> -->
     </group_state>
     <group_state name="forward_extension" group="arm">
         <joint name="elbow_roll_joint" value="0"/>
@@ -46,7 +46,7 @@
         <joint name="sternoclavicular_pitch_joint" value="-0.2285"/>
         <joint name="sternoclavicular_roll_joint" value="-0.3268"/>
         <joint name="sternoclavicular_yaw_joint" value="0.2165"/>
-        <joint name="wrist_yaw_joint" value="0"/>
+        <!-- <joint name="wrist_yaw_joint" value="0"/> -->
     </group_state>
     <group_state name="Pos1" group="arm">
         <joint name="elbow_roll_joint" value="0.052360"/>
@@ -57,7 +57,7 @@
         <joint name="sternoclavicular_pitch_joint" value="-0.209440"/>
         <joint name="sternoclavicular_roll_joint" value="0.000000"/>
         <joint name="sternoclavicular_yaw_joint" value="0.069813"/>
-        <joint name="wrist_yaw_joint" value="0.000000"/>
+        <!-- <joint name="wrist_yaw_joint" value="0.000000"/> -->
     </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="can" parent_link="hand" group="can_group" parent_group="arm"/>

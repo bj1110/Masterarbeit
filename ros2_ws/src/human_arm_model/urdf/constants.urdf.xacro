@@ -73,4 +73,7 @@
 
     <xacro:property name="can_weight" value="0.45"/>
 
+
+    <xacro:arg name="side" default="right"/>
+
 </robot>

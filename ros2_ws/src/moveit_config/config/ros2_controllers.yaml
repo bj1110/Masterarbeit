@@ -21,7 +21,7 @@ arm_controller:
       - glenohumeral_roll_joint
       - elbow_yaw_joint
       - elbow_roll_joint
-      - wrist_yaw_joint
+      # - wrist_yaw_joint
     command_interfaces:
       - position
     state_interfaces:

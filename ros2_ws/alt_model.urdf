@@ -126,12 +126,15 @@
       <inertia ixx="0.010893195102800622" ixy="0.0" ixz="0.0" iyy="0.010893195102800622" iyz="0.0" izz="0.0017764378146012444"/>
     </inertial>
   </link>
-  <joint name="wrist_yaw_joint" type="revolute">
+  <!-- <xacro:bodypart_template bodypart="wrist" suffix="yaw" parent="forearm" child="hand">
+        <origin xyz="0.0 0.0 ${-elbow_wrist_length}"/>
+        <axis xyz="1.0 0.0 0.0" />
+        <limit effort="1000.0" lower="${hand_palmarflexion}" upper="${hand_dorsalextension}" velocity="0.5" />
+    </xacro:bodypart_template> -->
+  <joint name="forearm_hand_joint" type="fixed">
     <parent link="forearm"/>
     <child link="hand"/>
     <origin xyz="0.0 0.0 -0.2869"/>
-    <axis xyz="1.0 0.0 0.0"/>
-    <limit effort="1000.0" lower="-1.4835298641951802" upper="1.4835298641951802" velocity="0.5"/>
   </joint>
   <link name="hand">
     <visual>
