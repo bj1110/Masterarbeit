@@ -27,6 +27,16 @@ add_executable(solver src/solver.cpp)
 add_executable(fullsim src/fullsim.cpp)
 add_executable(parser src/parser.cpp)
 
+add_library(ik_helpers
+  src/helpers.cpp
+)
+
+target_include_directories(ik_helpers
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
 ament_target_dependencies(solver
   rclcpp
   geometry_msgs
@@ -58,7 +68,24 @@ ament_target_dependencies(parser
   # moveit_visual_tools
 )
 
-target_link_libraries(fullsim nlohmann_json::nlohmann_json)
+ament_target_dependencies(ik_helpers
+  rclcpp
+  geometry_msgs
+  sensor_msgs
+  tf2_ros
+  moveit_ros_planning_interface
+  moveit_core
+  moveit_visual_tools
+)
+
+target_link_libraries(fullsim
+  ik_helpers
+  nlohmann_json::nlohmann_json
+)
+
+target_link_libraries(ik_helpers
+  nlohmann_json::nlohmann_json
+)
 
 set(msg_files
   "msg/Datapoint.msg"
@@ -77,6 +104,8 @@ ament_export_dependencies(rosidl_default_runtime)
 
 rosidl_get_typesupport_target(cpp_typesupport_target
   ${PROJECT_NAME} rosidl_typesupport_cpp)
+
+target_link_libraries(ik_helpers "${cpp_typesupport_target}")
 
 target_link_libraries(parser "${cpp_typesupport_target}")
 target_link_libraries(fullsim "${cpp_typesupport_target}")
@@ -101,4 +130,16 @@ install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}
 )
+
+install(
+  TARGETS ik_helpers
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+)
+
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
 ament_package()

@@ -20,74 +20,13 @@
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
+#include "ik_processing/helpers.hpp"
+
 // for convenience
 using json = nlohmann::json;
 using Datapoint = ik_processing::msg::Datapoint; 
 using Data = ik_processing::srv::Data; 
 
-namespace geometry_msgs::msg
-{
-    inline void to_json(nlohmann::json& j, const Pose& p)
-    {
-        j = {
-            {"position", {
-                {"x", p.position.x},
-                {"y", p.position.y},
-                {"z", p.position.z}
-            }},
-            {"orientation", {
-                {"x", p.orientation.x},
-                {"y", p.orientation.y},
-                {"z", p.orientation.z},
-                {"w", p.orientation.w}
-            }}
-        };
-    }
-
-    inline void from_json(const nlohmann::json& j, Pose& p)
-    {
-        j.at("position").at("x").get_to(p.position.x);
-        j.at("position").at("y").get_to(p.position.y);
-        j.at("position").at("z").get_to(p.position.z);
-
-        j.at("orientation").at("x").get_to(p.orientation.x);
-        j.at("orientation").at("y").get_to(p.orientation.y);
-        j.at("orientation").at("z").get_to(p.orientation.z);
-        j.at("orientation").at("w").get_to(p.orientation.w);
-    }
-}
-
-std::ofstream create_file(const rclcpp::Logger& LOGGER ){
-    const char* home = std::getenv("HOME");
-    if (!home) {
-        RCLCPP_ERROR(LOGGER, "HOME environment variable not set");
-        return {};
-    }
-    std::filesystem::path dir( std::filesystem::path(home) / "Projects/Masterarbeit/simdata");
-    std::error_code ec; 
-    std::filesystem::create_directories(dir, ec);
-    if (ec) {
-        RCLCPP_ERROR(
-            LOGGER,
-            "Failed to create %s: %s",
-            dir.c_str(),
-            ec.message().c_str()
-        );
-        return {};
-    }
-    std::filesystem::path filepath (dir / "data.json");
-    std::ofstream file(filepath);
-    if(!file.is_open()){
-        RCLCPP_ERROR(
-            LOGGER,
-            "Failed to open: %s",
-            filepath.c_str()
-        );
-        return {}; 
-    }
-    RCLCPP_INFO(LOGGER, "Output file opened");
-    return file; 
-}
 
 int main(int argc, char** argv)
 {
@@ -105,17 +44,6 @@ int main(int argc, char** argv)
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(move_group_node);
     std::thread([&executor]() { executor.spin(); }).detach();
-
-
-    // std::string urdf;
-    // {
-    // std::ifstream urdf_file("model3.urdf");
-    // urdf.assign((std::istreambuf_iterator<char>(urdf_file)),
-    //             std::istreambuf_iterator<char>());
-    // }
-
-    // move_group_node->declare_parameter("robot_description", urdf);
-    
 
     
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
@@ -147,6 +75,16 @@ int main(int argc, char** argv)
     std::vector<Datapoint> data = result->data; 
 
     RCLCPP_INFO(LOGGER, "Data received from Parser");
+
+        
+    /*
+        Creating the Path towards the desired output folder:
+    */
+
+    std::ofstream outputfile = helpers::create_file(LOGGER); 
+
+    json outputdata; 
+
 
     /*
         Der Tisch hat 80cm Durchmesser.
@@ -191,9 +129,9 @@ int main(int argc, char** argv)
     /*
         Setting orientation
     */
-    float roll = -2.47;
-    float pitch = 0.0; 
-    float yaw = -1.57;
+    // float roll = -2.47;
+    // float pitch = 0.0; 
+    // float yaw = -1.57;
     tf2::Quaternion q {-0.23278, -0.69127,-0.23118, 0.64383};
     // q.setRPY(roll, pitch , yaw); 
     q.normalize();
@@ -207,13 +145,14 @@ int main(int argc, char** argv)
     float z_offset=690;
 
     /*
-        add Offset wrist -> can to the wrist to account for it being used as endeffector 
+        Set Values for planning and moving
     */
-    // x_offset += 116; 
-
-    RCLCPP_INFO(LOGGER, "First Dataset: t=%f s, x= %f mm, y=%f mm, z=%f mm", dp1.time, dp1.x1, dp1.y1, dp1.z1); 
 
     move_group.setGoalOrientationTolerance(2*M_PI);
+    move_group.setMaxAccelerationScalingFactor(1.0);
+    move_group.setMaxVelocityScalingFactor(1.0);
+    
+    RCLCPP_INFO(LOGGER, "The tolerance for the Position per default is: %f", move_group.getGoalPositionTolerance());  
 
     /*
         Aufgrund der Achsenwahl: tausche x und y 
@@ -222,12 +161,6 @@ int main(int argc, char** argv)
     std::vector<geometry_msgs::msg::Pose> waypoints;
     int cnt=0; 
     for(auto dp: data){
-        if(dp==data[1] || dp==data[2]){
-            continue; 
-        }
-        // if((++cnt)%3!=0){
-        //     continue; 
-        // }
         geometry_msgs::msg::Pose p;
         p.position.x = (dp.y1 +x_offset)/1000;
         p.position.y = (dp.x1 +y_offset)/1000;
@@ -248,34 +181,13 @@ int main(int argc, char** argv)
 
         move_group.move();
 
+        helpers::store(outputdata, move_group, currPoint); 
     }
 
-    
-    /*
-        Creating the Path towards the desired output folder:
-    */
 
-    std::ofstream outputfile = create_file(LOGGER); 
-
-    json outputdata; 
-
-
-    /*
-        Saving Joint values in output file 
-    */
-    const std::vector< std::string > &  jointnames = move_group.getJointNames();
-    std::vector<double> jointstates = move_group.getCurrentJointValues();
-    for(size_t i=0; i< jointnames.size(); ++i){
-        outputdata["end_jointstates"][jointnames[i].c_str()] =  jointstates[i]; 
-    }
-
-    geometry_msgs::msg::Pose endPos = move_group.getCurrentPose().pose; 
-    outputdata["start"]= startPos;
-    outputdata["end"]= endPos; 
 
     outputfile << std::setw(4) <<outputdata <<std::endl; 
     
-
     rclcpp::shutdown();
     return 0;
 }
