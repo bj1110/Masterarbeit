@@ -105,8 +105,6 @@ int main(int argc, char** argv)
 
     move_group.setEndEffectorLink("can");
     move_group.setStartStateToCurrentState(); 
-    geometry_msgs::msg::Pose startPos = move_group.getCurrentPose().pose; 
-    RCLCPP_INFO(LOGGER, "Endeffector link: %s", move_group.getEndEffectorLink().c_str()); 
 
     /*
         Move to Position 1 
@@ -122,9 +120,6 @@ int main(int argc, char** argv)
         RCLCPP_WARN(LOGGER, "Default state not found."); 
     }
 
-
-
-    Datapoint dp1 = data[0];
 
     /*
         Setting orientation
@@ -148,18 +143,15 @@ int main(int argc, char** argv)
         Set Values for planning and moving
     */
 
-    move_group.setGoalOrientationTolerance(2*M_PI);
+    move_group.setGoalOrientationTolerance(0.25);
     move_group.setMaxAccelerationScalingFactor(1.0);
     move_group.setMaxVelocityScalingFactor(1.0);
-    
-    RCLCPP_INFO(LOGGER, "The tolerance for the Position per default is: %f", move_group.getGoalPositionTolerance());  
 
     /*
         Aufgrund der Achsenwahl: tausche x und y 
     */
     
     std::vector<geometry_msgs::msg::Pose> waypoints;
-    int cnt=0; 
     for(auto dp: data){
         geometry_msgs::msg::Pose p;
         p.position.x = (dp.y1 +x_offset)/1000;
@@ -173,6 +165,11 @@ int main(int argc, char** argv)
     int currPoint=0;
     for(const auto& wp: waypoints){
         move_group.setPoseTarget(wp);
+        /*
+            Set allowed deviance from the goal to the error from the file 
+        */
+        move_group.setGoalPositionTolerance(data[currPoint].error1 / 1000);
+
         moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
         bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
