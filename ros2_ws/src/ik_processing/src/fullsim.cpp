@@ -211,11 +211,34 @@ int main(int argc, char** argv)
 
     move_group.setJointValueTarget(states_values); 
     move_group.move(); 
-    for(const auto& p: plans){
-        move_group.execute(p); 
-    }
+    // for(const auto& p: plans){
+    //     move_group.execute(p); 
+    // }
 
     RCLCPP_INFO(LOGGER, "The number of successfully computed positions is: %d / %d", num_successes ,numPoints); 
+
+
+    moveit_msgs::msg::RobotTrajectory trajectory;
+
+    const double eef_step = 0.02;          // NOT too small
+    const bool avoid_collisions = true;
+
+    std::vector<geometry_msgs::msg::Pose> cartWaypoints;
+
+    for(size_t i=0; i< waypoints.size(); ++i){
+        if(i%5==0){
+            cartWaypoints.push_back(waypoints[i]);
+        }
+    }
+
+    double fraction = move_group.computeCartesianPath(
+        waypoints,
+        eef_step,
+        trajectory,
+        avoid_collisions
+    );
+
+    RCLCPP_INFO(LOGGER, "Cartesian path fraction: %.2f", fraction);
 
     outputfile << std::setw(4) <<outputdata <<std::endl; 
     
