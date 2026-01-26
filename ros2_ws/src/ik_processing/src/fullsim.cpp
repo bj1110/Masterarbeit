@@ -161,8 +161,31 @@ int main(int argc, char** argv)
         waypoints.push_back(p);
     }
 
+
+    /*
+        Path constraints
+    */
+    moveit_msgs::msg::Constraints path_constraints;
+
+    moveit_msgs::msg::OrientationConstraint oc;
+    oc.link_name = "can";
+    oc.header.frame_id = move_group.getPlanningFrame();
+
+    oc.orientation = tf2::toMsg(q);
+    oc.absolute_x_axis_tolerance = 0.05;  
+    oc.absolute_y_axis_tolerance = 0.05;  
+    oc.absolute_z_axis_tolerance = 0.05;  
+    oc.weight = 1.0;
+
+    path_constraints.orientation_constraints.push_back(oc);
+    // move_group.setPathConstraints(path_constraints);
+
+
+
     int numPoints= waypoints.size();
     int currPoint=0;
+    int num_successes=0;
+    std::vector<moveit::planning_interface::MoveGroupInterface::Plan> plans; 
     for(const auto& wp: waypoints){
         move_group.setPoseTarget(wp);
         /*
@@ -176,12 +199,23 @@ int main(int argc, char** argv)
 
         RCLCPP_INFO(LOGGER, "Visualizing plan %d/%d (pose goal) %s", ++currPoint, numPoints,  success ? "" : "FAILED");
 
-        move_group.move();
+        plans.push_back(my_plan); 
+        move_group.execute(my_plan);
 
-        helpers::store(outputdata, move_group, currPoint); 
+        if(success){
+            ++num_successes;
+            helpers::store(outputdata, move_group, currPoint); 
+        }
+
     }
 
+    move_group.setJointValueTarget(states_values); 
+    move_group.move(); 
+    for(const auto& p: plans){
+        move_group.execute(p); 
+    }
 
+    RCLCPP_INFO(LOGGER, "The number of successfully computed positions is: %d / %d", num_successes ,numPoints); 
 
     outputfile << std::setw(4) <<outputdata <<std::endl; 
     
