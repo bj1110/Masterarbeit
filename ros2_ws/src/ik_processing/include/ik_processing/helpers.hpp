@@ -36,6 +36,22 @@ inline void to_json(json& j, const moveit::planning_interface::MoveGroupInterfac
 
 }
 
+namespace moveit_msgs::msg
+{
+    inline void to_json(json& j, const RobotTrajectory& rt){
+        std::vector<std::string> jointnames = rt.joint_trajectory.joint_names;
+        std::vector<trajectory_msgs::msg::JointTrajectoryPoint> jtps = rt.joint_trajectory.points;
+        size_t numjoints = jointnames.size(); 
+        for (size_t i=0; i<jtps.size(); ++i){
+            for(size_t k=0; k< numjoints; ++k){
+                j[i][jointnames[k].c_str()] ["position"]= jtps[i].positions[k]; 
+                j[i][jointnames[k].c_str()] ["velocity"]= jtps[i].velocities[k]; 
+                j[i][jointnames[k].c_str()] ["acceleration"]= jtps[i].accelerations[k]; 
+            }
+        }
+    };
+}
+
 namespace geometry_msgs::msg
 {
     inline void to_json(nlohmann::json& j, const Pose& p)

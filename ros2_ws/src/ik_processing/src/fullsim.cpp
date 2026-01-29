@@ -182,63 +182,73 @@ int main(int argc, char** argv)
 
 
 
-    int numPoints= waypoints.size();
-    int currPoint=0;
-    int num_successes=0;
-    std::vector<moveit::planning_interface::MoveGroupInterface::Plan> plans; 
-    for(const auto& wp: waypoints){
-        move_group.setPoseTarget(wp);
-        /*
-            Set allowed deviance from the goal to the error from the file 
-        */
-        move_group.setGoalPositionTolerance(data[currPoint].error1 / 1000);
+    // int numPoints= waypoints.size();
+    // int currPoint=0;
+    // int num_successes=0;
+    // std::vector<moveit::planning_interface::MoveGroupInterface::Plan> plans; 
+    // for(const auto& wp: waypoints){
+    //     move_group.setPoseTarget(wp);
+    //     /*
+    //         Set allowed deviance from the goal to the error from the file 
+    //     */
+    //     move_group.setGoalPositionTolerance(data[currPoint].error1 / 1000);
 
-        moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    //     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
-        bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    //     bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
 
-        RCLCPP_INFO(LOGGER, "Visualizing plan %d/%d (pose goal) %s", ++currPoint, numPoints,  success ? "" : "FAILED");
+    //     RCLCPP_INFO(LOGGER, "Visualizing plan %d/%d (pose goal) %s", ++currPoint, numPoints,  success ? "" : "FAILED");
 
-        plans.push_back(my_plan); 
-        move_group.execute(my_plan);
+    //     plans.push_back(my_plan); 
+    //     move_group.execute(my_plan);
 
-        if(success){
-            ++num_successes;
-            helpers::store(outputdata, move_group, currPoint); 
-        }
+    //     if(success){
+    //         ++num_successes;
+    //         helpers::store(outputdata, move_group, currPoint); 
+    //     }
 
-    }
+    // }
 
-    move_group.setJointValueTarget(states_values); 
-    move_group.move(); 
+    // move_group.setJointValueTarget(states_values); 
+    // move_group.move(); 
     // for(const auto& p: plans){
     //     move_group.execute(p); 
     // }
 
-    RCLCPP_INFO(LOGGER, "The number of successfully computed positions is: %d / %d", num_successes ,numPoints); 
+    // RCLCPP_INFO(LOGGER, "The number of successfully computed positions is: %d / %d", num_successes ,numPoints); 
 
 
     moveit_msgs::msg::RobotTrajectory trajectory;
 
-    const double eef_step = 0.02;          // NOT too small
+    const double eef_step = 0.001;
     const bool avoid_collisions = true;
 
     std::vector<geometry_msgs::msg::Pose> cartWaypoints;
 
     for(size_t i=0; i< waypoints.size(); ++i){
-        if(i%5==0){
+        if(i%3==0){
             cartWaypoints.push_back(waypoints[i]);
         }
     }
 
     double fraction = move_group.computeCartesianPath(
-        waypoints,
+        cartWaypoints,
         eef_step,
         trajectory,
+        path_constraints, 
         avoid_collisions
     );
 
+    move_group.execute(trajectory);
     RCLCPP_INFO(LOGGER, "Cartesian path fraction: %.2f", fraction);
+
+    outputdata = trajectory; 
+
+    // move_group.setPoseTarget(waypoints[waypoints.size()-1]);
+    // move_group.clearPathConstraints(); 
+    // moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    // move_group.plan(my_plan);
+
 
     outputfile << std::setw(4) <<outputdata <<std::endl; 
     
