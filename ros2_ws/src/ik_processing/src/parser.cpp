@@ -35,8 +35,8 @@ class Parser: public rclcpp::Node{
         _startpos2 = static_cast<u_short>(this->get_parameter("startpos2").as_int());
         this->declare_parameter("goalpos2", 1);
         _goalpos2 = static_cast<u_short>(this->get_parameter("goalpos2").as_int());
-        this->declare_parameter("is_dat1", true);
-        _is_dat1 = this->get_parameter("is_dat1").as_bool();
+        this->declare_parameter("datafile", 1);
+        _datafile = this->get_parameter("datafile").as_int();
         this->declare_parameter("exNum", 1);
         _exnum = static_cast<u_short>(this->get_parameter("exNum").as_int());
 
@@ -45,7 +45,7 @@ class Parser: public rclcpp::Node{
             filepath /= _is_agent1 ? "agent1" : "agent2";
             filepath /= std::to_string(_startpos1) + "-" + std::to_string(_goalpos1);
             filepath /= (_exnum < 10) ? "00"+ std::to_string(_exnum): "0"+ std::to_string(_exnum); 
-            filepath /= _is_dat1 ? "1" :"2";
+            filepath /= std::to_string(_datafile);
             filepath += ".dat";
         }
         else{
@@ -61,7 +61,7 @@ class Parser: public rclcpp::Node{
             std::to_string(_startpos1) + "-" + std::to_string(_goalpos1) +
             (!_is_baseline ? ("_" + std::to_string(_startpos2) + "-" + std::to_string(_goalpos2)) : "") +
             " Experiment Number: " + std::to_string(_exnum) +
-            (_is_baseline ? (" run: " + std::string(_is_dat1 ? "1" : "2")) : "");
+            (_is_baseline ? (" run: " + std::to_string(_datafile)) : "");
         
         RCLCPP_INFO(this->get_logger(), "Opening: %s", file_info.c_str()); 
 
@@ -94,8 +94,7 @@ class Parser: public rclcpp::Node{
     bool _is_baseline;
     std::filesystem::path filepath = ament_index_cpp::get_package_share_directory("ik_processing") + "/data/dset"; 
     bool _is_agent1;
-    u_short _startpos1, _startpos2, _goalpos1, _goalpos2, _exnum;
-    bool _is_dat1; 
+    u_short _startpos1, _startpos2, _goalpos1, _goalpos2, _exnum, _datafile; 
     std::vector<Datapoint> data; 
     std::vector<Datapoint> create_datapoints(std::ifstream& file, const bool _is_baseline);
     rclcpp::Service<Data>::SharedPtr _service_server;
