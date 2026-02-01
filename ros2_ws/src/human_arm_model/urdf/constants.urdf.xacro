@@ -75,5 +75,12 @@
 
 
     <xacro:arg name="side" default="right"/>
+    <xacro:if value="${'$(arg side)'=='right'}">
+        <xacro:property name="right" value="-1"/>
+    </xacro:if>
+    <xacro:unless value="${'$(arg side)'=='right'}">
+        <xacro:property name="right" value="1"/>
+    </xacro:unless>
+    
 
 </robot>

@@ -13,8 +13,8 @@
     </link>
     
     <xacro:joint_template bodypart="glenohumeral" suffix="yaw" parent="clavicular" child="humerus_yaw" >
-        <origin xyz="0.0 ${clavicle_link_length} 0.0" rpy="0.0 0.0 ${-30*math.pi/180}"/>
-        <axis xyz="1.0 0.0 0.0" />
+        <origin xyz="0.0 ${right * clavicle_link_length} 0.0" rpy="0.0 0.0 ${-30*math.pi/180}"/>
+        <axis xyz="${right} 0.0 0.0" />
         <limit effort="1000.0" lower="${glenohumeraljoint_adduktion}" upper="${glenohumeraljoint_abduktion}" velocity="0.5" />
     </xacro:joint_template>
 

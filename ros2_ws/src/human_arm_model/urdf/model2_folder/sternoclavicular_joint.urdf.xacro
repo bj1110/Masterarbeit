@@ -13,8 +13,8 @@
     </link>
 
     <xacro:joint_template bodypart="sternoclavicular" suffix="yaw" parent="columna" child="clavicular_yaw" >
-        <origin xyz="0.0 ${sternum_radius} ${2*waist_back_length}" rpy="0.0 0.0 ${30*math.pi/180}" />
-        <axis xyz="1.0 0.0 0.0" />
+        <origin xyz="0.0 ${right * sternum_radius} ${2*waist_back_length}" rpy="0.0 0.0 ${30*math.pi/180}" />
+        <axis xyz="${right} 0.0 0.0" />
         <limit effort="1000.0" lower="${Sternoklavikularjoint_depression}" upper="${Sternoklavikularjoint_elevation}" velocity="0.5" />
     </xacro:joint_template>
 

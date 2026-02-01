@@ -77,10 +77,10 @@
       <geometry>
         <cylinder length="0.2081" radius="0.02915000000000001"/>
       </geometry>
-      <origin rpy="1.5707963267948966 0.0 0.0" xyz="0.0 0.10405 0.0"/>
+      <origin rpy="1.5707963267948966 0.0 0.0" xyz="0.0 -0.10405 0.0"/>
     </visual>
     <collision>
-      <origin rpy="1.5707963267948966 0.0 0.0" xyz="0.0 0.10405 0.0"/>
+      <origin rpy="1.5707963267948966 0.0 0.0" xyz="0.0 -0.10405 0.0"/>
       <geometry>
         <cylinder length="0.2081" radius="0.02915000000000001"/>
       </geometry>
@@ -175,7 +175,7 @@
   <joint name="hand_can_joint" type="fixed">
     <parent link="hand"/>
     <child link="can"/>
-    <origin xyz="0.06 -0.043925 -0.1165"/>
+    <origin xyz="0.06 0.043925 -0.1165"/>
   </joint>
   <!-- ___________________ Macro for joints __________ -->
   <!-- <xacro:macro name="joint_transmission" params="joint_name">
@@ -224,8 +224,8 @@
   <joint name="sternoclavicular_yaw_joint" type="revolute">
     <parent link="columna"/>
     <child link="clavicular_yaw"/>
-    <origin rpy="0.0 0.0 0.5235987755982988" xyz="0.0 0.05830000000000002 0.9552"/>
-    <axis xyz="1.0 0.0 0.0"/>
+    <origin rpy="0.0 0.0 0.5235987755982988" xyz="0.0 -0.05830000000000002 0.9552"/>
+    <axis xyz="-1 0.0 0.0"/>
     <limit effort="1000.0" lower="-0.08726646259971647" upper="0.5235987755982988" velocity="0.5"/>
   </joint>
   <joint name="sternoclavicular_pitch_joint" type="revolute">
@@ -289,8 +289,8 @@
   <joint name="glenohumeral_yaw_joint" type="revolute">
     <parent link="clavicular"/>
     <child link="humerus_yaw"/>
-    <origin rpy="0.0 0.0 -0.5235987755982988" xyz="0.0 0.2081 0.0"/>
-    <axis xyz="1.0 0.0 0.0"/>
+    <origin rpy="0.0 0.0 -0.5235987755982988" xyz="0.0 -0.2081 0.0"/>
+    <axis xyz="-1 0.0 0.0"/>
     <limit effort="1000.0" lower="0.0" upper="1.5707963267948966" velocity="0.5"/>
   </joint>
   <joint name="glenohumeral_pitch_joint" type="revolute">

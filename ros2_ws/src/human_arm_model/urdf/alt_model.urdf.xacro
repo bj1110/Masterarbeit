@@ -45,7 +45,7 @@
 
     <!-- placeholder mass here -->
     <xacro:cylinder_link_template name="clavicular" mass="1" radius="${sternum_radius/2}" height="${clavicle_link_length}">
-        <origin xyz="0.0 ${clavicle_link_length/2} 0.0" rpy="${math.pi/2} 0.0 0.0"/>
+        <origin xyz="0.0 ${right * clavicle_link_length/2} 0.0" rpy="${math.pi/2} 0.0 0.0"/>
     </xacro:cylinder_link_template>
 
 
@@ -93,7 +93,7 @@
     <joint name="hand_can_joint" type="fixed">
         <parent link="hand"/>
         <child link="can"/>
-        <origin xyz="${can_height/2} ${-(hand_thickness/2) - can_radius } ${-hand_length}"/>
+        <origin xyz="${can_height/2} ${right * (-(hand_thickness/2) - can_radius) } ${-hand_length}"/>
     </joint>
 
     <xacro:include filename="model2_folder/sternoclavicular_joint.urdf.xacro" />
