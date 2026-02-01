@@ -224,7 +224,7 @@
   <joint name="sternoclavicular_yaw_joint" type="revolute">
     <parent link="columna"/>
     <child link="clavicular_yaw"/>
-    <origin rpy="0.0 0.0 0.5235987755982988" xyz="0.0 -0.05830000000000002 0.9552"/>
+    <origin rpy="0.0 0.0 -0.5235987755982988" xyz="0.0 -0.05830000000000002 0.9552"/>
     <axis xyz="-1 0.0 0.0"/>
     <limit effort="1000.0" lower="-0.08726646259971647" upper="0.5235987755982988" velocity="0.5"/>
   </joint>
@@ -289,7 +289,7 @@
   <joint name="glenohumeral_yaw_joint" type="revolute">
     <parent link="clavicular"/>
     <child link="humerus_yaw"/>
-    <origin rpy="0.0 0.0 -0.5235987755982988" xyz="0.0 -0.2081 0.0"/>
+    <origin rpy="0.0 0.0 0.5235987755982988" xyz="0.0 -0.2081 0.0"/>
     <axis xyz="-1 0.0 0.0"/>
     <limit effort="1000.0" lower="0.0" upper="1.5707963267948966" velocity="0.5"/>
   </joint>
