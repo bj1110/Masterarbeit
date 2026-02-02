@@ -61,11 +61,11 @@
     </group_state>
     <group_state name="Pos1_right" group="arm">
         <joint name="elbow_roll_joint" value="0.052360"/>
-        <joint name="elbow_yaw_joint" value="1.605703"/>
-        <joint name="glenohumeral_pitch_joint" value="0.104720"/>
+        <joint name="elbow_yaw_joint" value="1.6"/>
+        <joint name="glenohumeral_pitch_joint" value="0.17"/>
         <joint name="glenohumeral_roll_joint" value="0.453786"/>
         <joint name="glenohumeral_yaw_joint" value="0.000000"/>
-        <joint name="sternoclavicular_pitch_joint" value="-0.209440"/>
+        <joint name="sternoclavicular_pitch_joint" value="0.0"/>
         <joint name="sternoclavicular_roll_joint" value="0.000000"/>
         <joint name="sternoclavicular_yaw_joint" value="0.069813"/>
         <!-- <joint name="wrist_yaw_joint" value="0.000000"/> -->

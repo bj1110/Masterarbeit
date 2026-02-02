@@ -107,6 +107,14 @@ int main(int argc, char** argv)
     move_group.setStartStateToCurrentState(); 
 
     /*
+        Set Values for planning and moving
+    */
+
+    move_group.setGoalOrientationTolerance(0.1);
+    move_group.setMaxAccelerationScalingFactor(1.0);
+    move_group.setMaxVelocityScalingFactor(1.0);
+
+    /*
         Move to Position 1 
         Position 1 lies approx. x= -25 & y=-220       
     */
@@ -119,7 +127,13 @@ int main(int argc, char** argv)
     }else{
         RCLCPP_WARN(LOGGER, "Default state not found."); 
     }
+    outputdata = move_group.getCurrentPose().pose; 
 
+    /*
+        Get the orientation from the preprogrammd Position where the orientation is as desired. 
+    */
+    tf2::Quaternion q;
+    tf2::fromMsg(move_group.getCurrentPose().pose.orientation, q); 
 
     /*
         Setting orientation
@@ -127,9 +141,9 @@ int main(int argc, char** argv)
     // float roll = -2.47;
     // float pitch = 0.0; 
     // float yaw = -1.57;
-    tf2::Quaternion q {-0.23278, -0.69127,-0.23118, 0.64383};
+    // tf2::Quaternion q {0.03085, -0.751833,0.143234, 0.64288};
     // q.setRPY(roll, pitch , yaw); 
-    q.normalize();
+    // q.normalize();
 
     /*
         Offset dataset -> model
@@ -139,23 +153,18 @@ int main(int argc, char** argv)
     float y_offset=0;
     float z_offset=690;
 
-    /*
-        Set Values for planning and moving
-    */
 
-    move_group.setGoalOrientationTolerance(M_PI);
-    move_group.setMaxAccelerationScalingFactor(1.0);
-    move_group.setMaxVelocityScalingFactor(1.0);
 
     /*
         Aufgrund der Achsenwahl: tausche x und y 
+        Aufgrund Draufsicht: invertiere y 
     */
     
     std::vector<geometry_msgs::msg::Pose> waypoints;
     for(auto dp: data){
         geometry_msgs::msg::Pose p;
         p.position.x = (dp.y1 +x_offset)/1000;
-        p.position.y = (dp.x1 +y_offset)/1000;
+        p.position.y = -(dp.x1 +y_offset)/1000;
         p.position.z = (dp.z1 +z_offset)/1000;
         p.orientation =tf2::toMsg(q); 
         waypoints.push_back(p);
@@ -163,7 +172,8 @@ int main(int argc, char** argv)
 
 
     /*
-        Path constraints
+        Path constraints:
+        - stay upright 
     */
     moveit_msgs::msg::Constraints path_constraints;
 
@@ -182,40 +192,47 @@ int main(int argc, char** argv)
 
 
 
-    int numPoints= waypoints.size();
-    int currPoint=0;
-    int num_successes=0;
-    std::vector<moveit::planning_interface::MoveGroupInterface::Plan> plans; 
-    for(const auto& wp: waypoints){
-        move_group.setPoseTarget(wp);
-        /*
-            Set allowed deviance from the goal to the error from the file 
-        */
-        move_group.setGoalPositionTolerance(data[currPoint].error1 / 1000);
+    // int numPoints= waypoints.size();
+    // int currPoint=0;
+    // int num_successes=0;
+    // std::vector<moveit::planning_interface::MoveGroupInterface::Plan> plans; 
+    // for(const auto& wp: waypoints){
+    //     move_group.setPoseTarget(wp);
+    //     /*
+    //         Set allowed deviance from the goal to the error from the file 
+    //     */
+    //     move_group.setGoalPositionTolerance(data[currPoint].error1 / 1000);
 
-        moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    //     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
-        bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    //     bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
 
-        RCLCPP_INFO(LOGGER, "Visualizing plan %d/%d (pose goal) %s", ++currPoint, numPoints,  success ? "" : "FAILED");
+    //     RCLCPP_INFO(LOGGER, "Visualizing plan %d/%d (pose goal) %s", ++currPoint, numPoints,  success ? "" : "FAILED");
 
-        plans.push_back(my_plan); 
-        move_group.execute(my_plan);
+    //     plans.push_back(my_plan); 
+    //     move_group.execute(my_plan);
 
-        if(success){
-            ++num_successes;
-            helpers::store(outputdata, move_group, currPoint); 
-        }
+    //     if(success){
+    //         ++num_successes;
+    //         helpers::store(outputdata, move_group, currPoint); 
+    //     }
 
-    }
+    // }
+    // RCLCPP_INFO(LOGGER, "The number of successfully computed positions is: %d / %d", num_successes ,numPoints); 
 
-    move_group.setJointValueTarget(states_values); 
-    move_group.move(); 
-    for(const auto& p: plans){
-        move_group.execute(p); 
-    }
+    // move_group.setJointValueTarget(states_values); 
+    // move_group.move(); 
+    // for(const auto& p: plans){
+    //     move_group.execute(p); 
+    // }
 
-    RCLCPP_INFO(LOGGER, "The number of successfully computed positions is: %d / %d", num_successes ,numPoints); 
+
+    // move_group.setPoseTarget(waypoints[0]);
+    // moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    // bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    // RCLCPP_INFO(LOGGER, "Moving to the first Position in path, %d", success);
+    // move_group.execute(my_plan);
+    // helpers::store(outputdata, move_group, 1);
 
 
     moveit_msgs::msg::RobotTrajectory trajectory;
