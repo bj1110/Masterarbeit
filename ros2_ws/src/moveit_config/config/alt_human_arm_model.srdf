@@ -91,4 +91,13 @@
     <disable_collisions link1="forearm" link2="humerus" reason="Adjacent"/>
     <disable_collisions link1="columna" link2="spine" reason="Adjacent"/>
 
+    <disable_collisions link1="spine" link2="forearm" reason="Never"/>
+    <disable_collisions link1="columna" link2="forearm" reason="Never"/>
+    <disable_collisions link1="spine" link2="hand" reason="Never"/>
+    <disable_collisions link1="columna" link2="hand" reason="Never"/>
+    <disable_collisions link1="spine" link2="can" reason="Never"/>
+    <disable_collisions link1="columna" link2="can" reason="Never"/>
+    <disable_collisions link1="spine" link2="humerus" reason="Never"/>
+    <disable_collisions link1="columna" link2="humerus" reason="Never"/>
+
 </robot>
