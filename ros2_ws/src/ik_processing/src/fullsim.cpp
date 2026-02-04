@@ -173,14 +173,14 @@ int main(int argc, char** argv)
 
     /*
         Path constraints:
-        - stay upright 
+        - can must stay upright 
+        - hips must move as little as possible
     */
     moveit_msgs::msg::Constraints path_constraints;
 
     moveit_msgs::msg::OrientationConstraint oc;
     oc.link_name = "can";
     oc.header.frame_id = move_group.getPlanningFrame();
-
     oc.orientation = tf2::toMsg(q);
     oc.absolute_x_axis_tolerance = 0.05;  
     oc.absolute_y_axis_tolerance = 0.05;  
@@ -188,6 +188,17 @@ int main(int argc, char** argv)
     oc.weight = 1.0;
 
     path_constraints.orientation_constraints.push_back(oc);
+
+    moveit_msgs::msg::JointConstraint jc;
+    jc.joint_name="calumna__joint";
+    double curr_columna = move_group.getCurrentState()->getVariablePosition("columna__joint");
+    jc.position= curr_columna;
+    jc.tolerance_above=0.1;
+    jc.tolerance_below=0.1;
+    jc.weight=9.9;
+
+    path_constraints.joint_constraints.push_back(jc);
+
     // move_group.setPathConstraints(path_constraints);
 
 
