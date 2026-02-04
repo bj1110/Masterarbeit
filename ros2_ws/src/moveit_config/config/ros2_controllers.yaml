@@ -13,6 +13,7 @@ controller_manager:
 arm_controller:
   ros__parameters:
     joints:
+      - columna__joint
       - sternoclavicular_yaw_joint
       - sternoclavicular_pitch_joint
       - sternoclavicular_roll_joint

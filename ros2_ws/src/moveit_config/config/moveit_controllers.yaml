@@ -9,6 +9,7 @@ moveit_simple_controller_manager:
   arm_controller:
     type: FollowJointTrajectory
     joints:
+      - columna__joint
       - sternoclavicular_yaw_joint
       - sternoclavicular_pitch_joint
       - sternoclavicular_roll_joint

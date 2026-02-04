@@ -48,29 +48,86 @@
   <link name="base_link">
     <!-- <xacro:minimal_interia /> -->
   </link>
+  <!-- ___________________ Macro for joints __________ -->
+  <!-- <xacro:macro name="joint_transmission" params="joint_name">
+        <transmission name="${joint_name}_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+
+        <joint name="${joint_name}">
+            <hardwareInterface>hardware_interface/PositionCommandInterface</hardwareInterface>
+        </joint>
+
+        <actuator name="${joint_name}_motor">
+            <hardwareInterface>hardware_interface/PositionCommandInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+        </transmission>
+    </xacro:macro> -->
+  <!-- ___________________ Macro for joints __________ -->
+  <!-- <xacro:macro name="joint_transmission" params="joint_name">
+        <transmission name="${joint_name}_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+
+        <joint name="${joint_name}">
+            <hardwareInterface>hardware_interface/PositionCommandInterface</hardwareInterface>
+        </joint>
+
+        <actuator name="${joint_name}_motor">
+            <hardwareInterface>hardware_interface/PositionCommandInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+        </transmission>
+    </xacro:macro> -->
+  <!-- Keep the spine as elevantion. Make the joint about the hips -> adding a second spine -->
   <link name="columna">
     <!-- carla columna-->
     <visual>
       <geometry>
-        <box size="0.11660000000000004 0.11660000000000004 0.9552"/>
+        <box size="0.11660000000000004 0.11660000000000004 0.4776"/>
       </geometry>
-      <origin xyz="0.0 0.0 0.4776"/>
+      <origin xyz="0.0 0.0 0.2388"/>
     </visual>
     <collision>
       <geometry>
-        <box size="0.11660000000000004 0.11660000000000004 0.9552"/>
+        <box size="0.11660000000000004 0.11660000000000004 0.4776"/>
       </geometry>
-      <origin xyz="0.0 0.0 0.4776"/>
+      <origin xyz="0.0 0.0 0.2388"/>
     </collision>
     <inertial>
       <mass value="50.0"/>
-      <inertia ixx="3.8583441666666665" ixy="0.0" ixz="0.0" iyy="3.8583441666666665" iyz="0.0" izz="0.11329633333333339"/>
+      <inertia ixx="0.9645860416666666" ixy="0.0" ixz="0.0" iyy="0.9645860416666666" iyz="0.0" izz="0.028324083333333347"/>
     </inertial>
   </link>
   <joint name="world_to_columna" type="fixed">
     <parent link="base_link"/>
     <child link="columna"/>
     <origin xyz="0.0 0.0 0.0"/>
+  </joint>
+  <link name="spine">
+    <!-- actual spine that moves about the hips-->
+    <visual>
+      <geometry>
+        <box size="0.11660000000000004 0.11660000000000004 0.4776"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.2388"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.11660000000000004 0.11660000000000004 0.4776"/>
+      </geometry>
+      <origin xyz="0.0 0.0 0.2388"/>
+    </collision>
+    <inertial>
+      <mass value="50.0"/>
+      <inertia ixx="0.9645860416666666" ixy="0.0" ixz="0.0" iyy="0.9645860416666666" iyz="0.0" izz="0.028324083333333347"/>
+    </inertial>
+  </link>
+  <joint name="columna__joint" type="revolute">
+    <parent link="columna"/>
+    <child link="spine"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.4776"/>
+    <axis xyz="0.0 1.0 0.0"/>
+    <limit effort="1000.0" lower="0.0" upper="0.5235987755982988" velocity="0.5"/>
   </joint>
   <link name="clavicular">
     <visual>
@@ -222,9 +279,9 @@
     </inertial>
   </link>
   <joint name="sternoclavicular_yaw_joint" type="revolute">
-    <parent link="columna"/>
+    <parent link="spine"/>
     <child link="clavicular_yaw"/>
-    <origin rpy="0.0 0.0 -0.5235987755982988" xyz="0.0 -0.05830000000000002 0.9552"/>
+    <origin rpy="0.0 0.0 -0.5235987755982988" xyz="0.0 -0.05830000000000002 0.4776"/>
     <axis xyz="-1 0.0 0.0"/>
     <limit effort="1000.0" lower="-0.08726646259971647" upper="0.5235987755982988" velocity="0.5"/>
   </joint>
