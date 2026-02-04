@@ -20,28 +20,7 @@
         <!-- <xacro:minimal_interia /> -->
     </link>
     
-    <link name="columna"> <!-- carla columna-->
-        <visual>
-            <geometry>
-                <box size="${sternum_radius*2} ${sternum_radius*2} ${2*waist_back_length}"/> 
-            </geometry>
-            <origin xyz="0.0 0.0 ${waist_back_length}"/>
-        </visual>
-        <collision>
-            <geometry>
-                <box size="${sternum_radius*2} ${sternum_radius*2} ${2*waist_back_length}"/> 
-            </geometry>
-            <origin xyz="0.0 0.0 ${waist_back_length}"/>
-        </collision>
-        <xacro:box_inertia m="50.0" x="${sternum_radius*2}" y="${sternum_radius*2}" z="${2*waist_back_length}" />
-    </link>
-
-    <joint name="world_to_columna" type="fixed">
-        <parent link="base_link"/>
-        <child link="columna"/>
-        <origin xyz="0.0 0.0 0.0"/>
-    </joint>
-
+    <xacro:include filename="model2_folder/columna.urdf.xacro"/> 
 
     <!-- placeholder mass here -->
     <xacro:cylinder_link_template name="clavicular" mass="1" radius="${sternum_radius/2}" height="${clavicle_link_length}">
