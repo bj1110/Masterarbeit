@@ -22,10 +22,27 @@
 
 #include "ik_processing/helpers.hpp"
 
+#include <moveit/move_group_interface/move_group_interface.hpp>
+#include <moveit/planning_scene_interface/planning_scene_interface.hpp>
+#include <moveit/robot_state/cartesian_interpolator.hpp>
+#include <moveit/trajectory_processing/time_optimal_trajectory_generation.hpp>
+
+#include <moveit_msgs/msg/display_robot_state.hpp>
+#include <moveit_msgs/msg/display_trajectory.hpp>
+#include <moveit_msgs/msg/attached_collision_object.hpp>
+#include <moveit_msgs/msg/collision_object.hpp>
+
+#include <tf2_eigen/tf2_eigen.hpp>
+#include <moveit_visual_tools/moveit_visual_tools.h>
+#include <moveit/robot_state/robot_state.hpp>
+#include <moveit/robot_state/conversions.hpp>
+
 // for convenience
 using json = nlohmann::json;
 using Datapoint = ik_processing::msg::Datapoint; 
 using Data = ik_processing::srv::Data; 
+
+double mid_range_cost(const moveit::core::JointModelGroup* jmg, const std::vector<double>& q);
 
 
 int main(int argc, char** argv)
@@ -199,7 +216,7 @@ int main(int argc, char** argv)
 
     path_constraints.joint_constraints.push_back(jc);
 
-    // move_group.setPathConstraints(path_constraints);
+    move_group.setPathConstraints(path_constraints);
 
 
 
@@ -245,32 +262,116 @@ int main(int argc, char** argv)
     // move_group.execute(my_plan);
     // helpers::store(outputdata, move_group, 1);
 
-
-    moveit_msgs::msg::RobotTrajectory trajectory;
-
-    const double eef_step = 0.001;
-    const bool avoid_collisions = true;
-
-    std::vector<geometry_msgs::msg::Pose> cartWaypoints;
-
-    for(size_t i=0; i< waypoints.size(); ++i){
-        if(i%3==0){
-            cartWaypoints.push_back(waypoints[i]);
-        }
+    /*
+        custom cost function
+        steps:
+        1. Make sure the startseed is the same (Position 1 for now)
+        2. define the targets
+        3. define options
+        4. define l2 norm
+        5. define custom cost callbackfn
+        6. call low-lvl planner
+        7. add time to each calculated waypoint
+        8. build and execute the Robot Trajecotry
+    */
+    
+    auto robot_model = move_group.getRobotModel();
+    moveit::core::RobotState rs (robot_model);
+    rs.setToDefaultValues(
+        robot_model->getJointModelGroup("arm"),
+        "Pos1_right"
+    );
+    moveit_msgs::msg::RobotState state_msg;
+    moveit::core::robotStateToRobotStateMsg(rs, state_msg);
+    move_group.setStartStateToCurrentState(); 
+    
+    /* 2: */
+    Eigen::Isometry3d target;
+    EigenSTL::vector_Isometry3d targets;
+    for(const auto& wp: waypoints){
+        tf2::fromMsg(wp, target);
+        targets.push_back(target);
     }
 
-    double fraction = move_group.computeCartesianPath(
-        cartWaypoints,
-        eef_step,
-        trajectory,
-        path_constraints, 
-        avoid_collisions
-    );
+    /* 3: */
+    moveit::core::GroupStateValidityCallbackFn callback_fn;
+    kinematics::KinematicsQueryOptions opts;
+    opts.return_approximate_solution = true;
+    auto start_state = move_group.getCurrentState();
+    std::vector<moveit::core::RobotStatePtr> traj;
+    moveit::core::MaxEEFStep max_eef_step(0.02, 0.2);
+    moveit::core::CartesianPrecision cartesian_precision{ .translational = 0.005,
+                                                        .rotational = 0.05,
+                                                        .max_resolution = 5e-3 };
 
-    move_group.execute(trajectory);
-    RCLCPP_INFO(LOGGER, "Cartesian path fraction: %.2f", fraction);
+    /* 4: */
+    const auto compute_l2_norm = [](std::vector<double> solution, std::vector<double> start) {
+        double sum = 0.0;
+        for (size_t ji = 0; ji < solution.size(); ji++)
+        {
+            double d = solution[ji] - start[ji];
+            sum += d * d;
+        }
+        return sum;
+    };
 
-    outputdata = trajectory; 
+    /* 5: */
+    const double weight = 0.0005;
+    const auto cost_fn = [&weight, &compute_l2_norm](const geometry_msgs::msg::Pose& /*goal_pose*/,
+                                                 const moveit::core::RobotState& solution_state,
+                                                 moveit::core::JointModelGroup const* jmg,
+                                                 const std::vector<double>& seed_state) {
+        std::vector<double> proposed_joint_positions;
+        solution_state.copyJointGroupPositions(jmg, proposed_joint_positions);
+        double cost = compute_l2_norm(proposed_joint_positions, seed_state);
+        return weight * cost;
+    };
+    
+    /* 6: */
+    const auto frac = moveit::core::CartesianInterpolator::computeCartesianPath(
+        start_state.get(), joint_model_group, traj, joint_model_group->getLinkModel("can"), targets, true,
+        max_eef_step, cartesian_precision, callback_fn, opts , cost_fn);
+
+    RCLCPP_INFO(LOGGER, "Computed %f percent of cartesian path.", frac.value * 100.0);
+
+    /* 7: */
+    robot_trajectory::RobotTrajectory rt(start_state->getRobotModel(), PLANNING_GROUP);
+    for (const moveit::core::RobotStatePtr& traj_state : traj)
+    rt.addSuffixWayPoint(traj_state, 0.0);
+    trajectory_processing::TimeOptimalTrajectoryGeneration time_param;
+    time_param.computeTimeStamps(rt, 1.0);
+
+    /* 8: */
+    moveit_msgs::msg::RobotTrajectory rt_msg;
+    rt.getRobotTrajectoryMsg(rt_msg);
+    move_group.execute(rt_msg);
+
+
+    // moveit_msgs::msg::RobotTrajectory trajectory;
+
+    // const double eef_step = 0.001;
+    // const bool avoid_collisions = true;
+
+    // std::vector<geometry_msgs::msg::Pose> cartWaypoints;
+
+    // for(size_t i=0; i< waypoints.size(); ++i){
+    //     if(i%3==0){
+    //         cartWaypoints.push_back(waypoints[i]);
+    //     }
+    // }
+
+    // double fraction = move_group.computeCartesianPath(
+    //     cartWaypoints,
+    //     eef_step,
+    //     trajectory,
+    //     path_constraints, 
+    //     avoid_collisions
+    // );
+
+    // move_group.execute(trajectory);
+    // RCLCPP_INFO(LOGGER, "Cartesian path fraction: %.2f", fraction);
+
+    // outputdata = trajectory; 
 
     // move_group.setPoseTarget(waypoints[waypoints.size()-1]);
     // move_group.clearPathConstraints(); 
