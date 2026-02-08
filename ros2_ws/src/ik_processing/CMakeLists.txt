@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(ik_processing)
 
+set(CMAKE_CXX_STANDARD 20)
 
 include(FetchContent)
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)

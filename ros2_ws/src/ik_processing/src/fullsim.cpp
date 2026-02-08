@@ -37,12 +37,12 @@
 #include <moveit/robot_state/robot_state.hpp>
 #include <moveit/robot_state/conversions.hpp>
 
+#include <cmath>
+
 // for convenience
 using json = nlohmann::json;
 using Datapoint = ik_processing::msg::Datapoint; 
 using Data = ik_processing::srv::Data; 
-
-double mid_range_cost(const moveit::core::JointModelGroup* jmg, const std::vector<double>& q);
 
 
 int main(int argc, char** argv)
@@ -274,7 +274,7 @@ int main(int argc, char** argv)
         7. add time to each calculated waypoint
         8. build and execute the Robot Trajecotry
     */
-    
+
     auto robot_model = move_group.getRobotModel();
     moveit::core::RobotState rs (robot_model);
     rs.setToDefaultValues(
@@ -315,16 +315,35 @@ int main(int argc, char** argv)
         return sum;
     };
 
+    const size_t hip_idx = joint_model_group->getVariableGroupIndex("columna__joint");
+    const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.001, double penalty_size= 1.0, double penalty_gradient=1.0){
+        double d= solution[hip_idx]; 
+        double step = 0.5 * (1+ std::tanh(penalty_gradient * (d-delta))); 
+        double penalty = penalty_size * step* (d-delta)*(d-delta); 
+        return penalty; 
+    };
+
+    const size_t elbow_idx = joint_model_group->getVariableGroupIndex("elbow_yaw_joint");
+    const auto incentivise_elbow = [&elbow_idx] (std::vector<double>solution){
+        double d= solution[elbow_idx]; 
+        return (d*d); 
+    };
+
     /* 5: */
-    const double weight = 0.0005;
-    const auto cost_fn = [&weight, &compute_l2_norm](const geometry_msgs::msg::Pose& /*goal_pose*/,
-                                                 const moveit::core::RobotState& solution_state,
-                                                 moveit::core::JointModelGroup const* jmg,
-                                                 const std::vector<double>& seed_state) {
+    const double hip_weight = 0.009;
+    const double elbow_weight= 0.1;
+    const std::vector<std::string> joint_model_names = joint_model_group->getJointModelNames();
+    const auto cost_fn = [&hip_weight, &elbow_weight, &compute_l2_norm, &penalize_hip, &incentivise_elbow](const geometry_msgs::msg::Pose& /*goal_pose*/,
+                                                const moveit::core::RobotState& solution_state,
+                                                moveit::core::JointModelGroup const* jmg,
+                                                const std::vector<double>& seed_state) {
         std::vector<double> proposed_joint_positions;
         solution_state.copyJointGroupPositions(jmg, proposed_joint_positions);
-        double cost = compute_l2_norm(proposed_joint_positions, seed_state);
-        return weight * cost;
+        //double abs = compute_l2_norm(proposed_joint_positions, seed_state);
+        double hip = hip_weight* penalize_hip(proposed_joint_positions);
+        double elbow = elbow_weight* incentivise_elbow(proposed_joint_positions);
+        
+        return hip ;
     };
     
     /* 6: */
