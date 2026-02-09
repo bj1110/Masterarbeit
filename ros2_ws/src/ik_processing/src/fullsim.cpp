@@ -331,7 +331,7 @@ int main(int argc, char** argv)
 
     /* 5: */
     const double hip_weight = 0.009;
-    const double elbow_weight= 0.1;
+    const double elbow_weight= 0.0001; 
     const std::vector<std::string> joint_model_names = joint_model_group->getJointModelNames();
     const auto cost_fn = [&hip_weight, &elbow_weight, &compute_l2_norm, &penalize_hip, &incentivise_elbow](const geometry_msgs::msg::Pose& /*goal_pose*/,
                                                 const moveit::core::RobotState& solution_state,
