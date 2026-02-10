@@ -323,10 +323,13 @@ int main(int argc, char** argv)
         return penalty; 
     };
 
+    const moveit::core::JointModel* elbow_model = robot_model->getJointModel("elbow_yaw_joint");
+    const moveit::core::VariableBounds elbowBounds = (elbow_model-> getVariableBounds())[0];
+    const double elbow_max = elbowBounds.max_position_; /*maximum bend*/ 
     const size_t elbow_idx = joint_model_group->getVariableGroupIndex("elbow_yaw_joint");
-    const auto incentivise_elbow = [&elbow_idx] (std::vector<double>solution){
-        double d= solution[elbow_idx]; 
-        return (d*d); 
+    const auto incentivise_elbow = [&elbow_idx, &elbow_max] (std::vector<double>solution){
+        double d= elbow_max - solution[elbow_idx]; 
+        return -(d*d) ; 
     };
 
     /* 5: */
@@ -364,6 +367,7 @@ int main(int argc, char** argv)
     moveit_msgs::msg::RobotTrajectory rt_msg;
     rt.getRobotTrajectoryMsg(rt_msg);
     move_group.execute(rt_msg);
+    outputdata = rt_msg; 
 
 
     // moveit_msgs::msg::RobotTrajectory trajectory;
