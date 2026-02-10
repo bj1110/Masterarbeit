@@ -41,7 +41,11 @@ namespace helpers{
         
         std::string name= (datapoint <10)? "Datapoint" + std::to_string(0) +std::to_string(datapoint):"Datapoint" + std::to_string(datapoint) ;
         j[name]["Pose"]= move_group.getCurrentPose().pose;
-        j[name]["Jointvalues"]=move_group.getCurrentJointValues(); 
+        const std::vector<double> jointvalues = move_group.getCurrentJointValues();
+        const std::vector<std::string> jointnames = move_group.getJointNames();
+        for(size_t i=0; i<jointvalues.size(); ++i){
+            j[name]["Jointvalues"][jointnames[i]] = jointvalues[i]; 
+        }
     }
 
 }
