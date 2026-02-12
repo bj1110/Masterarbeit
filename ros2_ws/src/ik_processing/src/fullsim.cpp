@@ -316,7 +316,7 @@ int main(int argc, char** argv)
     };
 
     const size_t hip_idx = joint_model_group->getVariableGroupIndex("columna__joint");
-    const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.001, double penalty_size= 1.0, double penalty_gradient=1.0){
+    const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.0005, double penalty_size= 1.0, double penalty_gradient=1.0){
         double d= solution[hip_idx]; 
         double step = 0.5 * (1+ std::tanh(penalty_gradient * (d-delta))); 
         double penalty = penalty_size * step* (d-delta)*(d-delta); 
@@ -334,19 +334,19 @@ int main(int argc, char** argv)
 
     /* 5: */
     const double hip_weight = 0.009;
-    const double elbow_weight= 0.0001; 
+    const double elbow_weight= 0.000000001; 
     const std::vector<std::string> joint_model_names = joint_model_group->getJointModelNames();
-    const auto cost_fn = [&hip_weight, &elbow_weight, &compute_l2_norm, &penalize_hip, &incentivise_elbow](const geometry_msgs::msg::Pose& /*goal_pose*/,
+    const auto cost_fn = [&hip_weight, &elbow_weight, &compute_l2_norm, &penalize_hip, &incentivise_elbow /*, &LOGGER*/](const geometry_msgs::msg::Pose& /*goal_pose*/,
                                                 const moveit::core::RobotState& solution_state,
                                                 moveit::core::JointModelGroup const* jmg,
-                                                const std::vector<double>& seed_state) {
+                                                const std::vector<double>& /*seed_state*/) {
         std::vector<double> proposed_joint_positions;
         solution_state.copyJointGroupPositions(jmg, proposed_joint_positions);
         //double abs = compute_l2_norm(proposed_joint_positions, seed_state);
         double hip = hip_weight* penalize_hip(proposed_joint_positions);
         double elbow = elbow_weight* incentivise_elbow(proposed_joint_positions);
         
-        return hip ;
+        return hip + elbow ;
     };
     
     /* 6: */
@@ -369,7 +369,17 @@ int main(int argc, char** argv)
     move_group.execute(rt_msg);
     outputdata = rt_msg; 
 
-
+    if(frac.value<1.0){
+        RCLCPP_INFO(LOGGER, "Path was not computed fully, attempting to move the last part"); 
+        move_group.setPoseTarget(waypoints.back());
+        move_group.clearPathConstraints(); 
+        moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+        bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+        RCLCPP_INFO(LOGGER, "Computation of missing pathpart %s", success? "successful": "FAILURE");
+        if(success){
+            move_group.execute(my_plan); 
+        }
+    }
     // moveit_msgs::msg::RobotTrajectory trajectory;
 
     // const double eef_step = 0.001;
