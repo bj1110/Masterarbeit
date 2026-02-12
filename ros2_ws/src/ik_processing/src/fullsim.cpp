@@ -199,9 +199,9 @@ int main(int argc, char** argv)
     oc.link_name = "can";
     oc.header.frame_id = move_group.getPlanningFrame();
     oc.orientation = tf2::toMsg(q);
-    oc.absolute_x_axis_tolerance = 0.05;  
-    oc.absolute_y_axis_tolerance = 0.05;  
-    oc.absolute_z_axis_tolerance = 0.05;  
+    oc.absolute_x_axis_tolerance = 0.1;  
+    oc.absolute_y_axis_tolerance = 0.1;  
+    oc.absolute_z_axis_tolerance = 0.1;  
     oc.weight = 1.0;
 
     path_constraints.orientation_constraints.push_back(oc);
@@ -212,7 +212,7 @@ int main(int argc, char** argv)
     jc.position= curr_columna;
     jc.tolerance_above=0.1;
     jc.tolerance_below=0.1;
-    jc.weight=9.9;
+    jc.weight=5.0;
 
     path_constraints.joint_constraints.push_back(jc);
 
