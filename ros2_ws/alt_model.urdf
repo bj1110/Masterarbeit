@@ -127,7 +127,7 @@
     <child link="spine"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.4776"/>
     <axis xyz="0.0 1.0 0.0"/>
-    <limit effort="1000.0" lower="0.0" upper="0.5235987755982988" velocity="0.5"/>
+    <limit effort="1000.0" lower="0.0" upper="0.08726646259971647" velocity="0.5"/>
   </joint>
   <link name="clavicular">
     <visual>

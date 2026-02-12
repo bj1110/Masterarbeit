@@ -48,7 +48,7 @@
     <xacro:joint_template bodypart="columna" suffix="" parent="columna" child="spine" >
         <origin xyz="0.0 0.0 ${waist_back_length}" rpy="0.0 0.0 0.0" />
         <axis xyz="0.0 1.0 0.0" />
-        <limit effort="1000.0" lower="0.0" upper="${30*math.pi/180}" velocity="0.5" />
+        <limit effort="1000.0" lower="0.0" upper="${5*math.pi/180}" velocity="0.5" />
     </xacro:joint_template>
 
 </robot>

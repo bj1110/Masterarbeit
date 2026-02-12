@@ -130,6 +130,7 @@ int main(int argc, char** argv)
     move_group.setGoalOrientationTolerance(0.1);
     move_group.setMaxAccelerationScalingFactor(1.0);
     move_group.setMaxVelocityScalingFactor(1.0);
+    move_group.setGoalPositionTolerance(0.1); 
 
     /*
         Move to Position 1 
@@ -137,8 +138,8 @@ int main(int argc, char** argv)
     */
 
     std::map<std::string, double> states_values;
-    if (joint_model_group->getVariableDefaultPositions("Pos1_right", states_values)){
-        RCLCPP_INFO(LOGGER, "Moving to default position \"Pos1\" ");
+    if (joint_model_group->getVariableDefaultPositions("Pos3_right", states_values)){
+        RCLCPP_INFO(LOGGER, "Moving to default position \"Pos3\" ");
         move_group.setJointValueTarget(states_values); 
         move_group.move(); 
     }else{
@@ -166,9 +167,17 @@ int main(int argc, char** argv)
         Offset dataset -> model
     */
 
-    float x_offset= 220 + 250;
-    float y_offset=0;
-    float z_offset=690;
+    const float TABLE_CLEARANCE = 150;
+    const float MARKER_EDGE_DISTANCE= 150;
+    const float TABLE_HEIGHT = 330; 
+    const float DATA_X_OFFSET = 220;
+    const float SPINE_LENGTH = 477;
+    const float X_OFFSET= DATA_X_OFFSET + TABLE_CLEARANCE + MARKER_EDGE_DISTANCE;
+    const float Y_OFFSET=0;
+    const float Z_OFFSET=SPINE_LENGTH + TABLE_HEIGHT;
+    const float x_offset= 220 + 250;
+    const float y_offset=0;
+    const float z_offset=690;
 
 
 
@@ -180,9 +189,9 @@ int main(int argc, char** argv)
     std::vector<geometry_msgs::msg::Pose> waypoints;
     for(auto dp: data){
         geometry_msgs::msg::Pose p;
-        p.position.x = (dp.y1 +x_offset)/1000;
-        p.position.y = -(dp.x1 +y_offset)/1000;
-        p.position.z = (dp.z1 +z_offset)/1000;
+        p.position.x = (dp.y1 +X_OFFSET)/1000;
+        p.position.y = -(dp.x1 +Y_OFFSET)/1000;
+        p.position.z = (dp.z1 +Z_OFFSET)/1000;
         p.orientation =tf2::toMsg(q); 
         waypoints.push_back(p);
     }
@@ -199,22 +208,22 @@ int main(int argc, char** argv)
     oc.link_name = "can";
     oc.header.frame_id = move_group.getPlanningFrame();
     oc.orientation = tf2::toMsg(q);
-    oc.absolute_x_axis_tolerance = 0.05;  
-    oc.absolute_y_axis_tolerance = 0.05;  
-    oc.absolute_z_axis_tolerance = 0.05;  
+    oc.absolute_x_axis_tolerance = 1.0;  
+    oc.absolute_y_axis_tolerance = 1.0;  
+    oc.absolute_z_axis_tolerance = 1.0;  
     oc.weight = 1.0;
 
     path_constraints.orientation_constraints.push_back(oc);
 
-    moveit_msgs::msg::JointConstraint jc;
-    jc.joint_name="calumna__joint";
-    double curr_columna = move_group.getCurrentState()->getVariablePosition("columna__joint");
-    jc.position= curr_columna;
-    jc.tolerance_above=0.1;
-    jc.tolerance_below=0.1;
-    jc.weight=9.9;
+    // moveit_msgs::msg::JointConstraint jc;
+    // jc.joint_name="calumna__joint";
+    // double curr_columna = move_group.getCurrentState()->getVariablePosition("columna__joint");
+    // jc.position= curr_columna;
+    // jc.tolerance_above=0.1;
+    // jc.tolerance_below=0.1;
+    // jc.weight=9.9;
 
-    path_constraints.joint_constraints.push_back(jc);
+    // path_constraints.joint_constraints.push_back(jc);
 
     move_group.setPathConstraints(path_constraints);
 
@@ -275,104 +284,125 @@ int main(int argc, char** argv)
         8. build and execute the Robot Trajecotry
     */
 
-    // auto robot_model = move_group.getRobotModel();
-    // moveit::core::RobotState rs (robot_model);
-    // rs.setToDefaultValues(
-    //     robot_model->getJointModelGroup("arm"),
-    //     "Pos1_right"
-    // );
-    // moveit_msgs::msg::RobotState state_msg;
-    // moveit::core::robotStateToRobotStateMsg(rs, state_msg);
-    // move_group.setStartStateToCurrentState(); 
+   
+   auto robot_model = move_group.getRobotModel();
+   moveit::core::RobotState rs (robot_model);
+   rs.setToDefaultValues(
+       robot_model->getJointModelGroup("arm"),
+       "Pos3_right"
+    );
+    moveit_msgs::msg::RobotState state_msg;
+    moveit::core::robotStateToRobotStateMsg(rs, state_msg);
+    move_group.setStartStateToCurrentState(); 
+ 
+    /* 2: */
+    std::vector<geometry_msgs::msg::Pose> waypoints_copy;
+    for(size_t i=0; i< waypoints.size(); ++i){
+        if(i%5==0){
+            waypoints_copy.push_back(waypoints[i]);
+        }
+    }
+    std::reverse(waypoints_copy.begin(), waypoints_copy.end()); 
     
-    // /* 2: */
-    // Eigen::Isometry3d target;
-    // EigenSTL::vector_Isometry3d targets;
-    // for(const auto& wp: waypoints){
-    //     tf2::fromMsg(wp, target);
-    //     targets.push_back(target);
-    // }
+    Eigen::Isometry3d target;
+    EigenSTL::vector_Isometry3d targets;
+    for(const auto& wp: waypoints_copy){
+        tf2::fromMsg(wp, target);
+        targets.push_back(target);
+    }
 
-    // /* 3: */
-    // moveit::core::GroupStateValidityCallbackFn callback_fn;
-    // kinematics::KinematicsQueryOptions opts;
-    // opts.return_approximate_solution = true;
-    // auto start_state = move_group.getCurrentState();
-    // std::vector<moveit::core::RobotStatePtr> traj;
-    // moveit::core::MaxEEFStep max_eef_step(0.02, 0.2);
-    // moveit::core::CartesianPrecision cartesian_precision{ .translational = 0.005,
-    //                                                     .rotational = 0.05,
-    //                                                     .max_resolution = 5e-3 };
+    /* 3: */
+    moveit::core::GroupStateValidityCallbackFn callback_fn;
+    kinematics::KinematicsQueryOptions opts;
+    opts.return_approximate_solution = true;
+    auto start_state = move_group.getCurrentState();
+    std::vector<moveit::core::RobotStatePtr> traj;
+    moveit::core::MaxEEFStep max_eef_step(0.001, 0.01);
+    moveit::core::CartesianPrecision cartesian_precision{ .translational = 0.01,
+                                                        .rotational = 0.1,
+                                                        .max_resolution = 1e-5 };
 
-    // /* 4: */
-    // const auto compute_l2_norm = [](std::vector<double> solution, std::vector<double> start) {
-    //     double sum = 0.0;
-    //     for (size_t ji = 0; ji < solution.size(); ji++)
-    //     {
-    //         double d = solution[ji] - start[ji];
-    //         sum += d * d;
-    //     }
-    //     return sum;
-    // };
+    /* 4: */
+    const auto compute_l2_norm = [](std::vector<double> solution, std::vector<double> start) {
+        double sum = 0.0;
+        for (size_t ji = 0; ji < solution.size(); ji++)
+        {
+            double d = solution[ji] - start[ji];
+            sum += d * d;
+        }
+        return sum;
+    };
 
-    // const size_t hip_idx = joint_model_group->getVariableGroupIndex("columna__joint");
-    // const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.001, double penalty_size= 1.0, double penalty_gradient=1.0){
-    //     double d= solution[hip_idx]; 
-    //     double step = 0.5 * (1+ std::tanh(penalty_gradient * (d-delta))); 
-    //     double penalty = penalty_size * step* (d-delta)*(d-delta); 
-    //     return penalty; 
-    // };
+    const size_t hip_idx = joint_model_group->getVariableGroupIndex("columna__joint");
+    const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.001, double penalty_size= 1.0, double penalty_gradient=1.0){
+        double d= solution[hip_idx]; 
+        double step = 0.5 * (1+ std::tanh(penalty_gradient * (d-delta))); 
+        double penalty = penalty_size * step* (d-delta)*(d-delta); 
+        return penalty; 
+    };
 
-    // const moveit::core::JointModel* elbow_model = robot_model->getJointModel("elbow_yaw_joint");
-    // const moveit::core::VariableBounds elbowBounds = (elbow_model-> getVariableBounds())[0];
-    // const double elbow_max = elbowBounds.max_position_; /*maximum bend*/ 
-    // const size_t elbow_idx = joint_model_group->getVariableGroupIndex("elbow_yaw_joint");
-    // const auto incentivise_elbow = [&elbow_idx, &elbow_max] (std::vector<double>solution){
-    //     double d= elbow_max - solution[elbow_idx]; 
-    //     return -(d*d) ; 
-    // };
+    const moveit::core::JointModel* elbow_model = robot_model->getJointModel("elbow_yaw_joint");
+    const moveit::core::VariableBounds elbowBounds = (elbow_model-> getVariableBounds())[0];
+    const double elbow_max = elbowBounds.max_position_; /*maximum bend*/ 
+    const size_t elbow_idx = joint_model_group->getVariableGroupIndex("elbow_yaw_joint");
+    const auto incentivise_elbow = [&elbow_idx, &elbow_max] (std::vector<double>solution){
+        double d= elbow_max - solution[elbow_idx]; 
+        return -(d*d) ; 
+    };
 
-    // /* 5: */
-    // const double hip_weight = 0.009;
-    // const double elbow_weight= 0.0001; 
-    // const std::vector<std::string> joint_model_names = joint_model_group->getJointModelNames();
-    // const auto cost_fn = [&hip_weight, &elbow_weight, &compute_l2_norm, &penalize_hip, &incentivise_elbow](const geometry_msgs::msg::Pose& /*goal_pose*/,
-    //                                             const moveit::core::RobotState& solution_state,
-    //                                             moveit::core::JointModelGroup const* jmg,
-    //                                             const std::vector<double>& seed_state) {
-    //     std::vector<double> proposed_joint_positions;
-    //     solution_state.copyJointGroupPositions(jmg, proposed_joint_positions);
-    //     //double abs = compute_l2_norm(proposed_joint_positions, seed_state);
-    //     double hip = hip_weight* penalize_hip(proposed_joint_positions);
-    //     double elbow = elbow_weight* incentivise_elbow(proposed_joint_positions);
+    /* 5: */
+    const double hip_weight = 0.009;
+    const double elbow_weight= 0.0001; 
+    const double abs_weight = 0.001; 
+    const std::vector<std::string> joint_model_names = joint_model_group->getJointModelNames();
+    const auto cost_fn = [&hip_weight, &elbow_weight, &abs_weight, &compute_l2_norm, &penalize_hip, &incentivise_elbow](const geometry_msgs::msg::Pose& /*goal_pose*/,
+                                                const moveit::core::RobotState& solution_state,
+                                                moveit::core::JointModelGroup const* jmg,
+                                                const std::vector<double>& seed_state) {
+        std::vector<double> proposed_joint_positions;
+        solution_state.copyJointGroupPositions(jmg, proposed_joint_positions);
+        double abs = compute_l2_norm(proposed_joint_positions, seed_state);
+        double hip = hip_weight* penalize_hip(proposed_joint_positions);
+        double elbow = elbow_weight* incentivise_elbow(proposed_joint_positions);
         
-    //     return hip ;
-    // };
+        return hip ;
+    };
     
-    // /* 6: */
-    // const auto frac = moveit::core::CartesianInterpolator::computeCartesianPath(
-    //     start_state.get(), joint_model_group, traj, joint_model_group->getLinkModel("can"), targets, true,
-    //     max_eef_step, cartesian_precision, callback_fn, opts , cost_fn);
+    /* 6: */
+    const auto frac = moveit::core::CartesianInterpolator::computeCartesianPath(
+        start_state.get(), joint_model_group, traj, joint_model_group->getLinkModel("can"), targets, true,
+        max_eef_step, cartesian_precision, callback_fn, opts , cost_fn);
 
-    // RCLCPP_INFO(LOGGER, "Computed %f percent of cartesian path.", frac.value * 100.0);
+    RCLCPP_INFO(LOGGER, "Computed %f percent of cartesian path.", frac.value * 100.0);
 
-    // /* 7: */
-    // robot_trajectory::RobotTrajectory rt(start_state->getRobotModel(), PLANNING_GROUP);
-    // for (const moveit::core::RobotStatePtr& traj_state : traj)
-    // rt.addSuffixWayPoint(traj_state, 0.0);
-    // trajectory_processing::TimeOptimalTrajectoryGeneration time_param;
-    // time_param.computeTimeStamps(rt, 1.0);
+    /* 7: */
+    robot_trajectory::RobotTrajectory rt(start_state->getRobotModel(), PLANNING_GROUP);
+    for (const moveit::core::RobotStatePtr& traj_state : traj)
+    rt.addSuffixWayPoint(traj_state, 0.0);
+    trajectory_processing::TimeOptimalTrajectoryGeneration time_param;
+    time_param.computeTimeStamps(rt, 1.0);
 
-    // /* 8: */
-    // moveit_msgs::msg::RobotTrajectory rt_msg;
-    // rt.getRobotTrajectoryMsg(rt_msg);
-    // move_group.execute(rt_msg);
-    // outputdata = rt_msg; 
+    /* 8: */
+    moveit_msgs::msg::RobotTrajectory rt_msg;
+    rt.getRobotTrajectoryMsg(rt_msg);
+    move_group.execute(rt_msg);
+    outputdata = rt_msg; 
 
+    if(frac.value<1.0){
+        std::map<std::string, double> states_values;
+        if (joint_model_group->getVariableDefaultPositions("Pos1_right", states_values)){
+            RCLCPP_INFO(LOGGER, "Moving to default position \"Pos1\" ");
+            move_group.setJointValueTarget(states_values); 
+            move_group.move(); 
+        }else{
+            RCLCPP_WARN(LOGGER, "Default state not found."); 
+        }
+    }
 
+    // RCLCPP_INFO(LOGGER, "starting on cartesianPath"); 
     // moveit_msgs::msg::RobotTrajectory trajectory;
 
-    // const double eef_step = 0.001;
+    // const double eef_step = 0.01;
     // const bool avoid_collisions = true;
 
     // std::vector<geometry_msgs::msg::Pose> cartWaypoints;
@@ -380,13 +410,13 @@ int main(int argc, char** argv)
 
 
     // for(size_t i=0; i< waypoints.size(); ++i){
-    //     if(i%3==0){
+    //     if(i%5==0){
     //         cartWaypoints.push_back(waypoints[i]);
     //     }
     // }
-    // std::reverse(cartWaypoints.begin(), cartWaypoints.end()); 
+    // // std::reverse(cartWaypoints.begin(), cartWaypoints.end()); 
 
-    // double fraction = move_group.computeCartesianPath(
+    // moveit::core::CartesianInterpolator::Percentage fraction = move_group.computeCartesianPath(
     //     cartWaypoints,
     //     eef_step,
     //     trajectory,
@@ -395,16 +425,17 @@ int main(int argc, char** argv)
     // );
 
     // move_group.execute(trajectory);
-    // RCLCPP_INFO(LOGGER, "Cartesian path fraction: %.2f", fraction);
+    // RCLCPP_INFO(LOGGER, "Computed %f percent of cartesian path.", fraction.value*100 );
+
 
     // outputdata = trajectory; 
 
-    move_group.setPoseTarget(waypoints[waypoints.size()-1]);
-    move_group.clearPathConstraints(); 
-    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-    move_group.plan(my_plan);
-    move_group.execute(my_plan);
-    helpers::store(outputdata, move_group, 0);
+    // move_group.setPoseTarget(waypoints.front());
+    // move_group.clearPathConstraints(); 
+    // moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    // move_group.plan(my_plan);
+    // move_group.execute(my_plan);
+    // helpers::store(outputdata, move_group, 0);
 
 
     outputfile << std::setw(4) <<outputdata <<std::endl; 

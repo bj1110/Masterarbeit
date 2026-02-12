@@ -64,27 +64,27 @@
         <!-- <joint name="wrist_yaw_joint" value="0.000000"/> -->
     </group_state>
     <group_state name="Pos1_right" group="arm">
-        <joint name="columna__joint" value="0"/>
-        <joint name="elbow_roll_joint" value="0.052360"/>
-        <joint name="elbow_yaw_joint" value="1.6"/>
-        <joint name="glenohumeral_pitch_joint" value="0.17"/>
-        <joint name="glenohumeral_roll_joint" value="0.453786"/>
-        <joint name="glenohumeral_yaw_joint" value="0.000000"/>
-        <joint name="sternoclavicular_pitch_joint" value="0.0"/>
-        <joint name="sternoclavicular_roll_joint" value="0.000000"/>
-        <joint name="sternoclavicular_yaw_joint" value="0.069813"/>
+        <joint name="columna__joint" value="0.0"/>
+        <joint name="elbow_roll_joint" value="-1.36136"/>
+        <joint name="elbow_yaw_joint" value="1.69297"/>
+        <joint name="glenohumeral_pitch_joint" value="0.977384"/>
+        <joint name="glenohumeral_roll_joint" value="0.506145"/>
+        <joint name="glenohumeral_yaw_joint" value="1.18682"/>
+        <joint name="sternoclavicular_pitch_joint" value="0.20944"/>
+        <joint name="sternoclavicular_roll_joint" value="0.0698132"/>
+        <joint name="sternoclavicular_yaw_joint" value="0.0698132"/>
         <!-- <joint name="wrist_yaw_joint" value="0.000000"/> -->
     </group_state>
     <group_state name="Pos3_right" group="arm">
-        <joint name="columna__joint" value="0.0"/>
-        <joint name="elbow_roll_joint" value="-0.0872665"/>
-        <joint name="elbow_yaw_joint" value="0.436332"/>
-        <joint name="glenohumeral_pitch_joint" value="0.802851"/>
-        <joint name="glenohumeral_roll_joint" value="-0.715585"/>
-        <joint name="glenohumeral_yaw_joint" value="0.680678"/>
-        <joint name="sternoclavicular_pitch_joint" value="0.349066"/>
-        <joint name="sternoclavicular_roll_joint" value="0.10472"/>
-        <joint name="sternoclavicular_yaw_joint" value="0.0349066"/>
+        <joint name="columna__joint" value="0.0698132"/>
+        <joint name="elbow_roll_joint" value="-0.523599"/>
+        <joint name="elbow_yaw_joint" value="1.02974"/>
+        <joint name="glenohumeral_pitch_joint" value="0.680678"/>
+        <joint name="glenohumeral_roll_joint" value="0.0349066"/>
+        <joint name="glenohumeral_yaw_joint" value="0.628319"/>
+        <joint name="sternoclavicular_pitch_joint" value="0.20944"/>
+        <joint name="sternoclavicular_roll_joint" value="-0.0174533"/>
+        <joint name="sternoclavicular_yaw_joint" value="0.20944"/>
         <!-- <joint name="wrist_yaw_joint" value="0.000000"/> -->
     </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
