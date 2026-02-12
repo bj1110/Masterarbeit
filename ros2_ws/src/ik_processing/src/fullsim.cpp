@@ -319,7 +319,7 @@ int main(int argc, char** argv)
     const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.0005, double penalty_size= 1.0, double penalty_gradient=1.0){
         double d= solution[hip_idx]; 
         double step = 0.5 * (1+ std::tanh(penalty_gradient * (d-delta))); 
-        double penalty = penalty_size * step* (d-delta)*(d-delta); 
+        double penalty = penalty_size * step* (d-delta); 
         return penalty; 
     };
 
@@ -333,10 +333,11 @@ int main(int argc, char** argv)
     };
 
     /* 5: */
-    const double hip_weight = 0.009;
+    const double hip_weight = 0.0009;
     const double elbow_weight= 0.000000001; 
     const std::vector<std::string> joint_model_names = joint_model_group->getJointModelNames();
-    const auto cost_fn = [&hip_weight, &elbow_weight, &compute_l2_norm, &penalize_hip, &incentivise_elbow /*, &LOGGER*/](const geometry_msgs::msg::Pose& /*goal_pose*/,
+    const auto cost_fn = [&hip_weight, &elbow_weight, &compute_l2_norm, &penalize_hip, &incentivise_elbow /*, &LOGGER*/]
+                                                (const geometry_msgs::msg::Pose& /*goal_pose*/,
                                                 const moveit::core::RobotState& solution_state,
                                                 moveit::core::JointModelGroup const* jmg,
                                                 const std::vector<double>& /*seed_state*/) {
