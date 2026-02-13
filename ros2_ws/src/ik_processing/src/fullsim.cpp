@@ -355,7 +355,7 @@ int main(int argc, char** argv)
         start_state.get(), joint_model_group, traj, joint_model_group->getLinkModel("can"), targets, true,
         max_eef_step, cartesian_precision, callback_fn, opts , cost_fn);
 
-    RCLCPP_INFO(LOGGER, "Computed %f percent of cartesian path.", frac.value * 100.0);
+    RCLCPP_INFO(LOGGER, "\033[32mComputed %f percent of cartesian path.\033[0m", frac.value * 100.0);
 
     /* 7: */
     robot_trajectory::RobotTrajectory rt(start_state->getRobotModel(), PLANNING_GROUP);
@@ -376,9 +376,27 @@ int main(int argc, char** argv)
         move_group.clearPathConstraints(); 
         moveit::planning_interface::MoveGroupInterface::Plan my_plan;
         bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-        RCLCPP_INFO(LOGGER, "Computation of missing pathpart %s", success? "successful": "FAILURE");
+        RCLCPP_INFO(LOGGER, "Computation of missing path %s", success? "successful": "\033[31mFAILURE\033[0m");
         if(success){
             move_group.execute(my_plan); 
+        }
+        else{
+            size_t pt = waypoints.size()-2;
+            while(pt>0){
+                move_group.setPoseTarget(waypoints[pt]);
+                moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+                bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+                if(success){
+                    int num_points = waypoints.size(); 
+                    int num_points_not_movedto = num_points-pt;
+                    float percentage_reachable = ( (float) pt/(float) num_points);
+                    RCLCPP_INFO(LOGGER, "\033[32mTotal movement: %f, with %d/%d Points not reachable \033[0m",percentage_reachable, num_points_not_movedto, num_points);
+                    move_group.execute(my_plan);
+                    break;
+                }
+                --pt; 
+            }
+
         }
     }
     // moveit_msgs::msg::RobotTrajectory trajectory;
