@@ -389,7 +389,7 @@ int main(int argc, char** argv)
                 if(success){
                     int num_points = waypoints.size(); 
                     int num_points_not_movedto = num_points-pt;
-                    float percentage_reachable = ( (float) pt/(float) num_points);
+                    float percentage_reachable = ( (float) pt/(float) num_points) *100.0 ;
                     RCLCPP_INFO(LOGGER, "\033[32mTotal movement: %f, with %d/%d Points not reachable \033[0m",percentage_reachable, num_points_not_movedto, num_points);
                     move_group.execute(my_plan);
                     break;
