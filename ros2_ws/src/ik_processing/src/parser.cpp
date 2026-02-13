@@ -12,8 +12,11 @@
 
 #include "ik_processing/msg/datapoint.hpp"
 #include "ik_processing/srv/data.hpp"
+#include "ik_processing/msg/header.hpp"
+
 
 using Datapoint = ik_processing::msg::Datapoint; 
+using Header = ik_processing::msg::Header;
 using Data = ik_processing::srv::Data;
 
 class Parser: public rclcpp::Node{
@@ -75,13 +78,22 @@ class Parser: public rclcpp::Node{
             RCLCPP_INFO(this->get_logger(), "Failed to open file");
         }
 
+        header_ = Header();
+        header_.len = data.size(); 
+        header_.startpos1 = _startpos1;
+        header_.goalpos1 = _goalpos1;
+        header_.startpos2 = _startpos2;
+        header_.goalpos2 = _goalpos2;
+        header_.agent = _is_agent1? 1 : 2; 
+        header_.exnum = _exnum; 
+        header_.is_baseline= _is_baseline;
 
         auto handle_service= [this](const std::shared_ptr<rmw_request_id_t> request_header,
                             const std::shared_ptr<Data::Request> request,
                             const std::shared_ptr<Data::Response> response){
             (void)request_header; 
             (void)request; 
-            response ->len = data.size();
+            response ->header = header_;
             response->data = data; 
             RCLCPP_INFO(this->get_logger(), "Packets send");
             service_completed_ = true; 
@@ -100,6 +112,7 @@ class Parser: public rclcpp::Node{
     bool _is_agent1;
     u_short _startpos1, _startpos2, _goalpos1, _goalpos2, _exnum, _datafile; 
     std::vector<Datapoint> data; 
+    Header header_; 
     std::vector<Datapoint> create_datapoints(std::ifstream& file, const bool _is_baseline);
     rclcpp::Service<Data>::SharedPtr _service_server;
     bool service_completed_ =false; 

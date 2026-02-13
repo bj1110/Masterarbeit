@@ -90,6 +90,7 @@ target_link_libraries(ik_helpers
 
 set(msg_files
   "msg/Datapoint.msg"
+  "msg/Header.msg"
 )
 
 set(srv_files

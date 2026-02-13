@@ -4,5 +4,5 @@ string str
 ---
 
 #response
-int8 len
+Header header
 Datapoint[] data

@@ -16,6 +16,7 @@
 
 #include <nlohmann/json.hpp>
 #include "ik_processing/msg/datapoint.hpp"
+#include "ik_processing/msg/header.hpp"
 #include "ik_processing/srv/data.hpp"
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -42,6 +43,7 @@
 // for convenience
 using json = nlohmann::json;
 using Datapoint = ik_processing::msg::Datapoint; 
+using Header = ik_processing::msg::Header; 
 using Data = ik_processing::srv::Data; 
 
 
@@ -88,7 +90,8 @@ int main(int argc, char** argv)
     }
 
     auto result = result_future.get();
-    [[maybe_unused]] int numElements = result->len;
+    Header header = result->header;
+    [[maybe_unused]] int numElements = header.len;
     std::vector<Datapoint> data = result->data; 
 
     RCLCPP_INFO(LOGGER, "Data received from Parser");
@@ -220,7 +223,7 @@ int main(int argc, char** argv)
 
 
 
-    // int numPoints= waypoints.size();
+    // int numPoints= numElements;
     // int currPoint=0;
     // int num_successes=0;
     // std::vector<moveit::planning_interface::MoveGroupInterface::Plan> plans; 
@@ -381,13 +384,13 @@ int main(int argc, char** argv)
             move_group.execute(my_plan); 
         }
         else{
-            size_t pt = waypoints.size()-2;
+            size_t pt = numElements-2;
             while(pt>0){
                 move_group.setPoseTarget(waypoints[pt]);
                 moveit::planning_interface::MoveGroupInterface::Plan my_plan;
                 bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
                 if(success){
-                    int num_points = waypoints.size(); 
+                    int num_points = numElements; 
                     int num_points_not_movedto = num_points-pt;
                     float percentage_reachable = ( (float) pt/(float) num_points) *100.0 ;
                     RCLCPP_INFO(LOGGER, "\033[32mTotal movement: %f, with %d/%d Points not reachable \033[0m",percentage_reachable, num_points_not_movedto, num_points);
@@ -406,7 +409,7 @@ int main(int argc, char** argv)
 
     // std::vector<geometry_msgs::msg::Pose> cartWaypoints;
 
-    // for(size_t i=0; i< waypoints.size(); ++i){
+    // for(size_t i=0; i< numElements; ++i){
     //     if(i%3==0){
     //         cartWaypoints.push_back(waypoints[i]);
     //     }
@@ -425,7 +428,7 @@ int main(int argc, char** argv)
 
     // outputdata = trajectory; 
 
-    // move_group.setPoseTarget(waypoints[waypoints.size()-1]);
+    // move_group.setPoseTarget(waypoints[numElements-1]);
     // move_group.clearPathConstraints(); 
     // moveit::planning_interface::MoveGroupInterface::Plan my_plan;
     // move_group.plan(my_plan);
