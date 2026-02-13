@@ -55,6 +55,9 @@ int main(int argc, char** argv)
     auto move_group_node = rclcpp::Node::make_shared("Fullsim_Node", node_options);
     const auto LOGGER = move_group_node->get_logger(); 
 
+    bool recalculate = move_group_node->get_parameter("recalculate").as_bool();
+
+
     static const std::string PLANNING_GROUP = "arm";
     moveit::planning_interface::MoveGroupInterface move_group(move_group_node, PLANNING_GROUP);
 
@@ -76,6 +79,7 @@ int main(int argc, char** argv)
     while(!client->wait_for_service(std::chrono::seconds(1))){
         if(!rclcpp::ok()){
             RCLCPP_INFO(LOGGER, "Client interupted while waiting for service to be available");
+            rclcpp::shutdown();
             return 1;
         }
         RCLCPP_INFO(LOGGER, "Waiting for data...");
@@ -86,6 +90,7 @@ int main(int argc, char** argv)
     if (result_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
     {
         RCLCPP_ERROR(LOGGER, "Service call timed out");
+        rclcpp::shutdown();
         return 1;
     }
 
@@ -95,6 +100,46 @@ int main(int argc, char** argv)
     std::vector<Datapoint> data = result->data; 
 
     RCLCPP_INFO(LOGGER, "Data received from Parser");
+
+    /*
+        Move to Position 1 
+        Position 1 lies approx. x= -25 & y=-220       
+    */
+
+    std::map<std::string, double> states_values;
+    if (joint_model_group->getVariableDefaultPositions("Pos1_right", states_values)){
+        RCLCPP_INFO(LOGGER, "Moving to default position \"Pos1\" ");
+        move_group.setJointValueTarget(states_values); 
+        move_group.move(); 
+    }else{
+        RCLCPP_WARN(LOGGER, "Default state not found."); 
+    }
+
+
+    /*
+        Check if just the playout of already calculated data is wanted
+    */
+    if(!recalculate){
+        if(std::filesystem::path filepath = helpers::create_datapath(LOGGER, header); !filepath.empty()){
+            RCLCPP_INFO(LOGGER, "This has been calculated before, loading..."); 
+            std::ifstream inputfile (filepath); 
+            if(!inputfile.is_open()){
+                RCLCPP_ERROR(LOGGER, "\033[31mFile could not be opened\033[0m"); 
+                rclcpp::shutdown();
+                return 1;
+            }
+            json inputdata = json::parse(inputfile);
+            moveit_msgs::msg::RobotTrajectory rt_msg;
+            from_json(inputdata, rt_msg);
+            rt_msg.joint_trajectory.header.stamp = move_group_node->now();
+            rt_msg.joint_trajectory.header.frame_id = move_group.getPlanningFrame();
+            RCLCPP_INFO(LOGGER, "Loading complete, displaying path");
+            move_group.execute(rt_msg);
+            rclcpp::shutdown(); 
+            return 0;
+        }
+    }
+
 
         
     /*
@@ -121,20 +166,6 @@ int main(int argc, char** argv)
     move_group.setMaxAccelerationScalingFactor(1.0);
     move_group.setMaxVelocityScalingFactor(1.0);
 
-    /*
-        Move to Position 1 
-        Position 1 lies approx. x= -25 & y=-220       
-    */
-
-    std::map<std::string, double> states_values;
-    if (joint_model_group->getVariableDefaultPositions("Pos1_right", states_values)){
-        RCLCPP_INFO(LOGGER, "Moving to default position \"Pos1\" ");
-        move_group.setJointValueTarget(states_values); 
-        move_group.move(); 
-    }else{
-        RCLCPP_WARN(LOGGER, "Default state not found."); 
-    }
-    outputdata = move_group.getCurrentPose().pose; 
 
     /*
         Get the orientation from the preprogrammd Position where the orientation is as desired. 

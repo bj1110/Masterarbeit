@@ -23,6 +23,7 @@ def generate_launch_description():
     goalpos2=LaunchConfiguration('goalpos2')
     datafile=LaunchConfiguration('datafile')
     exNum=LaunchConfiguration('exNum')
+    recalculate=LaunchConfiguration('recalculate')
 
     declare_baseline=DeclareLaunchArgument(
         'is_baseline',
@@ -73,6 +74,13 @@ def generate_launch_description():
         description='value indicating the experiment number'
     )
 
+    declare_recalculate=DeclareLaunchArgument(
+        'recalculate',
+        default_value='false',
+        choices=['true', 'false'],
+        description='Bool indicating if previously calculated Path should be used or recalculated and be overridden'
+    )
+
     moveit_config = MoveItConfigsBuilder("alt_human_arm_model", package_name="moveit_config") \
         .robot_description(file_path="config/alt_human_arm_model.urdf.xacro") \
         .robot_description_semantic(file_path="config/alt_human_arm_model.srdf") \
@@ -103,6 +111,7 @@ def generate_launch_description():
             moveit_config.robot_description_semantic,
             moveit_config.robot_description_kinematics,
             moveit_config.joint_limits,
+            {'recalculate':recalculate}
         ],
     )
 
@@ -127,6 +136,7 @@ def generate_launch_description():
         declare_goalpos2,
         declare_datafile,
         declare_exNum,
+        declare_recalculate,
         start_parser_node,
         delay,
     ])

@@ -56,6 +56,33 @@ namespace moveit_msgs::msg
             }
         }
     };
+    inline void from_json(json& j, RobotTrajectory& rt ){
+        if(j.at("trajectory").empty()){
+            return;
+        }
+        std::vector<trajectory_msgs::msg::JointTrajectoryPoint> jtps;
+        std::vector<std::string> jointnames; 
+        const auto& first_point = j.at("trajectory").front();
+        for (const auto& [joint_name, joint_data] : first_point.items()) {
+            jointnames.push_back(joint_name);
+        }
+        for (const auto& point : j.at("trajectory")) {
+            trajectory_msgs::msg::JointTrajectoryPoint jtp;
+            jtp.positions.resize(jointnames.size());
+            jtp.velocities.resize(jointnames.size());
+            jtp.accelerations.resize(jointnames.size());
+
+            for (size_t i = 0; i < jointnames.size(); ++i) {
+                const auto& joint_name = jointnames[i];
+                jtp.positions[i] = point.at(joint_name).at("position").get<double>();
+                jtp.velocities[i] = point.at(joint_name).at("velocity").get<double>();
+                jtp.accelerations[i] = point.at(joint_name).at("acceleration").get<double>();
+            }
+            jtps.push_back(jtp);
+        }
+        rt.joint_trajectory.joint_names = jointnames;
+        rt.joint_trajectory.points = jtps; 
+    };
 }
 
 namespace geometry_msgs::msg
