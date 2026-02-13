@@ -107,20 +107,7 @@ int main(int argc, char** argv)
 
 
     /*
-        Der Tisch hat 80cm Durchmesser.
-        Die Punkte sind je 15cm vom Rand weg. 
-        Punkt 9 liegt in der Mitte.
-        Dh. Punkt 9 liegt bei mindestens 25cm vor dem Bauch :D -> Nehmen wir die 15cm und sagen bei 40cm
-        Der Arm kann gerade so die 65cm erreichen. 
-        Frage: Welche Höhe sollte das sein? möglichst hoch ist praktisch... 
-        In den Daten: erster Wert lateral, zweiter vert ventral, dritter wert kranial
-            d.h. ich muss die ersten 2 Werte vertauschen. 
-        Koordinaten für die Position 9 scheinen sehr verschieden zu sein... 
-
-    */
-
-    /*
-        Setting Startstate & remember Position before initial Movement to store in output file 
+        Setting Startstate
     */
 
     move_group.setEndEffectorLink("can");
@@ -155,15 +142,6 @@ int main(int argc, char** argv)
     tf2::Quaternion q;
     tf2::fromMsg(move_group.getCurrentPose().pose.orientation, q); 
 
-    /*
-        Setting orientation
-    */
-    // float roll = -2.47;
-    // float pitch = 0.0; 
-    // float yaw = -1.57;
-    // tf2::Quaternion q {0.03085, -0.751833,0.143234, 0.64288};
-    // q.setRPY(roll, pitch , yaw); 
-    // q.normalize();
 
     /*
         Offset dataset -> model
@@ -221,49 +199,6 @@ int main(int argc, char** argv)
 
     move_group.setPathConstraints(path_constraints);
 
-
-
-    // int numPoints= numElements;
-    // int currPoint=0;
-    // int num_successes=0;
-    // std::vector<moveit::planning_interface::MoveGroupInterface::Plan> plans; 
-    // for(const auto& wp: waypoints){
-    //     move_group.setPoseTarget(wp);
-    //     /*
-    //         Set allowed deviance from the goal to the error from the file 
-    //     */
-    //     move_group.setGoalPositionTolerance(data[currPoint].error1 / 1000);
-
-    //     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-
-    //     bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-
-    //     RCLCPP_INFO(LOGGER, "Visualizing plan %d/%d (pose goal) %s", ++currPoint, numPoints,  success ? "" : "FAILED");
-
-    //     plans.push_back(my_plan); 
-    //     move_group.execute(my_plan);
-
-    //     if(success){
-    //         ++num_successes;
-    //         helpers::store(outputdata, move_group, currPoint); 
-    //     }
-
-    // }
-    // RCLCPP_INFO(LOGGER, "The number of successfully computed positions is: %d / %d", num_successes ,numPoints); 
-
-    // move_group.setJointValueTarget(states_values); 
-    // move_group.move(); 
-    // for(const auto& p: plans){
-    //     move_group.execute(p); 
-    // }
-
-
-    // move_group.setPoseTarget(waypoints[0]);
-    // moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-    // bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-    // RCLCPP_INFO(LOGGER, "Moving to the first Position in path, %d", success);
-    // move_group.execute(my_plan);
-    // helpers::store(outputdata, move_group, 1);
 
     /*
         custom cost function
@@ -402,38 +337,7 @@ int main(int argc, char** argv)
 
         }
     }
-    // moveit_msgs::msg::RobotTrajectory trajectory;
-
-    // const double eef_step = 0.001;
-    // const bool avoid_collisions = true;
-
-    // std::vector<geometry_msgs::msg::Pose> cartWaypoints;
-
-    // for(size_t i=0; i< numElements; ++i){
-    //     if(i%3==0){
-    //         cartWaypoints.push_back(waypoints[i]);
-    //     }
-    // }
-
-    // double fraction = move_group.computeCartesianPath(
-    //     cartWaypoints,
-    //     eef_step,
-    //     trajectory,
-    //     path_constraints, 
-    //     avoid_collisions
-    // );
-
-    // move_group.execute(trajectory);
-    // RCLCPP_INFO(LOGGER, "Cartesian path fraction: %.2f", fraction);
-
-    // outputdata = trajectory; 
-
-    // move_group.setPoseTarget(waypoints[numElements-1]);
-    // move_group.clearPathConstraints(); 
-    // moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-    // move_group.plan(my_plan);
-
-
+    
     outputfile << std::setw(4) <<outputdata <<std::endl; 
     
     rclcpp::shutdown();
