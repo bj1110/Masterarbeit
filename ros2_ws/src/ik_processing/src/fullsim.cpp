@@ -317,6 +317,9 @@ int main(int argc, char** argv)
         RCLCPP_INFO(LOGGER, "Computation of missing path %s", success? "successful": "\033[31mFAILURE\033[0m");
         if(success){
             move_group.execute(my_plan); 
+            outputdata["final_pose"]= move_group.getCurrentPose().pose;
+            to_json(outputdata["final_jointstates"], move_group); 
+
         }
         else{
             size_t pt = numElements-2;
@@ -330,6 +333,8 @@ int main(int argc, char** argv)
                     float percentage_reachable = ( (float) pt/(float) num_points) *100.0 ;
                     RCLCPP_INFO(LOGGER, "\033[32mTotal movement: %f, with %d/%d Points not reachable \033[0m",percentage_reachable, num_points_not_movedto, num_points);
                     move_group.execute(my_plan);
+                    outputdata["final_pose"]= move_group.getCurrentPose().pose;
+                    to_json(outputdata["final_jointstates"], move_group); 
                     break;
                 }
                 --pt; 

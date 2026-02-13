@@ -72,7 +72,6 @@ class Parser: public rclcpp::Node{
         if(file.is_open()){
             RCLCPP_INFO(this->get_logger(), "Successfully opened file");
             data = create_datapoints(file, _is_baseline); 
-            RCLCPP_INFO(this->get_logger(), "time: %f", data[0].time ); 
         }
         else{
             RCLCPP_INFO(this->get_logger(), "Failed to open file");
@@ -95,7 +94,7 @@ class Parser: public rclcpp::Node{
             (void)request; 
             response ->header = header_;
             response->data = data; 
-            RCLCPP_INFO(this->get_logger(), "Packets send");
+            RCLCPP_INFO(this->get_logger(), "Packets send, shutting down");
             service_completed_ = true; 
         };
         _service_server = this->create_service<Data>("parse_data", handle_service);

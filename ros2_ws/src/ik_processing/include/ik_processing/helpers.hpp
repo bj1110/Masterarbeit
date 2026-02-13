@@ -28,7 +28,7 @@ namespace helpers{
 
     void store(json& j, const moveit::planning_interface::MoveGroupInterface& move_group, int datapoint); 
 
-    std::filesystem::path create_datapath(const rclcpp::Logger& LOGGER);
+    std::filesystem::path create_datapath(const rclcpp::Logger& LOGGER, const Header& header);
 
     std::string create_outputname(const Header& header);
 }
@@ -37,7 +37,7 @@ inline void to_json(json& j, const moveit::planning_interface::MoveGroupInterfac
     const std::vector<std::string>&  jointnames = move_group.getJointNames();
     std::vector<double> jointstates = move_group.getCurrentJointValues();
     for(size_t i=0; i< jointnames.size(); ++i){
-        j["jointstates"][jointnames[i].c_str()] =  jointstates[i]; 
+        j[jointnames[i].c_str()] =  jointstates[i]; 
     }
 
 }
@@ -50,9 +50,9 @@ namespace moveit_msgs::msg
         size_t numjoints = jointnames.size(); 
         for (size_t i=0; i<jtps.size(); ++i){
             for(size_t k=0; k< numjoints; ++k){
-                j[i][jointnames[k].c_str()] ["position"]= jtps[i].positions[k]; 
-                j[i][jointnames[k].c_str()] ["velocity"]= jtps[i].velocities[k]; 
-                j[i][jointnames[k].c_str()] ["acceleration"]= jtps[i].accelerations[k]; 
+                j["trajectory"][i][jointnames[k].c_str()] ["position"]= jtps[i].positions[k]; 
+                j["trajectory"][i][jointnames[k].c_str()] ["velocity"]= jtps[i].velocities[k]; 
+                j["trajectory"][i][jointnames[k].c_str()] ["acceleration"]= jtps[i].accelerations[k]; 
             }
         }
     };

@@ -48,6 +48,7 @@ std::filesystem::path create_datapath(const rclcpp::Logger& LOGGER, const Header
     }
     std::string filename = create_outputname(header);
     std::filesystem::path filepath (dir / filename);
+    return filepath; 
 }
 
 std::string create_outputname(const Header& header){
