@@ -101,7 +101,7 @@ int main(int argc, char** argv)
         Creating the Path towards the desired output folder:
     */
 
-    std::ofstream outputfile = helpers::create_file(LOGGER); 
+    std::ofstream outputfile = helpers::create_file(LOGGER, header); 
 
     json outputdata; 
 

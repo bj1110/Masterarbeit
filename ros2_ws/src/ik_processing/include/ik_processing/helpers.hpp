@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <nlohmann/json.hpp>
 #include "ik_processing/msg/datapoint.hpp"
+#include "ik_processing/msg/header.hpp"
 #include "ik_processing/srv/data.hpp"
 
 #include <moveit/move_group_interface/move_group_interface.hpp>
@@ -18,13 +19,18 @@
 // for convenience
 using json = nlohmann::json;
 using Datapoint = ik_processing::msg::Datapoint; 
+using Header = ik_processing::msg::Header;
 using Data = ik_processing::srv::Data; 
 
 
 namespace helpers{
-    std::ofstream create_file(const rclcpp::Logger& LOGGER );
+    std::ofstream create_file(const rclcpp::Logger& LOGGER, const Header& header );
 
     void store(json& j, const moveit::planning_interface::MoveGroupInterface& move_group, int datapoint); 
+
+    std::filesystem::path create_datapath(const rclcpp::Logger& LOGGER);
+
+    std::string create_outputname(const Header& header);
 }
 
 inline void to_json(json& j, const moveit::planning_interface::MoveGroupInterface& move_group){
