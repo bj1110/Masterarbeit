@@ -84,10 +84,14 @@ class Parser: public rclcpp::Node{
             response ->len = data.size();
             response->data = data; 
             RCLCPP_INFO(this->get_logger(), "Packets send");
+            service_completed_ = true; 
         };
         _service_server = this->create_service<Data>("parse_data", handle_service);
         RCLCPP_INFO(this->get_logger(), "Ready for requests");
 
+    }
+    bool is_service_done() const{
+        return service_completed_; 
     }
     
     private:
@@ -98,6 +102,7 @@ class Parser: public rclcpp::Node{
     std::vector<Datapoint> data; 
     std::vector<Datapoint> create_datapoints(std::ifstream& file, const bool _is_baseline);
     rclcpp::Service<Data>::SharedPtr _service_server;
+    bool service_completed_ =false; 
 
 
 };
@@ -150,7 +155,9 @@ std::vector<Datapoint> Parser::create_datapoints(std::ifstream& file, const bool
 int main(int argc, char* argv[]){
     rclcpp::init(argc, argv);
     auto node= std::make_shared<Parser>();
-    rclcpp::spin(node); 
+    while(rclcpp::ok() && !(node->is_service_done())){
+        rclcpp::spin_some(node);
+    }
     rclcpp::shutdown(); 
     return 0; 
 }
