@@ -34,9 +34,9 @@ class Parser: public rclcpp::Node{
         _startpos1= static_cast<u_short>(this->get_parameter("startpos1").as_int()); 
         this->declare_parameter("goalpos1", 3);
         _goalpos1 = static_cast<u_short>(this->get_parameter("goalpos1").as_int());
-        this->declare_parameter("startpos2", 1);
+        this->declare_parameter("startpos2", 5);
         _startpos2 = static_cast<u_short>(this->get_parameter("startpos2").as_int());
-        this->declare_parameter("goalpos2", 1);
+        this->declare_parameter("goalpos2", 2);
         _goalpos2 = static_cast<u_short>(this->get_parameter("goalpos2").as_int());
         this->declare_parameter("datafile", 1);
         _datafile = this->get_parameter("datafile").as_int();
@@ -74,7 +74,7 @@ class Parser: public rclcpp::Node{
             data = create_datapoints(file, _is_baseline); 
         }
         else{
-            RCLCPP_INFO(this->get_logger(), "Failed to open file");
+            RCLCPP_ERROR(this->get_logger(), "Failed to open file with path: %s", filepath.c_str());
         }
 
         header_ = Header();
