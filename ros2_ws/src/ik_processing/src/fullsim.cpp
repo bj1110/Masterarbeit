@@ -102,17 +102,17 @@ int main(int argc, char** argv)
     RCLCPP_INFO(LOGGER, "Data received from Parser");
 
     /*
-        Move to Position 1 
-        Position 1 lies approx. x= -25 & y=-220       
+        Move to approx. Startposition     
     */
 
+    std::string startpos_name = helpers::get_startpos(header);
     std::map<std::string, double> states_values;
-    if (joint_model_group->getVariableDefaultPositions("Pos1_right", states_values)){
-        RCLCPP_INFO(LOGGER, "Moving to default position \"Pos1\" ");
+    if (joint_model_group->getVariableDefaultPositions(startpos_name, states_values)){
+        RCLCPP_INFO(LOGGER, "Moving to approx. Startposition \"%s\" ", startpos_name.c_str());
         move_group.setJointValueTarget(states_values); 
         move_group.move(); 
     }else{
-        RCLCPP_WARN(LOGGER, "Default state not found."); 
+        RCLCPP_WARN(LOGGER, "\033[31mDefault state not found.\033[0m"); 
     }
 
 
@@ -120,7 +120,8 @@ int main(int argc, char** argv)
         Check if just the playout of already calculated data is wanted
     */
     if(!recalculate){
-        if(std::filesystem::path filepath = helpers::create_datapath(LOGGER, header); !filepath.empty()){
+        if(std::filesystem::path filepath = helpers::create_datapath(LOGGER, header); 
+        !filepath.empty() && std::filesystem::exists(filepath)){
             RCLCPP_INFO(LOGGER, "This has been calculated before, loading..."); 
             std::ifstream inputfile (filepath); 
             if(!inputfile.is_open()){
@@ -147,7 +148,6 @@ int main(int argc, char** argv)
     */
 
     std::ofstream outputfile = helpers::create_file(LOGGER, header); 
-
     json outputdata; 
 
 
@@ -248,7 +248,7 @@ int main(int argc, char** argv)
     moveit::core::RobotState rs (robot_model);
     rs.setToDefaultValues(
         robot_model->getJointModelGroup("arm"),
-        "Pos1_right"
+        startpos_name
     );
     moveit_msgs::msg::RobotState state_msg;
     moveit::core::robotStateToRobotStateMsg(rs, state_msg);

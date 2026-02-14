@@ -31,6 +31,8 @@ namespace helpers{
     std::filesystem::path create_datapath(const rclcpp::Logger& LOGGER, const Header& header);
 
     std::string create_outputname(const Header& header);
+
+    std::string get_startpos(const Header& header);
 }
 
 inline void to_json(json& j, const moveit::planning_interface::MoveGroupInterface& move_group){

@@ -63,6 +63,19 @@ std::string create_outputname(const Header& header){
     return name; 
 }
 
+std::string get_startpos(const Header& header){
+    if(header.agent==1){
+        u_short s = header.startpos1;
+        std::string pos_name = "Pos"+std::to_string(s)+"_right";
+        return pos_name;
+    }
+    if(header.agent==2){
+        u_short s = header.startpos1;
+        std::string pos_name = "Pos"+std::to_string(s)+"_right";
+        return pos_name;
+    }
+    return {}; 
+}
 
 
 } //namespace helpers 
