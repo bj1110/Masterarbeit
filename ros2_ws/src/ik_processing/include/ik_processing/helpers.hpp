@@ -42,19 +42,47 @@ inline void to_json(json& j, const moveit::planning_interface::MoveGroupInterfac
 
 }
 
+
+namespace builtin_interfaces::msg{
+    inline void to_json(json& j, const Time& t){
+        j = {
+            {"sec", t.sec},
+            {"nanosec", t.nanosec}
+        };
+    }
+    inline void from_json(const json& j, Time& t){
+        j.at("sec").get_to(t.sec);
+        j.at("nanosec").get_to(t.nanosec);
+    }
+    inline void to_json(json& j, const Duration& d){
+        j = {
+            {"sec", d.sec},
+            {"nanosec", d.nanosec}
+        };
+    }
+    inline void from_json(const json& j, Duration& d){
+        j.at("sec").get_to(d.sec);
+        j.at("nanosec").get_to(d.nanosec);
+    }
+}
+
 namespace moveit_msgs::msg
 {
     inline void to_json(json& j, const RobotTrajectory& rt){
-        std::vector<std::string> jointnames = rt.joint_trajectory.joint_names;
-        std::vector<trajectory_msgs::msg::JointTrajectoryPoint> jtps = rt.joint_trajectory.points;
-        size_t numjoints = jointnames.size(); 
-        for (size_t i=0; i<jtps.size(); ++i){
-            for(size_t k=0; k< numjoints; ++k){
-                j["trajectory"][i][jointnames[k].c_str()] ["position"]= jtps[i].positions[k]; 
-                j["trajectory"][i][jointnames[k].c_str()] ["velocity"]= jtps[i].velocities[k]; 
-                j["trajectory"][i][jointnames[k].c_str()] ["acceleration"]= jtps[i].accelerations[k]; 
-            }
-        }
+        const std::vector<std::string>& jointnames = rt.joint_trajectory.joint_names;
+        const std::vector<trajectory_msgs::msg::JointTrajectoryPoint>& jtps = rt.joint_trajectory.points;
+        const std_msgs::msg::Header& header = rt.joint_trajectory.header; 
+        j["trajectory"]["header"]["stamp"] = header.stamp;
+        j["trajectory"]["header"]["frame_id"] = header.frame_id; 
+        j["trajectory"]["joint_names"]= jointnames;
+        int i=0;
+        for(const auto& jtp: jtps ){
+            j["trajectory"]["points"][i]["positions"]=jtp.positions;
+            j["trajectory"]["points"][i]["velocities"]=jtp.velocities;
+            j["trajectory"]["points"][i]["accelerations"]=jtp.accelerations; 
+            j["trajectory"]["points"][i]["time_from_start"]=jtp.time_from_start; 
+            ++i;      
+        }       
     };
     inline void from_json(json& j, RobotTrajectory& rt ){
         if(j.at("trajectory").empty()){
@@ -62,26 +90,23 @@ namespace moveit_msgs::msg
         }
         std::vector<trajectory_msgs::msg::JointTrajectoryPoint> jtps;
         std::vector<std::string> jointnames; 
-        const auto& first_point = j.at("trajectory").front();
-        for (const auto& [joint_name, joint_data] : first_point.items()) {
-            jointnames.push_back(joint_name);
-        }
-        for (const auto& point : j.at("trajectory")) {
-            trajectory_msgs::msg::JointTrajectoryPoint jtp;
-            jtp.positions.resize(jointnames.size());
-            jtp.velocities.resize(jointnames.size());
-            jtp.accelerations.resize(jointnames.size());
+        std_msgs::msg::Header header;
 
-            for (size_t i = 0; i < jointnames.size(); ++i) {
-                const auto& joint_name = jointnames[i];
-                jtp.positions[i] = point.at(joint_name).at("position").get<double>();
-                jtp.velocities[i] = point.at(joint_name).at("velocity").get<double>();
-                jtp.accelerations[i] = point.at(joint_name).at("acceleration").get<double>();
-            }
+        j.at("trajectory").at("joint_names").get_to(jointnames);
+        j.at("trajectory").at("header").at("stamp").get_to(header.stamp);
+        j.at("trajectory").at("header").at("frame_id").get_to(header.frame_id);
+
+        for(const auto& p: j.at("trajectory").at("points")){
+            trajectory_msgs::msg::JointTrajectoryPoint jtp;
+            p.at("positions").get_to(jtp.positions);
+            p.at("velocities").get_to(jtp.velocities);
+            p.at("accelerations").get_to(jtp.accelerations);
+            p.at("time_from_start").get_to(jtp.time_from_start);
             jtps.push_back(jtp);
         }
         rt.joint_trajectory.joint_names = jointnames;
         rt.joint_trajectory.points = jtps; 
+        rt.joint_trajectory.header = header; 
     };
 }
 
