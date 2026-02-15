@@ -117,7 +117,8 @@ int main(int argc, char** argv)
 
 
     /*
-        Check if just the playout of already calculated data is wanted
+        Check if just the playout of already calculated data is wanted.
+        Only header data is needed for that.
     */
     if(!recalculate){
         if(std::filesystem::path filepath = helpers::create_datapath(LOGGER, header); 
@@ -176,25 +177,35 @@ int main(int argc, char** argv)
 
     /*
         Offset dataset -> model
-    */
+        1. x value should start about 25cm infront of robot center (15cm table->Point1; 10cm body->table)
+        2. y value -
+        3. z value should be raised to about the height where the forearm is parallel to the ground in Pos1
 
-    float x_offset= 220 + 250;
-    float y_offset=0;
-    float z_offset=690;
+        4. In case of Agent2 movement: mirror x and y
+    */
+    const float AGENT_SIGN = (header.is_agent1)? 1 : -1;
+    const float TABLE_PERSON_DIST = 100;
+    const float TABLE_MARKER_DIST = 150;
+    const float SPINE_HEIGHT = 477;
+    const float CHAIR_TABLE_HEIGHTDIFF = 330;
+    const float CAN_HEIGHT = 120; 
+    const float PREV_HEIGHT = 690; 
+    const float X_OFFSET = 220 + TABLE_PERSON_DIST + TABLE_MARKER_DIST;
+    const float Y_OFFSET = 0;
+    const float Z_OFFSET = SPINE_HEIGHT + CHAIR_TABLE_HEIGHTDIFF -CAN_HEIGHT;
 
 
 
     /*
-        Aufgrund der Achsenwahl: tausche x und y 
-        Aufgrund Draufsicht: invertiere y 
+        Due to the axis choice in model compared to data: swap x and y. 
+        Due to the top view: invert y.
     */
-    
     std::vector<geometry_msgs::msg::Pose> waypoints;
     for(auto dp: data){
         geometry_msgs::msg::Pose p;
-        p.position.x = (dp.y1 +x_offset)/1000;
-        p.position.y = -(dp.x1 +y_offset)/1000;
-        p.position.z = (dp.z1 +z_offset)/1000;
+        p.position.x = AGENT_SIGN*((dp.y1 +X_OFFSET)/1000);
+        p.position.y = AGENT_SIGN*(-(dp.x1 +Y_OFFSET)/1000);
+        p.position.z = (dp.z1 +Z_OFFSET)/1000;
         p.orientation =tf2::toMsg(q); 
         waypoints.push_back(p);
     }

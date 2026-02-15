@@ -36,7 +36,7 @@ class Parser: public rclcpp::Node{
         _goalpos1 = static_cast<u_short>(this->get_parameter("goalpos1").as_int());
         this->declare_parameter("startpos2", 5);
         _startpos2 = static_cast<u_short>(this->get_parameter("startpos2").as_int());
-        this->declare_parameter("goalpos2", 2);
+        this->declare_parameter("goalpos2", 7);
         _goalpos2 = static_cast<u_short>(this->get_parameter("goalpos2").as_int());
         this->declare_parameter("datafile", 1);
         _datafile = this->get_parameter("datafile").as_int();
@@ -46,7 +46,8 @@ class Parser: public rclcpp::Node{
         if(_is_baseline){
             filepath /= "baselines";
             filepath /= _is_agent1 ? "agent1" : "agent2";
-            filepath /= std::to_string(_startpos1) + "-" + std::to_string(_goalpos1);
+            filepath /= _is_agent1? (std::to_string(_startpos1) + "-" + std::to_string(_goalpos1)) : 
+                                    (std::to_string(_startpos2) + "-" + std::to_string(_goalpos2));
             filepath /= (_exnum < 10) ? "00"+ std::to_string(_exnum): "0"+ std::to_string(_exnum); 
             filepath /= std::to_string(_datafile);
             filepath += ".dat";
@@ -57,15 +58,9 @@ class Parser: public rclcpp::Node{
             filepath /= (_exnum < 10) ? "00"+ std::to_string(_exnum): "0"+ std::to_string(_exnum);
             filepath /= "1.dat"; 
         }
-
-        std::string file_info =
-            (_is_baseline ? "Baseline " : "Interaction ") +
-            std::string("Positions: ") +
-            std::to_string(_startpos1) + "-" + std::to_string(_goalpos1) +
-            (!_is_baseline ? ("_" + std::to_string(_startpos2) + "-" + std::to_string(_goalpos2)) : "") +
-            " Experiment Number: " + std::to_string(_exnum) +
-            (_is_baseline ? (" run: " + std::to_string(_datafile)) : "");
         
+        std::string file_info= create_file_info(); 
+
         RCLCPP_INFO(this->get_logger(), "Opening: %s", file_info.c_str()); 
 
         std::ifstream file{filepath};
@@ -83,7 +78,7 @@ class Parser: public rclcpp::Node{
         header_.goalpos1 = _goalpos1;
         header_.startpos2 = _startpos2;
         header_.goalpos2 = _goalpos2;
-        header_.agent = _is_agent1? 1 : 2; 
+        header_.is_agent1 = _is_agent1; 
         header_.exnum = _exnum; 
         header_.is_baseline= _is_baseline;
         header_.run = _datafile; 
@@ -117,53 +112,66 @@ class Parser: public rclcpp::Node{
     rclcpp::Service<Data>::SharedPtr _service_server;
     bool service_completed_ =false; 
 
+    std::string create_file_info(){
+        using namespace std::string_literals;
+        std::string file_info =
+            (_is_baseline ? "Baseline "s : "Interaction "s) +
+            (_is_agent1 ? "Agent 1 "s : "Agent 2 "s)+
+            "Positions: "s +
+            ((_is_agent1 && _is_baseline)? std::to_string(_startpos1) + "-"s + std::to_string(_goalpos1) :
+                 std::to_string(_startpos2) + "-"s + std::to_string(_goalpos2))+
+            (!_is_baseline ? ("_"s + std::to_string(_startpos2) + "-"s + std::to_string(_goalpos2)) : ""s) +
+            " Experiment Number: "s + std::to_string(_exnum) +
+            (_is_baseline ? (" run: "s + std::to_string(_datafile)) : ""s);
+        return file_info; 
+    }
 
 };
 
 std::vector<Datapoint> Parser::create_datapoints(std::ifstream& file, const bool _is_baseline){
-        std::vector<Datapoint> data; 
-        std::vector<std::stringstream> vss; 
-        std::string line;
-        while(std::getline(file, line)){
-            vss.emplace_back(line);
-        }
-        if(_is_baseline){
-            std::array<float, 5> f;
-            while(vss[0]>>f[0]){
-                for(size_t i=1; i<5; ++i){
-                    vss[i] >> f[i]; 
+    std::vector<Datapoint> data; 
+    std::vector<std::stringstream> vss; 
+    std::string line;
+    while(std::getline(file, line)){
+        vss.emplace_back(line);
+    }
+    if(_is_baseline){
+        std::array<float, 5> f;
+        while(vss[0]>>f[0]){
+            for(size_t i=1; i<5; ++i){
+                vss[i] >> f[i]; 
 
-                }
-                Datapoint d;
-                d.time=f[0];
-                d.x1= f[1];
-                d.y1= f[2];
-                d.z1= f[3];
-                d.error1= f[4];
-                data.push_back(d);
             }
-            return data; 
-        }else{
-            std::array<float,9> f;
-            while(vss[0]>>f[0]){
-                for(size_t i=1; i<9; i++){
-                    vss[i] >> f[i];
-                }
-                Datapoint d;
-                d.time=f[0];
-                d.x1= f[1];
-                d.y1= f[2];
-                d.z1= f[3];
-                d.error1= f[4];
-                d.x2=f[5];
-                d.y2=f[6];
-                d.z2=f[7];
-                d.error2=f[8]; 
-                data.push_back(d); 
-            } 
+            Datapoint d;
+            d.time=f[0];
+            d.x1= f[1];
+            d.y1= f[2];
+            d.z1= f[3];
+            d.error1= f[4];
+            data.push_back(d);
         }
         return data; 
+    }else{
+        std::array<float,9> f;
+        while(vss[0]>>f[0]){
+            for(size_t i=1; i<9; i++){
+                vss[i] >> f[i];
+            }
+            Datapoint d;
+            d.time=f[0];
+            d.x1= f[1];
+            d.y1= f[2];
+            d.z1= f[3];
+            d.error1= f[4];
+            d.x2=f[5];
+            d.y2=f[6];
+            d.z2=f[7];
+            d.error2=f[8]; 
+            data.push_back(d); 
+        } 
     }
+    return data; 
+}
 
 int main(int argc, char* argv[]){
     rclcpp::init(argc, argv);

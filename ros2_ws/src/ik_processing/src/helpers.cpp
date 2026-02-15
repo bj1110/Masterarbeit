@@ -54,7 +54,8 @@ std::filesystem::path create_datapath(const rclcpp::Logger& LOGGER, const Header
 std::string create_outputname(const Header& header){
     std::string name = header.is_baseline ? "base" : "interaction";
     name += std::to_string(header.exnum);
-    name += "agent" + std::to_string(header.agent)+ "_";
+    name += "agent" ; 
+    name += header.is_agent1 ? "1_":"2_";
     name += std::to_string(header.startpos1) + "-" + std::to_string(header.goalpos1);
     if(!header.is_baseline){
         name += "_" + std::to_string(header.startpos2) + "-" + std::to_string(header.goalpos2);
@@ -65,12 +66,12 @@ std::string create_outputname(const Header& header){
 }
 
 std::string get_startpos(const Header& header){
-    if(header.agent==1){
+    if(header.is_agent1){
         u_short s = header.startpos1;
         std::string pos_name = "Pos"+std::to_string(s)+"_right";
         return pos_name;
     }
-    if(header.agent==2){
+    else{
         u_short s = header.startpos1;
         std::string pos_name = "Pos"+std::to_string(s)+"_right";
         return pos_name;

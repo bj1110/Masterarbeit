@@ -57,7 +57,7 @@ def generate_launch_description():
     )
     declare_goalpos2=DeclareLaunchArgument(
         'goalpos2',
-        default_value='2',
+        default_value='7',
         choices=['1', '2', '3', '4', '5', '7', '8', '9'],
         description='(short u_)Int indicating the Gaolposition for agent 2'
     )
