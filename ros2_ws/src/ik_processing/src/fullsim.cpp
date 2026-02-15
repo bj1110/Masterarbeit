@@ -348,9 +348,7 @@ int main(int argc, char** argv)
         RCLCPP_INFO(LOGGER, "Computation of missing path %s", success? "successful": "\033[31mFAILURE\033[0m");
         if(success){
             move_group.execute(my_plan); 
-            outputdata["final_pose"]= move_group.getCurrentPose().pose;
-            to_json(outputdata["final_jointstates"], move_group); 
-
+            outputdata["info"]["endpoint_reachable"]=true;
         }
         else{
             size_t pt = numElements-2;
@@ -364,7 +362,10 @@ int main(int argc, char** argv)
                     float percentage_reachable = ( (float) pt/(float) num_points) *100.0 ;
                     RCLCPP_INFO(LOGGER, "\033[32mTotal movement: %f, with %d/%d Points not reachable \033[0m",percentage_reachable, num_points_not_movedto, num_points);
                     move_group.execute(my_plan);
-                    outputdata["final_pose"]= move_group.getCurrentPose().pose;
+                    outputdata["info"]["endpoint_reachable"]=false;
+                    outputdata["info"]["max_percentage"]=percentage_reachable;
+                    outputdata["info"]["num_points_moved_to"]=num_points_not_movedto;
+                    outputdata["info"]["last_pos_movable"]=waypoints[pt]; 
                     break;
                 }
                 --pt; 
@@ -373,9 +374,9 @@ int main(int argc, char** argv)
         }
     }
     
-
+    outputdata["final_pose"]= move_group.getCurrentPose().pose;
     to_json(outputdata["final_jointstates"], move_group); 
-    
+    outputdata["info"]["cartesian_path_completion"]=frac.value;
 
     outputfile << std::setw(4) <<outputdata <<std::endl; 
     

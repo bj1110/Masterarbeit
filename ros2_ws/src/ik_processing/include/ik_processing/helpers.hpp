@@ -41,7 +41,6 @@ inline void to_json(json& j, const moveit::planning_interface::MoveGroupInterfac
     for(size_t i=0; i< jointnames.size(); ++i){
         j[jointnames[i].c_str()] =  jointstates[i]; 
     }
-
 }
 
 
@@ -142,4 +141,18 @@ namespace geometry_msgs::msg
         j.at("orientation").at("z").get_to(p.orientation.z);
         j.at("orientation").at("w").get_to(p.orientation.w);
     }
+}
+
+inline void to_json(json& j, const Datapoint& d){
+    j={
+        {"time", d.time},
+        {"x1", d.x1},
+        {"y1", d.y1},
+        {"z1", d.z1},
+        {"error1", d.error1},
+        {"x2", d.x2},
+        {"y2", d.y2},
+        {"z2", d.z2},
+        {"error2", d.error2}
+    };
 }
