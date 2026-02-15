@@ -189,7 +189,7 @@ int main(int argc, char** argv)
     const float SPINE_HEIGHT = 477;
     const float CHAIR_TABLE_HEIGHTDIFF = 330;
     const float CAN_HEIGHT = 120; 
-    const float PREV_HEIGHT = 690; 
+    [[maybe_unused]] const float PREV_HEIGHT = 690; 
     const float X_OFFSET = 220 + TABLE_PERSON_DIST + TABLE_MARKER_DIST;
     const float Y_OFFSET = 0;
     const float Z_OFFSET = SPINE_HEIGHT + CHAIR_TABLE_HEIGHTDIFF -CAN_HEIGHT;
@@ -224,20 +224,20 @@ int main(int argc, char** argv)
     oc.orientation = tf2::toMsg(q);
     oc.absolute_x_axis_tolerance = 0.1;  
     oc.absolute_y_axis_tolerance = 0.1;  
-    oc.absolute_z_axis_tolerance = 0.1;  
+    oc.absolute_z_axis_tolerance = 2*M_PI;  
     oc.weight = 1.0;
 
     path_constraints.orientation_constraints.push_back(oc);
 
-    moveit_msgs::msg::JointConstraint jc;
-    jc.joint_name="calumna__joint";
-    double curr_columna = move_group.getCurrentState()->getVariablePosition("columna__joint");
-    jc.position= curr_columna;
-    jc.tolerance_above=0.1;
-    jc.tolerance_below=0.1;
-    jc.weight=5.0;
+    // moveit_msgs::msg::JointConstraint jc;
+    // jc.joint_name="calumna__joint";
+    // double curr_columna = move_group.getCurrentState()->getVariablePosition("columna__joint");
+    // jc.position= curr_columna;
+    // jc.tolerance_above=0.1;
+    // jc.tolerance_below=0.1;
+    // jc.weight=5.0;
 
-    path_constraints.joint_constraints.push_back(jc);
+    // path_constraints.joint_constraints.push_back(jc);
 
     move_group.setPathConstraints(path_constraints);
 
@@ -369,7 +369,7 @@ int main(int argc, char** argv)
                 bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
                 if(success){
                     int num_points = numElements; 
-                    int num_points_not_movedto = num_points-pt;
+                    int num_points_not_movedto = num_points-pt -1;
                     float percentage_reachable = ( (float) pt/(float) num_points) *100.0 ;
                     RCLCPP_INFO(LOGGER, "\033[32mTotal movement: %f, with %d/%d Points not reachable \033[0m",percentage_reachable, num_points_not_movedto, num_points);
                     move_group.execute(my_plan);
