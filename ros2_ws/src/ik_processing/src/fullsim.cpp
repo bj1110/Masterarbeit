@@ -365,7 +365,6 @@ int main(int argc, char** argv)
                     RCLCPP_INFO(LOGGER, "\033[32mTotal movement: %f, with %d/%d Points not reachable \033[0m",percentage_reachable, num_points_not_movedto, num_points);
                     move_group.execute(my_plan);
                     outputdata["final_pose"]= move_group.getCurrentPose().pose;
-                    to_json(outputdata["final_jointstates"], move_group); 
                     break;
                 }
                 --pt; 
@@ -374,6 +373,10 @@ int main(int argc, char** argv)
         }
     }
     
+
+    to_json(outputdata["final_jointstates"], move_group); 
+    
+
     outputfile << std::setw(4) <<outputdata <<std::endl; 
     
     rclcpp::shutdown();
