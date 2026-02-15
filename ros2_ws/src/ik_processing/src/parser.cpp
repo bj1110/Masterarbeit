@@ -86,6 +86,7 @@ class Parser: public rclcpp::Node{
         header_.agent = _is_agent1? 1 : 2; 
         header_.exnum = _exnum; 
         header_.is_baseline= _is_baseline;
+        header_.run = _datafile; 
 
         auto handle_service= [this](const std::shared_ptr<rmw_request_id_t> request_header,
                             const std::shared_ptr<Data::Request> request,

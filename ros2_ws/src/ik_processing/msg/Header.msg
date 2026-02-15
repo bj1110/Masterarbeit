@@ -6,3 +6,4 @@ int8 goalpos2 9
 int8 agent 1
 int8 exnum 1
 bool is_baseline
+int8 run 1

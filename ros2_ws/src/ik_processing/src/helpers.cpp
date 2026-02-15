@@ -59,6 +59,7 @@ std::string create_outputname(const Header& header){
     if(!header.is_baseline){
         name += "_" + std::to_string(header.startpos2) + "-" + std::to_string(header.goalpos2);
     }
+    name+="#"+std::to_string(header.run); 
     name += ".json"; 
     return name; 
 }
