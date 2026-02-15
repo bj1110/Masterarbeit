@@ -203,8 +203,8 @@ int main(int argc, char** argv)
     std::vector<geometry_msgs::msg::Pose> waypoints;
     for(auto dp: data){
         geometry_msgs::msg::Pose p;
-        p.position.x = AGENT_SIGN*((dp.y1 +X_OFFSET)/1000);
-        p.position.y = AGENT_SIGN*(-(dp.x1 +Y_OFFSET)/1000);
+        p.position.x = (AGENT_SIGN*dp.y1 +X_OFFSET)/1000;
+        p.position.y = -(AGENT_SIGN*dp.x1 +Y_OFFSET)/1000;
         p.position.z = (dp.z1 +Z_OFFSET)/1000;
         p.orientation =tf2::toMsg(q); 
         waypoints.push_back(p);
