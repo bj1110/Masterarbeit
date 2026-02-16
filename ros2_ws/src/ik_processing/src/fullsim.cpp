@@ -222,7 +222,7 @@ int main(int argc, char** argv)
     oc.link_name = "can";
     oc.header.frame_id = move_group.getPlanningFrame();
     oc.orientation = tf2::toMsg(q);
-    oc.absolute_x_axis_tolerance = 0.1;  
+    oc.absolute_x_axis_tolerance = 0.1;  //TODO: allow for tolance which would equal the tilting of the hand
     oc.absolute_y_axis_tolerance = 0.1;  
     oc.absolute_z_axis_tolerance = 2*M_PI;  
     oc.weight = 1.0;
