@@ -122,12 +122,26 @@
       <inertia ixx="0.9645860416666666" ixy="0.0" ixz="0.0" iyy="0.9645860416666666" iyz="0.0" izz="0.028324083333333347"/>
     </inertial>
   </link>
-  <joint name="columna__joint" type="revolute">
-    <parent link="columna"/>
+  <joint name="columna_flex_joint" type="revolute">
+    <parent link="c1"/>
     <child link="spine"/>
-    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.4776"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
     <axis xyz="0.0 1.0 0.0"/>
     <limit effort="1000.0" lower="0.0" upper="0.5235987755982988" velocity="0.5"/>
+  </joint>
+  <link name="c1">
+    <inertial>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+      <mass value="0.01"/>
+      <inertia ixx="0.001" ixy="0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="columna_rot_joint" type="revolute">
+    <parent link="columna"/>
+    <child link="c1"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.4776"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <limit effort="1000.0" lower="-0.5235987755982988" upper="0.5235987755982988" velocity="0.5"/>
   </joint>
   <link name="clavicular">
     <visual>

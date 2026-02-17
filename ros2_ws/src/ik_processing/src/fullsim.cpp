@@ -231,7 +231,7 @@ int main(int argc, char** argv)
 
     // moveit_msgs::msg::JointConstraint jc;
     // jc.joint_name="calumna__joint";
-    // double curr_columna = move_group.getCurrentState()->getVariablePosition("columna__joint");
+    // double curr_columna = move_group.getCurrentState()->getVariablePosition("columna_flex_joint");
     // jc.position= curr_columna;
     // jc.tolerance_above=0.1;
     // jc.tolerance_below=0.1;
@@ -295,7 +295,7 @@ int main(int argc, char** argv)
         return sum;
     };
 
-    const size_t hip_idx = joint_model_group->getVariableGroupIndex("columna__joint");
+    const size_t hip_idx = joint_model_group->getVariableGroupIndex("columna_flex_joint");
     const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.0005, double penalty_size= 1.0, double penalty_gradient=1.0){
         double d= solution[hip_idx]; 
         double step = 0.5 * (1+ std::tanh(penalty_gradient * (d-delta))); 

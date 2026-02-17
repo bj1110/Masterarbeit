@@ -1,7 +1,8 @@
 # Default initial positions for alt_human_arm_model's ros2_control fake system
 
 initial_positions:
-  columna__joint: 0
+  columna_rot_joint: 0
+  columna_flex_joint: 0
   elbow_roll_joint: 0
   elbow_yaw_joint: 0
   glenohumeral_pitch_joint: 0

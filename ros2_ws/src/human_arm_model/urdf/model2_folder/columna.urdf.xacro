@@ -45,10 +45,22 @@
     </link>
 
     <!-- forward tilt of 30° seems reasonable -->
-    <xacro:joint_template bodypart="columna" suffix="" parent="columna" child="spine" >
-        <origin xyz="0.0 0.0 ${waist_back_length}" rpy="0.0 0.0 0.0" />
+    <xacro:joint_template bodypart="columna" suffix="flex" parent="c1" child="spine" >
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
         <axis xyz="0.0 1.0 0.0" />
         <limit effort="1000.0" lower="0.0" upper="${30*math.pi/180}" velocity="0.5" />
     </xacro:joint_template>
+
+    <link name="c1">
+        <xacro:minimal_interia />
+    </link>
+
+    <!-- rotation of 70-80° in each direction is possible, but 30° will sufice -->
+    <xacro:joint_template bodypart="columna" suffix="rot" parent="columna" child="c1">
+        <origin xyz="0.0 0.0 ${waist_back_length}" rpy="0.0 0.0 0.0" />
+        <axis xyz="0.0 0.0 1.0" />
+        <limit effort="1000.0" lower="${-30*math.pi/180}" upper="${30*math.pi/180}" velocity="0.5" />
+    </xacro:joint_template>
+
 
 </robot>
