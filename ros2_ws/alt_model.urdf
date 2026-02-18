@@ -141,7 +141,7 @@
     <child link="c1"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.4776"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <limit effort="1000.0" lower="-0.5235987755982988" upper="0.5235987755982988" velocity="0.5"/>
+    <limit effort="1000.0" lower="-1.2217304763960306" upper="1.2217304763960306" velocity="0.5"/>
   </joint>
   <link name="clavicular">
     <visual>
