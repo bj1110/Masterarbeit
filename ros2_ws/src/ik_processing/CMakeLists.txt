@@ -31,8 +31,16 @@ add_executable(parser src/parser.cpp)
 add_library(ik_helpers
   src/helpers.cpp
 )
+add_library(ik_evaluator
+  src/evaluator.cpp)
 
 target_include_directories(ik_helpers
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+target_include_directories(ik_evaluator
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
@@ -79,12 +87,26 @@ ament_target_dependencies(ik_helpers
   moveit_visual_tools
 )
 
+ament_target_dependencies(ik_evaluator
+  rclcpp
+  geometry_msgs
+  sensor_msgs
+  tf2_ros
+  moveit_ros_planning_interface
+  moveit_core
+  moveit_visual_tools
+)
+
 target_link_libraries(fullsim
   ik_helpers
+  ik_evaluator
   nlohmann_json::nlohmann_json
 )
 
 target_link_libraries(ik_helpers
+  nlohmann_json::nlohmann_json
+)
+target_link_libraries(ik_evaluator
   nlohmann_json::nlohmann_json
 )
 
@@ -108,6 +130,7 @@ rosidl_get_typesupport_target(cpp_typesupport_target
   ${PROJECT_NAME} rosidl_typesupport_cpp)
 
 target_link_libraries(ik_helpers "${cpp_typesupport_target}")
+target_link_libraries(ik_evaluator "${cpp_typesupport_target}")
 
 target_link_libraries(parser "${cpp_typesupport_target}")
 target_link_libraries(fullsim "${cpp_typesupport_target}")
@@ -135,6 +158,12 @@ install(DIRECTORY
 
 install(
   TARGETS ik_helpers
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+)
+
+install(
+  TARGETS ik_evaluator
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )

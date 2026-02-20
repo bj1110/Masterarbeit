@@ -33,6 +33,11 @@ namespace helpers{
     std::string create_outputname(const Header& header);
 
     std::string get_startpos(const Header& header);
+
+    double to_double(const builtin_interfaces::msg::Duration& d){
+        double erg = d.sec + (d.nanosec / 1e9);
+        return erg; 
+    }
 }
 
 inline void to_json(json& j, const moveit::planning_interface::MoveGroupInterface& move_group){

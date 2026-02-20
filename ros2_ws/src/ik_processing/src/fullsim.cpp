@@ -22,6 +22,8 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "ik_processing/helpers.hpp"
+#include "ik_processing/evaluator.hpp"
+
 
 #include <moveit/move_group_interface/move_group_interface.hpp>
 #include <moveit/planning_scene_interface/planning_scene_interface.hpp>
@@ -388,6 +390,8 @@ int main(int argc, char** argv)
     outputdata["final_pose"]= move_group.getCurrentPose().pose;
     to_json(outputdata["final_jointstates"], move_group); 
     outputdata["info"]["cartesian_path_completion"]=frac.value;
+
+    outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(rt_msg, LOGGER); 
 
     outputfile << std::setw(4) <<outputdata <<std::endl; 
     
