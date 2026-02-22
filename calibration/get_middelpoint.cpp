@@ -18,6 +18,7 @@ struct value{
     int agent_;
     int pos_; 
     int row_; 
+    bool at_end_;
     
     friend std::ostream&  operator<<( std::ostream& os, const value& v){
         char c;
@@ -34,13 +35,9 @@ struct value{
         return os; 
     }
 
-    value(const std::filesystem::path& p, int agent, int pos, int row)
-    : pos_(pos), agent_(agent), row_(row)
+    value(const std::filesystem::path& p, int agent, int pos, int row, bool at_end)
+    : pos_(pos), agent_(agent), row_(row), at_end_(at_end)
     {
-        bool at_end=true;
-        if( (agent==1 &&( pos==1 || pos == 3)) || (agent==2 &&(pos==5 || pos==7))){
-            at_end=false; 
-        }
         std::vector<double> v = get_values(p, row , pos_ , at_end); 
         mean_ = mean(v);
         std_dev_=std_dev(v, mean_);  
@@ -60,25 +57,27 @@ int main(int argc, char** argv){
     std::filesystem::path agent1_dir = baselines_dir / "agent1";
     std::filesystem::path agent2_dir = baselines_dir / "agent2";
 
-    value a1_9_x {agent1_dir, agent1, 9, X_ROW};
-    value a1_9_y {agent1_dir, agent1, 9, Y_ROW};
-    value a2_9_x {agent2_dir, agent2, 9, X_ROW};
-    value a2_9_y {agent2_dir, agent2, 9, Y_ROW};
+    value a1_1_x {agent1_dir, agent1, 1, X_ROW, false};
+    value a1_1_y {agent1_dir, agent1, 1, Y_ROW, false};
+    value a1_5_x {agent1_dir, agent1, 5, X_ROW, true};
+    value a1_5_y {agent1_dir, agent1, 5, Y_ROW, true};
 
-    value a1_1_x {agent1_dir, agent1, 1, X_ROW};
-    value a1_1_y {agent1_dir, agent1, 1, Y_ROW};
-    value a2_1_x {agent2_dir, agent2, 1, X_ROW};
-    value a2_1_y {agent2_dir, agent2, 1, Y_ROW};
+    value a2_5_x {agent2_dir, agent2, 5, X_ROW, false};
+    value a2_5_y {agent2_dir, agent2, 5, Y_ROW, false};
+    value a2_1_x {agent2_dir, agent2, 1, X_ROW, true};
+    value a2_1_y {agent2_dir, agent2, 1, Y_ROW, true};
 
-    std::cout<<a1_9_x<<std::endl; 
-    std::cout<<a1_9_y<<std::endl; 
-    std::cout<<a2_9_x<<std::endl; 
-    std::cout<<a2_9_y<<std::endl; 
-
-    std::cout << "--------" <<std::endl; 
-    
+    std::cout<<"av. Path of Agent1:" <<std::endl; 
     std::cout<<a1_1_x<<std::endl; 
     std::cout<<a1_1_y<<std::endl; 
+    std::cout<<a1_5_x<<std::endl; 
+    std::cout<<a1_5_y<<std::endl; 
+
+    std::cout << "--------" <<std::endl; 
+    std::cout<<"av. Path of Agent2:" <<std::endl; 
+    
+    std::cout<<a2_5_x<<std::endl; 
+    std::cout<<a2_5_y<<std::endl; 
     std::cout<<a2_1_x<<std::endl; 
     std::cout<<a2_1_y<<std::endl; 
 
@@ -88,6 +87,12 @@ int main(int argc, char** argv){
 std::vector<double> get_values(const std::filesystem::path& path, size_t axis_row, int posfilter, bool at_end){
     std::vector<double> values;
     std::string filter = std::to_string(posfilter);
+    if(at_end){
+        filter.insert(0, "-");
+    }
+    else{
+        filter+="-";
+    }
     int i=0; 
     for(const auto& movement_dir: std::filesystem::directory_iterator(path)){
         std::string movement_name = movement_dir.path().filename().string();
