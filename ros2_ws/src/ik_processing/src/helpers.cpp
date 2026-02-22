@@ -72,7 +72,15 @@ std::string get_startpos(const Header& header){
         return pos_name;
     }
     else{
-        u_short s = header.startpos1;
+        u_short s = header.startpos2;
+        if(header.is_baseline){
+            s=header.startpos1;
+        }
+        if(s==5){
+            s=1;
+        } else if(s==7){
+            s=3;
+        }
         std::string pos_name = "Pos"+std::to_string(s)+"_right";
         return pos_name;
     }
