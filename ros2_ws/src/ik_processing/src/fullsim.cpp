@@ -185,7 +185,7 @@ int main(int argc, char** argv)
 
         4. In case of Agent2 movement: mirror x and y
     */
-    const float AGENT_SIGN = (header.is_agent1)? 1 : -1;
+    [[maybe_unused]] const float AGENT_SIGN = (header.is_agent1)? 1 : -1;
     const float TABLE_PERSON_DIST = 100;
     const float TABLE_MARKER_DIST = 150;
     const float SPINE_HEIGHT = 477;
@@ -197,6 +197,33 @@ int main(int argc, char** argv)
     const float Z_OFFSET = SPINE_HEIGHT + CHAIR_TABLE_HEIGHTDIFF -CAN_HEIGHT;
 
 
+    const Eigen::Vector3f agent1_av_pos1 {-241.88, 2.38, 0};
+    const Eigen::Vector3f agent1_av_pos5 {237.46, 4.87, 0};
+    const Eigen::Vector3f agent2_av_pos1 {-238.43, -8.01, 0};
+    const Eigen::Vector3f agent2_av_pos5 {237.0, -3.39, 0};
+
+    const Eigen::Vector3f agent1_av_path_1_5 = agent1_av_pos5 - agent1_av_pos1;
+    const Eigen::Vector3f agent5_av_path_5_1 = agent2_av_pos1 - agent2_av_pos5;
+    // RCLCPP_INFO(LOGGER, "Average Path Agent 1: x=%f y=%f z=%f", agent1_av_path_1_5.x(), agent1_av_path_1_5.y(), agent1_av_path_1_5.z() );    
+    // RCLCPP_INFO(LOGGER, "Average Path Agent 2: x=%f y=%f z=%f", agent5_av_path_5_1.x(), agent5_av_path_5_1.y(), agent5_av_path_5_1.z() );    
+
+    const auto crossproduct = agent1_av_path_1_5.cross(agent5_av_path_5_1);
+    const auto dotproduct = agent1_av_path_1_5.dot(agent5_av_path_5_1);
+    const auto abs_agent1_path = agent1_av_path_1_5.norm();
+    const auto abs_agent2_path = agent5_av_path_5_1.norm();
+
+    const auto abs_both_paths =abs_agent1_path * abs_agent2_path;
+    const auto cos_phi = dotproduct / abs_both_paths;
+    const auto sin_phi = crossproduct.norm() / abs_both_paths; 
+
+
+    Eigen::Matrix3f rotationsmatrix {
+        {cos_phi, -sin_phi, 0.0},
+        {sin_phi, cos_phi, 0.0}, 
+        {0.0, 0.0, 1.0}  
+    };
+
+
 
     /*
         Due to the axis choice in model compared to data: swap x and y. 
@@ -204,13 +231,26 @@ int main(int argc, char** argv)
     */
     std::vector<geometry_msgs::msg::Pose> waypoints;
     for(auto dp: data){
+        Eigen::Vector3f point {dp.y1, dp.x1, dp.z1}; 
+        if(!header.is_baseline && !header.is_agent1){
+            point.x() = dp.y2;
+            point.y() = dp.x2;
+            point.z() = dp.z2;
+        }
+        if(!header.is_agent1){
+            point = rotationsmatrix * point;
+        }
         geometry_msgs::msg::Pose p;
-        p.position.x = (AGENT_SIGN*dp.y1 +X_OFFSET)/1000;
-        p.position.y = -(AGENT_SIGN*dp.x1 +Y_OFFSET)/1000;
-        p.position.z = (dp.z1 +Z_OFFSET)/1000;
+        p.position.x = (point.x() +X_OFFSET)/1000;
+        p.position.y = -(point.y() +Y_OFFSET)/1000;
+        p.position.z = (point.z() +Z_OFFSET)/1000;
         p.orientation =tf2::toMsg(q); 
         waypoints.push_back(p);
     }
+
+
+    RCLCPP_INFO(LOGGER, "\033[34mFirst point: (%f, %f, %f)\033[0m", waypoints.front().position.x,waypoints.front().position.y, waypoints.front().position.z); 
+    RCLCPP_INFO(LOGGER, "\033[34mLast point: (%f, %f, %f)\033[0m", waypoints.back().position.x,waypoints.back().position.y, waypoints.back().position.z); 
 
 
     /*

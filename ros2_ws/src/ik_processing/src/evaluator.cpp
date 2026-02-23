@@ -65,14 +65,13 @@ double calculate_total_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rc
     double NJS=0;
     for(const auto& j:joints){
         NJS += j.get_NJS(); 
-        RCLCPP_INFO(LOGGER, "new value: %f", NJS);
     }
     return NJS; 
 }
 double calculate_av_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& LOGGER){
     double num_joints  = rt.joint_trajectory.joint_names.size();
     double NJS_total = calculate_total_NJS(rt, LOGGER);
-    RCLCPP_INFO(LOGGER, "\033[31m NJS total %f \033[0m", NJS_total);
+    RCLCPP_INFO(LOGGER, "\033[33m NJS total %.2f \033[0m", NJS_total);
     return NJS_total / num_joints; 
 }
 
