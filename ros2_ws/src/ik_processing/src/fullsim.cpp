@@ -203,9 +203,7 @@ int main(int argc, char** argv)
     const Eigen::Vector3f agent2_av_pos5 {237.0, -3.39, 0};
 
     const Eigen::Vector3f agent1_av_path_1_5 = agent1_av_pos5 - agent1_av_pos1;
-    const Eigen::Vector3f agent5_av_path_5_1 = agent2_av_pos1 - agent2_av_pos5;
-    // RCLCPP_INFO(LOGGER, "Average Path Agent 1: x=%f y=%f z=%f", agent1_av_path_1_5.x(), agent1_av_path_1_5.y(), agent1_av_path_1_5.z() );    
-    // RCLCPP_INFO(LOGGER, "Average Path Agent 2: x=%f y=%f z=%f", agent5_av_path_5_1.x(), agent5_av_path_5_1.y(), agent5_av_path_5_1.z() );    
+    const Eigen::Vector3f agent5_av_path_5_1 = agent2_av_pos1 - agent2_av_pos5;    
 
     const auto crossproduct = agent1_av_path_1_5.cross(agent5_av_path_5_1);
     const auto dotproduct = agent1_av_path_1_5.dot(agent5_av_path_5_1);
@@ -214,7 +212,7 @@ int main(int argc, char** argv)
 
     const auto abs_both_paths =abs_agent1_path * abs_agent2_path;
     const auto cos_phi = dotproduct / abs_both_paths;
-    const auto sin_phi = crossproduct.norm() / abs_both_paths; 
+    const auto sin_phi = crossproduct.z() / abs_both_paths; 
 
 
     Eigen::Matrix3f rotationsmatrix {
