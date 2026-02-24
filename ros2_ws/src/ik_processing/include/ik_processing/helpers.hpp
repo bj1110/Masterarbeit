@@ -34,7 +34,7 @@ namespace helpers{
 
     std::string get_startpos(const Header& header);
 
-    double to_double(const builtin_interfaces::msg::Duration& d){
+    inline double to_double(const builtin_interfaces::msg::Duration& d){
         double erg = d.sec + (d.nanosec / 1e9);
         return erg; 
     }

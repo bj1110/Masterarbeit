@@ -145,6 +145,12 @@ int main(int argc, char** argv)
     }
 
 
+    /*
+        create vector of the timestamps
+        fill later.
+    */
+    std::vector<double> timesteps; 
+
         
     /*
         Creating the Path towards the desired output folder:
@@ -244,6 +250,7 @@ int main(int argc, char** argv)
         p.position.z = (point.z() +Z_OFFSET)/1000;
         p.orientation =tf2::toMsg(q); 
         waypoints.push_back(p);
+        timesteps.push_back(dp.time);
     }
 
 
@@ -353,7 +360,7 @@ int main(int argc, char** argv)
     };
 
     /* 5: */
-    const double hip_weight = 0.0009;
+    const double hip_weight = 0.00009; // added 1x0. better performance on some paths, but less human-like on others. 
     const double elbow_weight= 0.000000001; 
     const std::vector<std::string> joint_model_names = joint_model_group->getJointModelNames();
     const auto cost_fn = [&hip_weight, &elbow_weight, &compute_l2_norm, &penalize_hip, &incentivise_elbow /*, &LOGGER*/]
@@ -430,6 +437,8 @@ int main(int argc, char** argv)
     outputdata["info"]["cartesian_path_completion"]=frac.value;
 
     outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(rt_msg, LOGGER); 
+    auto input_path_eval = evaluator::endeffector(waypoints, timesteps, LOGGER);
+    outputdata["info"]["Endeffector_NJS"] = input_path_eval.get_NJS(); 
 
     outputfile << std::setw(4) <<outputdata <<std::endl; 
     
