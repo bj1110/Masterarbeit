@@ -66,7 +66,7 @@ class Parser: public rclcpp::Node{
         std::ifstream file{filepath};
         if(file.is_open()){
             RCLCPP_INFO(this->get_logger(), "Successfully opened file");
-            data = create_datapoints(file, _is_baseline); 
+            data = create_datapoints(file); 
         }
         else{
             RCLCPP_ERROR(this->get_logger(), "Failed to open file with path: %s", filepath.c_str());
@@ -108,7 +108,7 @@ class Parser: public rclcpp::Node{
     u_short _startpos1, _startpos2, _goalpos1, _goalpos2, _exnum, _datafile; 
     std::vector<Datapoint> data; 
     Header header_; 
-    std::vector<Datapoint> create_datapoints(std::ifstream& file, const bool _is_baseline);
+    std::vector<Datapoint> create_datapoints(std::ifstream& file);
     rclcpp::Service<Data>::SharedPtr _service_server;
     bool service_completed_ =false; 
 
@@ -128,14 +128,14 @@ class Parser: public rclcpp::Node{
 
 };
 
-std::vector<Datapoint> Parser::create_datapoints(std::ifstream& file, const bool _is_baseline){
+std::vector<Datapoint> Parser::create_datapoints(std::ifstream& file){
     std::vector<Datapoint> data; 
     std::vector<std::stringstream> vss; 
     std::string line;
     while(std::getline(file, line)){
         vss.emplace_back(line);
     }
-    if(_is_baseline){
+    if(_is_baseline && _is_agent1){
         std::array<float, 5> f;
         while(vss[0]>>f[0]){
             for(size_t i=1; i<5; ++i){
@@ -151,6 +151,21 @@ std::vector<Datapoint> Parser::create_datapoints(std::ifstream& file, const bool
             data.push_back(d);
         }
         return data; 
+    }else if(_is_baseline){
+        std::array<float,5> f;
+        while (vss[0]>>f[0]){
+            for(size_t i=1; i<5; ++i){
+                vss[i]>>f[i];
+            }
+            Datapoint d;
+            d.time= f[0];
+            d.x2=f[1];
+            d.y2=f[2];
+            d.z2=f[3];
+            d.error2=f[4];
+            data.push_back(d);
+        }
+        return data;
     }else{
         std::array<float,9> f;
         while(vss[0]>>f[0]){
