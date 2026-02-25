@@ -61,7 +61,7 @@ class Parser: public rclcpp::Node{
         
         std::string file_info= create_file_info(); 
 
-        RCLCPP_INFO(this->get_logger(), "Opening: %s", file_info.c_str()); 
+        RCLCPP_INFO(this->get_logger(), "\033[35mOpening: %s \033[0m", file_info.c_str()); 
 
         std::ifstream file{filepath};
         if(file.is_open()){
