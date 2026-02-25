@@ -232,16 +232,15 @@ int main(int argc, char** argv)
     /*
         Due to the axis choice in model compared to data: swap x and y. 
         Due to the top view: invert y.
+        Chosing either agent1 or agent2 to compute the path
     */
     std::vector<geometry_msgs::msg::Pose> waypoints;
     for(auto dp: data){
         Eigen::Vector3f point {dp.y1, dp.x1, dp.z1}; 
-        if(!header.is_baseline && !header.is_agent1){
+        if(!header.is_agent1){
             point.x() = dp.y2;
             point.y() = dp.x2;
             point.z() = dp.z2;
-        }
-        if(!header.is_agent1){
             point = rotationsmatrix * point;
         }
         geometry_msgs::msg::Pose p;
