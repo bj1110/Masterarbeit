@@ -325,7 +325,7 @@ int main(int argc, char** argv)
     opts.return_approximate_solution = true;
     auto start_state = move_group.getCurrentState();
     std::vector<moveit::core::RobotStatePtr> traj;
-    moveit::core::MaxEEFStep max_eef_step(0.02, 0.2);
+    moveit::core::MaxEEFStep max_eef_step(0.01, 0.1);
     moveit::core::CartesianPrecision cartesian_precision{ .translational = 0.005,
                                                         .rotational = 0.05,
                                                         .max_resolution = 5e-3 };
