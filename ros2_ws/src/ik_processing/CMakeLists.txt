@@ -17,6 +17,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(ament_index_cpp REQUIRED)
+find_package(RBDL REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_core REQUIRED)
@@ -34,6 +36,10 @@ add_library(ik_helpers
 add_library(ik_evaluator
   src/evaluator.cpp)
 
+add_library(rba
+  src/rigid_body_algorithm.cpp
+)
+
 target_include_directories(ik_helpers
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -41,6 +47,12 @@ target_include_directories(ik_helpers
 )
 
 target_include_directories(ik_evaluator
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+target_include_directories(rba
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
@@ -97,10 +109,16 @@ ament_target_dependencies(ik_evaluator
   moveit_visual_tools
 )
 
+ament_target_dependencies(rba
+  rclcpp
+  Eigen3
+)
+
 target_link_libraries(fullsim
   ik_helpers
   ik_evaluator
   nlohmann_json::nlohmann_json
+  rba
 )
 
 target_link_libraries(ik_helpers
@@ -164,6 +182,11 @@ install(
 
 install(
   TARGETS ik_evaluator
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+)
+install(
+  TARGETS rba
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
