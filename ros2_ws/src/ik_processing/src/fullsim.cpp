@@ -310,7 +310,25 @@ int main(int argc, char** argv)
     moveit_msgs::msg::RobotState state_msg;
     moveit::core::robotStateToRobotStateMsg(rs, state_msg);
     move_group.setStartStateToCurrentState(); 
+
+
+    /*
+      get the urdf -> links -> interia  
+    */
+    const auto urdf = robot_model->getURDF();
+    std::vector<std::shared_ptr<urdf::Link>> urdf_links {};
+    urdf->getLinks(urdf_links);
+    std::unordered_map<std::string, urdf::Inertial> inertias;
+    std::vector<std::string> link_names;
+    for(const auto& link: urdf_links){
+        std::string link_name= link->name;
+        urdf::Inertial link_inertial = *(link->inertial);
+        inertias.insert({link_name, link_inertial}); 
+        link_names.push_back(link_name);
+    }
+
     
+    // TODO: initialized targets directly from data
     /* 2: */
     Eigen::Isometry3d target;
     EigenSTL::vector_Isometry3d targets;

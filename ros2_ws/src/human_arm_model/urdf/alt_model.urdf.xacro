@@ -61,7 +61,9 @@
             </geometry>
             <origin xyz="0.0 0.0 ${-hand_length/2}" rpy="${90*math.pi/180} 0.0 ${90*math.pi/180}"/>
         </collision>
-        <xacro:box_inertia m="${hand_weight}" x="${hand_thickness}" y="${hand_length}" z="${hand_width}" />
+        <xacro:box_inertia m="${hand_weight}" x="${hand_thickness}" y="${hand_length}" z="${hand_width}" >
+            <origin xyz="0.0 0.0 ${-hand_length/2}" rpy="${90*math.pi/180} 0.0 ${90*math.pi/180}"/>
+        </xacro:box_inertia>
     </link>
 
     
