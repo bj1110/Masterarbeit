@@ -14,6 +14,15 @@ from moveit_configs_utils import MoveItConfigsBuilder
 def generate_launch_description():
     this_package = FindPackageShare('ik_processing')
     moveit_package = FindPackageShare("moveit_config")
+    model_package = FindPackageShare('human_arm_model')
+
+    modelpath = PathJoinSubstitution([
+        model_package,
+        'urdf',
+        'alt_model.urdf.xacro'
+    ])
+    urdf= ParameterValue(Command(['xacro ', modelpath]), value_type=str)
+    
 
     is_baseline = LaunchConfiguration('is_baseline')
     is_agent1 = LaunchConfiguration('is_agent1')
@@ -111,7 +120,8 @@ def generate_launch_description():
             moveit_config.robot_description_semantic,
             moveit_config.robot_description_kinematics,
             moveit_config.joint_limits,
-            {'recalculate':recalculate}
+            {'recalculate':recalculate},
+            {'urdf' : urdf }
         ],
     )
 

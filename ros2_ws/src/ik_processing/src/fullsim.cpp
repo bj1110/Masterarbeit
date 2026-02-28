@@ -23,7 +23,7 @@
 
 #include "ik_processing/helpers.hpp"
 #include "ik_processing/evaluator.hpp"
-
+#include "ik_processing/rigid_body_algorithm.hpp"
 
 #include <moveit/move_group_interface/move_group_interface.hpp>
 #include <moveit/planning_scene_interface/planning_scene_interface.hpp>
@@ -47,6 +47,7 @@ using json = nlohmann::json;
 using Datapoint = ik_processing::msg::Datapoint; 
 using Header = ik_processing::msg::Header; 
 using Data = ik_processing::srv::Data; 
+using crb = rigid_body_algorithm::crb; 
 
 
 int main(int argc, char** argv)
@@ -58,6 +59,7 @@ int main(int argc, char** argv)
     const auto LOGGER = move_group_node->get_logger(); 
 
     bool recalculate = move_group_node->get_parameter("recalculate").as_bool();
+    std::string urdf_string = move_group_node->get_parameter("urdf").as_string(); 
 
 
     static const std::string PLANNING_GROUP = "arm";
@@ -315,17 +317,18 @@ int main(int argc, char** argv)
     /*
       get the urdf -> links -> interia  
     */
-    const auto urdf = robot_model->getURDF();
-    std::vector<std::shared_ptr<urdf::Link>> urdf_links {};
-    urdf->getLinks(urdf_links);
-    std::unordered_map<std::string, urdf::Inertial> inertias;
-    std::vector<std::string> link_names;
-    for(const auto& link: urdf_links){
-        std::string link_name= link->name;
-        urdf::Inertial link_inertial = *(link->inertial);
-        inertias.insert({link_name, link_inertial}); 
-        link_names.push_back(link_name);
-    }
+    // const auto urdf = robot_model->getURDF();
+    // std::vector<std::shared_ptr<urdf::Link>> urdf_links {};
+    // urdf->getLinks(urdf_links);
+    // std::unordered_map<std::string, urdf::Inertial> inertias;
+    // std::vector<std::string> link_names;
+    // for(const auto& link: urdf_links){
+    //     std::string link_name= link->name;
+    //     urdf::Inertial link_inertial = *(link->inertial);
+    //     inertias.insert({link_name, link_inertial}); 
+    //     link_names.push_back(link_name);
+    // }
+
 
     
     // TODO: initialized targets directly from data
@@ -349,6 +352,21 @@ int main(int argc, char** argv)
                                                         .max_resolution = 5e-3 };
 
     /* 4: */
+
+    
+    std::vector<double> joint_states;
+    start_state->copyJointGroupPositions(joint_model_group, joint_states);
+    crb crb_{ joint_states , urdf_string , LOGGER}; 
+    Eigen::MatrixXd inertia = crb_.get_inertia_Matrix();
+    RCLCPP_INFO(LOGGER, "inertia matrix first values: %f, %f", inertia(0, 0), inertia(0, 1) );
+
+    const auto compute_energy = [&crb_](std::vector<double> solution){
+        crb_.update_model_state(solution);
+        Eigen::MatrixXd inertia_matrix = crb_.get_inertia_Matrix();
+
+    };
+
+
     const auto compute_l2_norm = [](std::vector<double> solution, std::vector<double> start) {
         double sum = 0.0;
         for (size_t ji = 0; ji < solution.size(); ji++)
@@ -404,7 +422,7 @@ int main(int argc, char** argv)
     /* 7: */
     robot_trajectory::RobotTrajectory rt(start_state->getRobotModel(), PLANNING_GROUP);
     for (const moveit::core::RobotStatePtr& traj_state : traj)
-    rt.addSuffixWayPoint(traj_state, 0.0);
+        rt.addSuffixWayPoint(traj_state, 0.0);
     trajectory_processing::TimeOptimalTrajectoryGeneration time_param;
     time_param.computeTimeStamps(rt, 1.0);
 
@@ -439,7 +457,7 @@ int main(int argc, char** argv)
                     move_group.execute(my_plan);
                     outputdata["info"]["endpoint_reachable"]=false;
                     outputdata["info"]["max_percentage"]=percentage_reachable;
-                    outputdata["info"]["num_points_moved_to"]=num_points_not_movedto;
+                    outputdata["info"]["num_poijoint_states = joint_model_group->nts_moved_to"]=num_points_not_movedto;
                     outputdata["info"]["last_pos_movable"]=waypoints[pt]; 
                     break;
                 }

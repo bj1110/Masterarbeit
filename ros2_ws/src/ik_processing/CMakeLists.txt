@@ -18,6 +18,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(RBDL REQUIRED)
+# find_package(rdbl_urdfreader REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 find_package(moveit_ros_planning_interface REQUIRED)
@@ -81,12 +82,6 @@ ament_target_dependencies(fullsim
 ament_target_dependencies(parser
   rclcpp
   ament_index_cpp
-  # geometry_msgs
-  # sensor_msgs
-  # tf2_ros
-  # moveit_ros_planning_interface
-  # moveit_core
-  # moveit_visual_tools
 )
 
 ament_target_dependencies(ik_helpers
@@ -106,7 +101,6 @@ ament_target_dependencies(ik_evaluator
   tf2_ros
   moveit_ros_planning_interface
   moveit_core
-  moveit_visual_tools
 )
 
 ament_target_dependencies(rba
@@ -126,6 +120,11 @@ target_link_libraries(ik_helpers
 )
 target_link_libraries(ik_evaluator
   nlohmann_json::nlohmann_json
+)
+
+target_link_libraries(rba
+  rbdl
+  rbdl_urdfreader
 )
 
 set(msg_files
@@ -152,7 +151,7 @@ target_link_libraries(ik_evaluator "${cpp_typesupport_target}")
 
 target_link_libraries(parser "${cpp_typesupport_target}")
 target_link_libraries(fullsim "${cpp_typesupport_target}")
-
+target_link_libraries(rba "${cpp_typesupport_target}")
 
 install(DIRECTORY
   data

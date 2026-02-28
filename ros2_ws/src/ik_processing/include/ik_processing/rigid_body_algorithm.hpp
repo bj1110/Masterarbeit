@@ -2,16 +2,10 @@
 #include <memory>
 #include <experimental/propagate_const>
 #include <rclcpp/rclcpp.hpp> 
+#include <Eigen/Dense>
 		
 
 namespace rigid_body_algorithm{
-
-struct transfer{
-    std::vector<double> masses;
-    std::vector<std::vector<double>> origin;
-    std::vector<std::vector<double>> inertias; 
-    size_t num_links;
-}; 
 
 class crb{
     private:
@@ -25,12 +19,13 @@ class crb{
     crb(const crb&) = delete;
     crb& operator=(const crb&) = delete;
     crb& operator=(crb&&); 
+    crb(const std::vector<double>& joint_states, const std::string& urdf_string, const rclcpp::Logger& logger);
 
-    void crba();
+    bool crba();
+    Eigen::MatrixXd get_inertia_Matrix() const; 
 
-    bool update();
+    bool update_model_state(const std::vector<double> joint_states);
 
-    //TODO: Getter 
 
 
 
