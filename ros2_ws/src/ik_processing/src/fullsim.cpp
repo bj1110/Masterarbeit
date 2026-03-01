@@ -59,6 +59,7 @@ int main(int argc, char** argv)
     const auto LOGGER = move_group_node->get_logger(); 
 
     bool recalculate = move_group_node->get_parameter("recalculate").as_bool();
+    bool fully_calc = move_group_node->get_parameter("fully_calc").as_bool();
     std::string urdf_string = move_group_node->get_parameter("urdf").as_string(); 
 
 
@@ -359,59 +360,69 @@ int main(int argc, char** argv)
     crb crb_{ joint_states , urdf_string , LOGGER}; 
     crb_.crba(); 
     Eigen::MatrixXd inertia = crb_.get_inertia_Matrix();
-    RCLCPP_INFO(LOGGER, "inertia matrix first values: %f, %f", inertia(0, 0), inertia(0, 1) );
 
-
-    const auto compute_energy = [&crb_](std::vector<double> solution){
+    const double duration = 0.1; 
+    const auto compute_energy = [&crb_, &duration](const std::vector<double>& start, const std::vector<double>& solution){
         crb_.update_model_state(solution);
         Eigen::MatrixXd inertia_matrix = crb_.get_inertia_Matrix();
-
+        Eigen::VectorXd start_positions; 
+        start_positions = Eigen::Map< const Eigen::VectorXd>(
+            start.data(),
+            start.size()
+        );
+        Eigen::VectorXd end_positions;
+        end_positions = Eigen::Map<const Eigen::VectorXd>(
+            solution.data(),
+            solution.size()
+        ); 
+        Eigen::VectorXd speeds = (end_positions - start_positions) / duration; 
+        double T = 0.5 * speeds.transpose() * inertia_matrix * speeds;
+        return T; 
     };
 
 
-    const auto compute_l2_norm = [](std::vector<double> solution, std::vector<double> start) {
-        double sum = 0.0;
-        for (size_t ji = 0; ji < solution.size(); ji++)
-        {
-            double d = solution[ji] - start[ji];
-            sum += d * d;
-        }
-        return sum;
-    };
+    // const auto compute_l2_norm = [](std::vector<double> solution, std::vector<double> start) {
+    //     double sum = 0.0;
+    //     for (size_t ji = 0; ji < solution.size(); ji++)
+    //     {
+    //         double d = solution[ji] - start[ji];
+    //         sum += d * d;
+    //     }
+    //     return sum;
+    // };
 
-    const size_t hip_idx = joint_model_group->getVariableGroupIndex("columna_flex_joint");
-    const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.0005, double penalty_size= 1.0, double penalty_gradient=1.0){
-        double d= solution[hip_idx]; 
-        double step = 0.5 * (1+ std::tanh(penalty_gradient * (d-delta))); 
-        double penalty = penalty_size * step* (d-delta); 
-        return penalty; 
-    };
+    // const size_t hip_idx = joint_model_group->getVariableGroupIndex("columna_flex_joint");
+    // const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.0005, double penalty_size= 1.0, double penalty_gradient=1.0){
+    //     double d= solution[hip_idx]; 
+    //     double step = 0.5 * (1+ std::tanh(penalty_gradient * (d-delta))); 
+    //     double penalty = penalty_size * step* (d-delta); 
+    //     return penalty; 
+    // };
 
-    const moveit::core::JointModel* elbow_model = robot_model->getJointModel("elbow_yaw_joint");
-    const moveit::core::VariableBounds elbowBounds = (elbow_model-> getVariableBounds())[0];
-    const double elbow_max = elbowBounds.max_position_; /*maximum bend*/ 
-    const size_t elbow_idx = joint_model_group->getVariableGroupIndex("elbow_yaw_joint");
-    const auto incentivise_elbow = [&elbow_idx, &elbow_max] (std::vector<double>solution){
-        double d= elbow_max - solution[elbow_idx]; 
-        return -(d*d) ; 
-    };
+    // const moveit::core::JointModel* elbow_model = robot_model->getJointModel("elbow_yaw_joint");
+    // const moveit::core::VariableBounds elbowBounds = (elbow_model-> getVariableBounds())[0];
+    // const double elbow_max = elbowBounds.max_position_; /*maximum bend*/ 
+    // const size_t elbow_idx = joint_model_group->getVariableGroupIndex("elbow_yaw_joint");
+    // const auto incentivise_elbow = [&elbow_idx, &elbow_max] (std::vector<double>solution){
+    //     double d= elbow_max - solution[elbow_idx]; 
+    //     return -(d*d) ; 
+    // };
 
     /* 5: */
-    const double hip_weight = 0.00009; // added 1x0. better performance on some paths, but less human-like on others. 
-    const double elbow_weight= 0.000000001; 
+    // const double hip_weight = 0.00009; // added 1x0. better performance on some paths, but less human-like on others. 
+    // const double elbow_weight= 0.000000001; 
+
+    const double energy_weight = 0.0; 
     const std::vector<std::string> joint_model_names = joint_model_group->getJointModelNames();
-    const auto cost_fn = [&hip_weight, &elbow_weight, &compute_l2_norm, &penalize_hip, &incentivise_elbow /*, &LOGGER*/]
+    const auto cost_fn = [&compute_energy,  &energy_weight]
                                                 (const geometry_msgs::msg::Pose& /*goal_pose*/,
                                                 const moveit::core::RobotState& solution_state,
                                                 moveit::core::JointModelGroup const* jmg,
-                                                const std::vector<double>& /*seed_state*/) {
+                                                const std::vector<double>& seed_state) {
         std::vector<double> proposed_joint_positions;
         solution_state.copyJointGroupPositions(jmg, proposed_joint_positions);
-        //double abs = compute_l2_norm(proposed_joint_positions, seed_state);
-        double hip = hip_weight* penalize_hip(proposed_joint_positions);
-        double elbow = elbow_weight* incentivise_elbow(proposed_joint_positions);
-        
-        return hip + elbow ;
+        double T = compute_energy(seed_state, proposed_joint_positions); 
+        return T ;
     };
     
     /* 6: */
@@ -434,7 +445,7 @@ int main(int argc, char** argv)
     move_group.execute(rt_msg);
     outputdata = rt_msg; 
 
-    if(frac.value<1.0){
+    if(frac.value<1.0 && fully_calc){
         RCLCPP_INFO(LOGGER, "Path was not computed fully, attempting to move the last part"); 
         move_group.setPoseTarget(waypoints.back());
         move_group.clearPathConstraints(); 

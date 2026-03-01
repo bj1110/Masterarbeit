@@ -33,6 +33,7 @@ def generate_launch_description():
     datafile=LaunchConfiguration('datafile')
     exNum=LaunchConfiguration('exNum')
     recalculate=LaunchConfiguration('recalculate')
+    fully_calc=LaunchConfiguration('fully_calc')
 
     declare_baseline=DeclareLaunchArgument(
         'is_baseline',
@@ -90,6 +91,13 @@ def generate_launch_description():
         description='Bool indicating if previously calculated Path should be used or recalculated and be overridden'
     )
 
+    declare_fully_calc=DeclareLaunchArgument(
+        'fully_calc',
+        default_value='true',
+        choices=['true', 'false'],
+        description='Bool indicating if path should be completed using setPoseTarget() if CartesianPath not complete'
+    )
+
     moveit_config = MoveItConfigsBuilder("alt_human_arm_model", package_name="moveit_config") \
         .robot_description(file_path="config/alt_human_arm_model.urdf.xacro") \
         .robot_description_semantic(file_path="config/alt_human_arm_model.srdf") \
@@ -121,7 +129,8 @@ def generate_launch_description():
             moveit_config.robot_description_kinematics,
             moveit_config.joint_limits,
             {'recalculate':recalculate},
-            {'urdf' : urdf }
+            {'urdf' : urdf },
+            {'fully_calc':fully_calc}
         ],
     )
 
@@ -147,6 +156,7 @@ def generate_launch_description():
         declare_datafile,
         declare_exNum,
         declare_recalculate,
+        declare_fully_calc, 
         start_parser_node,
         delay,
     ])
