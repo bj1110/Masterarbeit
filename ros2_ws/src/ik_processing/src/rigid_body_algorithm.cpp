@@ -28,7 +28,7 @@ class crb::impl{
             joint_states.data(),
             joint_states.size()
         );
-        joint_space_intertia_Matrix_ = RigidBodyDynamics::Math::MatrixNd(); 
+        joint_space_intertia_Matrix_ = RigidBodyDynamics::Math::MatrixNd(model_->q_size, model_->q_size); 
         joint_space_intertia_Matrix_.setZero(); 
     };
 

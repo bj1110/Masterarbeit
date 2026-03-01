@@ -357,8 +357,10 @@ int main(int argc, char** argv)
     std::vector<double> joint_states;
     start_state->copyJointGroupPositions(joint_model_group, joint_states);
     crb crb_{ joint_states , urdf_string , LOGGER}; 
+    crb_.crba(); 
     Eigen::MatrixXd inertia = crb_.get_inertia_Matrix();
     RCLCPP_INFO(LOGGER, "inertia matrix first values: %f, %f", inertia(0, 0), inertia(0, 1) );
+
 
     const auto compute_energy = [&crb_](std::vector<double> solution){
         crb_.update_model_state(solution);
