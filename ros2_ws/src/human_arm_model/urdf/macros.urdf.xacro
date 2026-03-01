@@ -18,7 +18,7 @@
     </xacro:macro>
 
 
-    <xacro:macro name="cylinder_link_template"  params="name mass radius height *origin ">
+    <xacro:macro name="cylinder_link_template"  params="name mass radius height dir_y dir_z dir_x:='0.0' *origin ">
         <link name="${name}">
             <visual>
                 <geometry>
@@ -33,15 +33,13 @@
                 </geometry>
             </collision>
 
-            <xacro:cylinder_inertia m="${mass}" r="${radius}" h="${height}">
-                <xacro:insert_block name="origin"/>
-            </xacro:cylinder_inertia>           
+            <xacro:cylinder_inertia m="${mass}" r="${radius}" h="${height}" dir_y="${dir_y}" dir_z="${dir_z}" dir_x="${dir_x}"/>        
         </link>
     </xacro:macro>
 
-    <xacro:macro name="cylinder_inertia" params="m r h *origin">
+    <xacro:macro name="cylinder_inertia" params="m r h dir_y dir_z dir_x">
         <inertial>
-            <xacro:insert_block name="origin"/>
+            <origin xyz="${dir_x * h/2.0} ${-1.0* dir_y*h/2.0} ${-1.0* dir_z*h/2.0}" rpy="0.0 0.0 0.0"/>
             <mass value="${m}"/>
             <inertia ixx="${(1/12)* m*(3*r*r + h*h) }" ixy="0.0" ixz="0.0" iyy="${(1/12)* m*(3*r*r + h*h) }" iyz="0.0" izz="${(1/2)*m*r*r}" />
         </inertial>

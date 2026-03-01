@@ -23,16 +23,16 @@
     <xacro:include filename="model2_folder/columna.urdf.xacro"/> 
 
     <!-- placeholder mass here -->
-    <xacro:cylinder_link_template name="clavicular" mass="1" radius="${sternum_radius/2}" height="${clavicle_link_length}">
+    <xacro:cylinder_link_template name="clavicular" mass="1" radius="${sternum_radius/2}" height="${clavicle_link_length}" dir_y="1.0" dir_z="0.0">
         <origin xyz="0.0 ${right * clavicle_link_length/2} 0.0" rpy="${math.pi/2} 0.0 0.0"/>
     </xacro:cylinder_link_template>
 
 
-    <xacro:cylinder_link_template name="humerus" mass="${upperarm_weight}" radius="${upperarm_radius}" height="${upperarm_length}">
+    <xacro:cylinder_link_template name="humerus" mass="${upperarm_weight}" radius="${upperarm_radius}" height="${upperarm_length}" dir_y="0.0" dir_z="1.0">
         <origin xyz="0.0 0.0 ${-upperarm_length/2}" rpy="0.0 0.0 0.0"/>
     </xacro:cylinder_link_template>
 
-    <xacro:cylinder_link_template name="forearm" mass="${forearm_weight}" radius="${forearm_circumference / (2*math.pi)}" height="${elbow_wrist_length}">
+    <xacro:cylinder_link_template name="forearm" mass="${forearm_weight}" radius="${forearm_circumference / (2*math.pi)}" height="${elbow_wrist_length}" dir_y="0.0" dir_z="1.0">
         <origin xyz="0.0 0.0 ${-elbow_wrist_length/2}" rpy="0.0 0.0 0.0"/>
     </xacro:cylinder_link_template>
 
@@ -62,12 +62,12 @@
             <origin xyz="0.0 0.0 ${-hand_length/2}" rpy="${90*math.pi/180} 0.0 ${90*math.pi/180}"/>
         </collision>
         <xacro:box_inertia m="${hand_weight}" x="${hand_thickness}" y="${hand_length}" z="${hand_width}" >
-            <origin xyz="0.0 0.0 ${-hand_length/2}" rpy="${90*math.pi/180} 0.0 ${90*math.pi/180}"/>
+            <origin xyz="0.0 0.0 ${-hand_length/2}" rpy="0.0 0.0 0.0"/>
         </xacro:box_inertia>
     </link>
 
     
-    <xacro:cylinder_link_template name="can" mass="${can_weight}" radius="${can_radius}" height="${can_height}">
+    <xacro:cylinder_link_template name="can" mass="${can_weight}" radius="${can_radius}" height="${can_height}" dir_y="0.0" dir_z="0.0" dir_x="-1.0">
         <origin xyz="${-can_height/2} 0.0 0.0" rpy="${90*math.pi/180} 0.0 ${90*math.pi/180}"/>
     </xacro:cylinder_link_template>
     
