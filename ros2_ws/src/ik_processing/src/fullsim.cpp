@@ -412,7 +412,7 @@ int main(int argc, char** argv)
     // const double hip_weight = 0.00009; // added 1x0. better performance on some paths, but less human-like on others. 
     // const double elbow_weight= 0.000000001; 
 
-    const double energy_weight = 0.0; 
+    const double energy_weight = 0.0001; 
     const std::vector<std::string> joint_model_names = joint_model_group->getJointModelNames();
     const auto cost_fn = [&compute_energy,  &energy_weight]
                                                 (const geometry_msgs::msg::Pose& /*goal_pose*/,
