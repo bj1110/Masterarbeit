@@ -103,6 +103,7 @@ def generate_launch_description():
         .robot_description_semantic(file_path="config/alt_human_arm_model.srdf") \
         .robot_description_kinematics(file_path="config/kinematics.yaml") \
         .joint_limits(file_path="config/joint_limits.yaml") \
+        .planning_pipelines( "stomp", ["stomp"])\
         .to_moveit_configs()
 
     start_parser_node = Node(
@@ -128,6 +129,7 @@ def generate_launch_description():
             moveit_config.robot_description_semantic,
             moveit_config.robot_description_kinematics,
             moveit_config.joint_limits,
+            moveit_config.planning_pipelines,
             {'recalculate':recalculate},
             {'urdf' : urdf },
             {'fully_calc':fully_calc}

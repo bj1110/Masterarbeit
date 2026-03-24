@@ -15,7 +15,7 @@
         </inertial>
     </xacro:macro>
     <!-- Inertia for a cylinder  -->
-    <xacro:macro name="cylinder_inertia" params="m r h">
+    <xacro:macro name="cylinder_inertia2" params="m r h">
         <inertial>
             <mass value="${m}"/>
             <inertia ixx="${(1/12)* m*(3*r*r + h*h) }" ixy="0.0" ixz="0.0" iyy="${(1/12)* m*(3*r*r + h*h) }" iyz="0.0" izz="${(1/2)*m*r*r}" />
@@ -58,7 +58,7 @@
                 </geometry>
             </collision>
 
-            <xacro:cylinder_inertia m="${mass}" r="${radius}" h="${height}"/>           
+            <xacro:cylinder_inertia2 m="${mass}" r="${radius}" h="${height}"/>           
         </link>
     </xacro:macro>
 

@@ -23,7 +23,7 @@
     <xacro:include filename="model2_folder/columna.urdf.xacro"/> 
 
     <!-- placeholder mass here -->
-    <xacro:cylinder_link_template name="clavicular" mass="1" radius="${sternum_radius/2}" height="${clavicle_link_length}" dir_y="1.0" dir_z="0.0">
+    <xacro:cylinder_link_template name="clavicular" mass="3" radius="${clavicle_raidus}" height="${clavicle_link_length}" dir_y="1.0" dir_z="0.0">
         <origin xyz="0.0 ${right * clavicle_link_length/2} 0.0" rpy="${math.pi/2} 0.0 0.0"/>
     </xacro:cylinder_link_template>
 

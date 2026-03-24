@@ -23,7 +23,7 @@ find_package(Eigen3 REQUIRED)
 
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_core REQUIRED)
-find_package(moveit_visual_tools REQUIRED)
+# find_package(moveit_visual_tools REQUIRED)
 
 find_package(rosidl_default_generators REQUIRED)
 
@@ -66,7 +66,7 @@ ament_target_dependencies(solver
   tf2_ros
   moveit_ros_planning_interface
   moveit_core
-  moveit_visual_tools
+  #moveit_visual_tools
 )
 
 ament_target_dependencies(fullsim
@@ -76,7 +76,7 @@ ament_target_dependencies(fullsim
   tf2_ros
   moveit_ros_planning_interface
   moveit_core
-  moveit_visual_tools
+  #moveit_visual_tools
 )
 
 ament_target_dependencies(parser
@@ -91,7 +91,7 @@ ament_target_dependencies(ik_helpers
   tf2_ros
   moveit_ros_planning_interface
   moveit_core
-  moveit_visual_tools
+  #moveit_visual_tools
 )
 
 ament_target_dependencies(ik_evaluator

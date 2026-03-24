@@ -1,14 +1,5 @@
 arm:
-  kinematics_solver: pick_ik/PickIkPlugin
-  kinematics_solver_timeout: 0.5
-  kinematics_solver_attempts: 1000
-  stop_optimization_on_valid_solution: false
-  cost_threshold: 100.0
-  position_threshold: 0.01
-  orientation_threshold: 0.1
-  position_scale: 0.5
-  rotation_scale: 0.1
-  minimal_displacement_weight: 0.001
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
 
 
 # arm:

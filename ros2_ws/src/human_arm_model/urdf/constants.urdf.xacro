@@ -21,6 +21,7 @@
     <xacro:property name="shoulder_length" value="0.1498" />
     <xacro:property name="clavicle_link_length" value="0.2081" />
     <xacro:property name="sternum_radius" value="${clavicle_link_length - shoulder_length}" />
+    <xacro:property name="clavicle_raidus" value="0.015"/>
 
     <!-- Winkel -->
     <!-- Diese sind Bewegungsamplituden und nicht 1:1 im Model vorwendbar. -->

@@ -19,7 +19,7 @@
             </geometry>
             <origin xyz="0.0 0.0 ${waist_back_length/2}"/>
         </collision>
-        <xacro:box_inertia m="50.0" x="${sternum_radius}" y="${sternum_radius}" z="${waist_back_length}" >
+        <xacro:box_inertia m="45.0" x="${sternum_radius}" y="${sternum_radius}" z="${waist_back_length}" >
             <origin xyz="0.0 0.0 ${waist_back_length/2}"/>
         </xacro:box_inertia>
     </link>
@@ -43,7 +43,7 @@
             </geometry>
             <origin xyz="0.0 0.0 ${waist_back_length/2}"/>
         </collision>
-        <xacro:box_inertia m="50.0" x="${sternum_radius}" y="${sternum_radius}" z="${waist_back_length}">
+        <xacro:box_inertia m="45.0" x="${sternum_radius}" y="${sternum_radius}" z="${waist_back_length}">
             <origin xyz="0.0 0.0 ${waist_back_length/2}"/>
         </xacro:box_inertia>
     </link>
