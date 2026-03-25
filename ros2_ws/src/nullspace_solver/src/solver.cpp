@@ -8,9 +8,9 @@
 
 namespace nullspace_solver{
 
-bool solver::solve(const Eigen::Isometry3d& start, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory, const double dt ){
-    const pinocchio::SE3 oMdes(Eigen::Matrix3d::Identity(), goal.translation());
-    Eigen::VectorXd q = pinocchio::neutral(model_); // TODO: startpos =/= neutral pos 
+bool solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory, const double dt ){
+    const pinocchio::SE3 oMdes(goal.rotation(), goal.translation());
+    Eigen::VectorXd q = start_configuration; 
 
     pinocchio::Data::Matrix6x J(6, model_.nv);
     J.setZero();
@@ -23,6 +23,7 @@ bool solver::solve(const Eigen::Isometry3d& start, const Eigen::Isometry3d& goal
         pinocchio::forwardKinematics(model_, data_, q);
         const pinocchio::SE3 dMi = oMdes.actInv(data_.oMi[ee_frame_id_]);
         err=pinocchio::log6(dMi).toVector();
+        //possibily weigh position/orientation: err.tail<3>() *= 0.1;  // reduce orientation importance
         if(err.norm() < eps_){
             success=true;
             break;

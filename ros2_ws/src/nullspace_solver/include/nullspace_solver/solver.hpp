@@ -11,7 +11,7 @@ namespace nullspace_solver{
 
 class solver{
 public: 
-    bool solve(const Eigen::Isometry3d& start, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory, const double dt );
+    bool solve(const Eigen::VectorXd& start_configuration, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory, const double dt );
 
     void setJointLimits(const Eigen::VectorXd& q_min, const Eigen::VectorXd& q_max);
 
