@@ -19,6 +19,10 @@ bool solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
     typedef Eigen::Matrix<double, 6, 1> Vector6d;
     Vector6d err;
     Eigen::VectorXd v(model_.nv); // v= q' 
+
+    trajectory.joint_trajectory.joint_names = model_.names; 
+    double time = 0.0;
+
     for(int i=0;;++i){
         pinocchio::forwardKinematics(model_, data_, q);
         const pinocchio::SE3 dMi = oMdes.actInv(data_.oMi[ee_frame_id_]);
@@ -33,11 +37,33 @@ bool solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
             break;
         }
         pinocchio::computeJointJacobian(model_, data_, q, ee_frame_id_, J);
-        pinocchio::Data::Matrix6 JJt;
-        JJt.noalias() = J * W_inv_* J.transpose();  // J* W^{-1}*J^t
-        JJt.diagonal().array() += damp_; // JJ^t + Lambda*I
-        v.noalias() = W_inv_* J.transpose() * JJt.ldlt().solve(err); //W^{-1} * J^t ( JJ^t + Lambda*I)^{-1} err  
+        pinocchio::Data::Matrix6 JWJt;
+        JWJt.noalias() = J * W_inv_* J.transpose();  // J* W^{-1}*J^t
+        JWJt.diagonal().array() += damp_; // JJ^t + Lambda*I
+        Eigen::MatrixXd J_pinv;
+        J_pinv.noalias() = W_inv_ * J.transpose() * JWJt.ldlt().solve(Eigen::MatrixXd::Identity(6,6));//W^{-1} * J^t ( JJ^t + Lambda*I)^{-1} 
+        
+        Eigen::MatrixXd v_primary;
+        v_primary.noalias() = J_pinv * err ; 
+
+        Eigen::MatrixXd N;
+        N.noalias() = Eigen::MatrixXd::Identity(DoF_, DoF_) - J_pinv* J;
+        Eigen::VectorXd v_secondary(DoF_);
+        nullspaceObjective(q, v_secondary);
+
+        v.noalias() = v_primary + N*v_secondary; 
         q=pinocchio::integrate(model_, q, v*dt);
+
+        trajectory_msgs::msg::JointTrajectoryPoint point;
+        point.positions.resize(DoF_);
+        for(int j=0; j<DoF_; ++j){
+            point.positions[j] = q[j];
+            point.velocities[j] = v[j]; 
+        }
+        point.time_from_start = rclcpp::Duration::from_seconds(time);
+        trajectory.joint_trajectory.points.push_back(point);
+        time += dt; 
+
         if(!(i%10)){
             std::cout << i << ": error = " << err.transpose() << std::endl;
         }
