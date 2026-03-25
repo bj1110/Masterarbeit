@@ -11,47 +11,49 @@ namespace nullspace_solver{
 
 class solver{
 public: 
-    bool solve(const Eigen::Isometry3d& start, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory );
+    bool solve(const Eigen::Isometry3d& start, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory, const double dt );
 
     void setJointLimits(const Eigen::VectorXd& q_min, const Eigen::VectorXd& q_max);
 
     bool initFromURDF(const std::string& urdf_path, const std::string& ee_frame);
 
+    solver()=default;
+    ~solver() = default;
+    solver(const solver& other) = delete;
+    solver(solver&& other)=default;
+    solver& operator=(const solver& other) = delete;
+    solver& operator=(solver&& other)=default; 
+    solver(const std::string& urdf_path, const std::string& ee_frame);
 
+    bool adjust_weight(const size_t pos, const double weight);
 
 private:
-    void computeError(const Eigen::Isometry3d& current, const Eigen::Isometry3d& target, Eigen::VectorXd& error);
-
-    void computeJacobian(const Eigen::VectorXd& q, Eigen::MatrixXd& J);
-
-    void dampedPseudoInverse(const Eigen::MatrixXd& J, Eigen::MatrixXd& J_pinv );
-
+    
     void nullspaceObjective(const Eigen::VectorXd& q, Eigen::VectorXd& objective );
 
-    void forwardKinematics(const Eigen::VectorXd& q, Eigen::Isometry3d& FK);
 
 
 
 private:
     pinocchio::Model model_;
     pinocchio::Data data_;
-    pinocchio::FrameIndex ee_frame_id_;
+    pinocchio::FrameIndex ee_frame_id_; //could also be int
 
 
-    u_int DoF_; 
+    int DoF_; 
     Eigen::MatrixXd K_;
-    Eigen::MatrixXd W_;
+    Eigen::MatrixXd W_inv_; 
     Eigen::MatrixXd W_inv_;
-    double lambda_; 
+    double lambda_ = 1e-6; 
+    int max_steps_= 1000;
+    double eps_ = 1e-4;
+    double damp_ = 1e-6; 
+
 
     Eigen::VectorXd q_min_;
     Eigen::VectorXd q_max_;
-
-    Eigen::MatrixXd J_;
-    Eigen::MatrixXd J_pinv_;
-    Eigen::MatrixXd N_; 
-    Eigen::VectorXd error_;
-    Eigen::VectorXd q_dot_; // q_dot = J_pinv * p_dot + N_ * q_dot_null;
+    
+    // q_dot = J_pinv * p_dot + N_ * q_dot_null;
 
 };
 } // namespace nullspace_solver 
