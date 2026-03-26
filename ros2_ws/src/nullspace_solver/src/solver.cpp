@@ -37,12 +37,9 @@ bool solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
             success=false;
             break;
         }
-        pinocchio::computeJointJacobian(model_, data_, q, ee_frame_id_, J);
-        pinocchio::Data::Matrix6 JWJt;
-        JWJt.noalias() = J * W_inv_* J.transpose();  // J* W^{-1}*J^t
-        JWJt.diagonal().array() += damp_; // JJ^t + Lambda*I
+
         Eigen::MatrixXd J_pinv;
-        J_pinv.noalias() = W_inv_ * J.transpose() * JWJt.ldlt().solve(Eigen::MatrixXd::Identity(6,6));//W^{-1} * J^t ( JJ^t + Lambda*I)^{-1} 
+        compute_weighted_J_pinv(J,q,J_pinv);
         
         Eigen::MatrixXd v_primary;
         v_primary.noalias() = J_pinv * err ; 
@@ -55,19 +52,13 @@ bool solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
         v.noalias() = v_primary + N*v_secondary; 
         q=pinocchio::integrate(model_, q, v*dt);
 
-        trajectory_msgs::msg::JointTrajectoryPoint point;
-        point.positions.resize(DoF_);
-        for(int j=0; j<DoF_; ++j){
-            point.positions[j] = q[j];
-            point.velocities[j] = v[j]; 
-        }
-        point.time_from_start = rclcpp::Duration::from_seconds(time);
+        trajectory_msgs::msg::JointTrajectoryPoint point = create_JTP(q,v,time);
         trajectory.joint_trajectory.points.push_back(point);
         time += dt; 
 
-        if(!(i%10)){
-            std::cout << i << ": error = " << err.transpose() << std::endl;
-        }
+        // if(!(i%10)){
+        //     std::cout << i << ": error = " << err.transpose() << std::endl;
+        // }
     }
             
     // std::cout << "\nresult: " << q.transpose() << std::endl;
@@ -75,11 +66,20 @@ bool solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
     return success; 
 }
 
-solver::solver(const std::string& urdf_path, const std::string& ee_frame){
+solver::solver(const std::string& urdf_path, const std::string& ee_frame, std::vector<Datapoint> input_data, bool is_agent1):
+    in_traj_(input_data, is_agent1)
+{
     initFromURDF(urdf_path, ee_frame);
     DoF_= model_.nv;
     W_inv_ = Eigen::MatrixXd::Identity(DoF_, DoF_); 
-    //TODO:: Input_trajectory constructing
+}
+
+solver::solver(const std::string& urdf_path, const std::string& ee_frame):
+    in_traj_()
+{
+    initFromURDF(urdf_path, ee_frame);
+    DoF_= model_.nv;
+    W_inv_ = Eigen::MatrixXd::Identity(DoF_, DoF_); 
 }
 
 
@@ -120,6 +120,26 @@ bool solver::adjust_weight(const Eigen::VectorXd& weights){
     W_inv_.diagonal() = weights; 
     return true;
 }
+
+void solver::compute_weighted_J_pinv(pinocchio::Data::Matrix6x& J, const Eigen::VectorXd& q, Eigen::MatrixXd& J_pinv){
+    pinocchio::computeJointJacobian(model_, data_, q, ee_frame_id_, J);
+    pinocchio::Data::Matrix6 JWJt;
+    JWJt.noalias() = J * W_inv_* J.transpose();  // J* W^{-1}*J^t
+    JWJt.diagonal().array() += damp_; // JJ^t + Lambda*I
+    J_pinv.noalias() = W_inv_ * J.transpose() * JWJt.ldlt().solve(Eigen::MatrixXd::Identity(6,6));//W^{-1} * J^t ( JJ^t + Lambda*I)^{-1}        
+}
+
+trajectory_msgs::msg::JointTrajectoryPoint solver::create_JTP(const Eigen::VectorXd& q, const Eigen::VectorXd& v, const double time) const{
+    trajectory_msgs::msg::JointTrajectoryPoint point;
+    point.positions.resize(DoF_);
+    for(int j=0; j<DoF_; ++j){
+        point.positions[j] = q[j];
+        point.velocities[j] = v[j]; 
+    }
+    point.time_from_start = rclcpp::Duration::from_seconds(time);
+    return point; 
+}
+
 
 
 } // namespace nullspace_solver 
