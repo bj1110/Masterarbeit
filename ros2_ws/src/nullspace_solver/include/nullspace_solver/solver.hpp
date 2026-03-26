@@ -26,6 +26,7 @@ public:
     solver(const std::string& urdf_path, const std::string& ee_frame);
 
     bool adjust_weight(const size_t pos, const double weight);
+    bool adjust_weight(const Eigen::VectorXd& weights);
 
 private:
     
@@ -52,8 +53,5 @@ private:
 
     Eigen::VectorXd q_min_;
     Eigen::VectorXd q_max_;
-    
-    // q_dot = J_pinv * p_dot + N_ * q_dot_null;
-
 };
 } // namespace nullspace_solver 

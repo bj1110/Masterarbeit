@@ -5,6 +5,7 @@
 #include <pinocchio/algorithm/jacobian.hpp>
 #include <pinocchio/algorithm/frames.hpp>
 #include "pinocchio/algorithm/joint-configuration.hpp"
+#include <cassert>
 
 namespace nullspace_solver{
 
@@ -104,7 +105,9 @@ void solver::setJointLimits(const Eigen::VectorXd& q_min, const Eigen::VectorXd&
 
 
 bool solver::adjust_weight(const size_t pos, const double weight){
-    if(weight<=0 || weight >1.0){
+    assert(pos < DoF_);
+    assert(weight>=0 && weight<=1.0); 
+    if(weight<0 || weight >1.0){
         std::cout << "New weight not within legal range"<< std::endl;
         return false;
     }
@@ -113,7 +116,17 @@ bool solver::adjust_weight(const size_t pos, const double weight){
         return false;
     }
     W_inv_(pos, pos)= weight; 
+    return true; 
 }
-    
+
+bool solver::adjust_weight(const Eigen::VectorXd& weights){
+    assert(weights.size() == W_inv_.diagonalSize());
+    if(weights.size() != W_inv_.diagonalSize()){
+        return false;
+    }
+    W_inv_.diagonal() = weights; 
+    return true;
+}
+
 
 } // namespace nullspace_solver 
