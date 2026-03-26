@@ -29,7 +29,7 @@ private:
 
     Eigen::Vector3d interpolate(const Eigen::Vector3d& p1,const Eigen::Vector3d& v1, const Eigen::Vector3d& p2, const Eigen::Vector3d& v2, double perc)const;
 
-    double Input_Trajectory::percentage_between_points(const Datapoint& dp1, const Datapoint& dp2, const double total_time); 
+    double percentage_between_points(const Datapoint& dp1, const Datapoint& dp2, const double total_time); 
 
     Eigen::Vector3d approx_v(size_t seg) const;
 
@@ -38,7 +38,7 @@ private:
 
     bool allPointsServed_ = false; 
     std::vector<Datapoint> data_;
-    int current_segment_ = 0 ;
+    size_t current_segment_ = 0 ;
     // double t_segment_;
     double segment_duration_;
     bool is_agent1_ = true; 

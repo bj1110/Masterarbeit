@@ -22,6 +22,7 @@ double Input_Trajectory::calculate_segment_duration(size_t segment) const{
         return std::numeric_limits<double>::quiet_NaN();
     }
     double durr = data_[segment+1].time - data_[segment].time; 
+    return durr; 
 }   
 
 bool Input_Trajectory::advance_segment(){
@@ -48,8 +49,8 @@ Eigen::Vector3d Input_Trajectory::get_current_segment() const{
     return to_eigen_vector(data_[current_segment_]); 
 }
 
-Eigen::Vector3d Input_Trajectory::get_current_goalpos(double time, double dt){
-    if(all_points_have_been_served){
+Eigen::Vector3d Input_Trajectory::get_current_goalpos(double time, double /*dt*/){
+    if(all_points_have_been_served()){
         return to_eigen_vector(data_.back());
     }
     if(current_segment_>=data_.size()-1){
