@@ -69,14 +69,9 @@ bool solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
             std::cout << i << ": error = " << err.transpose() << std::endl;
         }
     }
-    if(success){
-        std::cout<< "Convergence achieved" <<std::endl;
-    } else{
-        std::cout << "\nWarning: the iterative algorithm has not reached convergence to the desired precision" << std::endl;
-    }
             
-    std::cout << "\nresult: " << q.transpose() << std::endl;
-    std::cout << "\nfinal error: " << err.transpose() << std::endl;
+    // std::cout << "\nresult: " << q.transpose() << std::endl;
+    // std::cout << "\nfinal error: " << err.transpose() << std::endl;
     return success; 
 }
 
@@ -84,6 +79,7 @@ solver::solver(const std::string& urdf_path, const std::string& ee_frame){
     initFromURDF(urdf_path, ee_frame);
     DoF_= model_.nv;
     W_inv_ = Eigen::MatrixXd::Identity(DoF_, DoF_); 
+    //TODO:: Input_trajectory constructing
 }
 
 
@@ -92,7 +88,6 @@ bool solver::initFromURDF(const std::string& urdf_path, const std::string& ee_fr
     data_ = pinocchio::Data(model_);
     ee_frame_id_ = model_.getFrameId(ee_frame);
     if (ee_frame_id_ == (pinocchio::FrameIndex)(-1)){
-        std::cerr << "End-effector frame not found\n";
         return false;
     }
     return true;
@@ -108,11 +103,9 @@ bool solver::adjust_weight(const size_t pos, const double weight){
     assert(pos < DoF_);
     assert(weight>=0 && weight<=1.0); 
     if(weight<0 || weight >1.0){
-        std::cout << "New weight not within legal range"<< std::endl;
         return false;
     }
     if (pos >= DoF_){
-        std::cout << "Index not within legal range"<< std::endl;
         return false;
     }
     W_inv_(pos, pos)= weight; 

@@ -5,6 +5,8 @@
 #include <moveit_msgs/msg/robot_trajectory.hpp>
 #include <pinocchio/multibody/model.hpp>
 #include <pinocchio/multibody/data.hpp>
+#include "nullspace_solver/input_trajectory.hpp"
+
 
 
 namespace nullspace_solver{
@@ -28,6 +30,7 @@ public:
     bool adjust_weight(const size_t pos, const double weight);
     bool adjust_weight(const Eigen::VectorXd& weights);
 
+
 private:
     
     void nullspaceObjective(const Eigen::VectorXd& q, Eigen::VectorXd& objective );
@@ -44,7 +47,6 @@ private:
     int DoF_; 
     Eigen::MatrixXd K_;
     Eigen::MatrixXd W_inv_; 
-    Eigen::MatrixXd W_inv_;
     double lambda_ = 1e-6; 
     int max_steps_= 1000;
     double eps_ = 1e-4;
@@ -53,5 +55,7 @@ private:
 
     Eigen::VectorXd q_min_;
     Eigen::VectorXd q_max_;
+
+    Input_Trajectory in_traj; 
 };
 } // namespace nullspace_solver 
