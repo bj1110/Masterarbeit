@@ -50,7 +50,7 @@ private:
     pinocchio::FrameIndex ee_frame_id_; //could also be int
 
 
-    int DoF_; 
+    size_t DoF_; 
     Eigen::MatrixXd K_;
     Eigen::MatrixXd W_inv_; 
     int max_steps_= 1000;

@@ -25,7 +25,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
     Vector6d err;
     Eigen::VectorXd v(DoF_); // v= q' 
     Eigen::MatrixXd J_pinv(DoF_, 6);
-    Eigen::MatrixXd v_primary(DoF_);
+    Eigen::VectorXd v_primary(DoF_);
     Eigen::MatrixXd N(DoF_, DoF_);
     Eigen::VectorXd v_secondary(DoF_);
 
@@ -144,7 +144,7 @@ trajectory_msgs::msg::JointTrajectoryPoint Solver::create_JTP(const Eigen::Vecto
     trajectory_msgs::msg::JointTrajectoryPoint point;
     point.positions.resize(DoF_);
     point.velocities.resize(DoF_);  
-    for(int j=0; j<DoF_; ++j){
+    for(size_t j=0; j<DoF_; ++j){
         point.positions[j] = q[j];
         point.velocities[j] = v[j]; 
     }
