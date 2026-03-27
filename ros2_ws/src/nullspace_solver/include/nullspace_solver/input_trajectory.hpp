@@ -19,7 +19,7 @@ public:
     int get_current_segment_index() const; 
     Eigen::Vector3d get_current_segment() const;
 
-    Eigen::Vector3d get_current_goalpos(double time, double dt);
+    Eigen::Vector3d get_current_goalpos(double time);
 
     bool advance_segment();
     bool all_points_have_been_served()const; 

@@ -6,6 +6,8 @@ namespace nullspace_solver{
 Input_Trajectory::Input_Trajectory(const std::vector<Datapoint>& data, bool is_agent1): data_(data), is_agent1_(is_agent1)
 {
     segment_duration_ = calculate_segment_duration(0); 
+    if(data_.size() < 2)
+        throw std::runtime_error("Not enough trajectory points");
 }
 
 double Input_Trajectory::get_segment_duration() const{
@@ -49,7 +51,7 @@ Eigen::Vector3d Input_Trajectory::get_current_segment() const{
     return to_eigen_vector(data_[current_segment_]); 
 }
 
-Eigen::Vector3d Input_Trajectory::get_current_goalpos(double time, double /*dt*/){
+Eigen::Vector3d Input_Trajectory::get_current_goalpos(double time){
     if(all_points_have_been_served()){
         return to_eigen_vector(data_.back());
     }
@@ -64,7 +66,7 @@ Eigen::Vector3d Input_Trajectory::get_current_goalpos(double time, double /*dt*/
     }
     Datapoint dp1 = data_[current_segment_];
     Datapoint dp2 = data_[current_segment_+1];
-    double total_time = time /*+dt*/ ;
+    double total_time = time;
     
     double perc = percentage_between_points(dp1, dp2, total_time);
  

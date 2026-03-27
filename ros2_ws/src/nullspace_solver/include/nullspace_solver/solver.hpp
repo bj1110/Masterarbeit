@@ -11,22 +11,22 @@
 
 namespace nullspace_solver{
 
-class solver{
+class Solver{
 public: 
-    bool solve(const Eigen::VectorXd& start_configuration, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory, const double dt );
+    bool solve(const Eigen::VectorXd& start_configuration, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory);
 
     void setJointLimits(const Eigen::VectorXd& q_min, const Eigen::VectorXd& q_max);
 
     bool initFromURDF(const std::string& urdf_path, const std::string& ee_frame);
 
-    solver()=default;
-    ~solver() = default;
-    solver(const solver& other) = delete;
-    solver(solver&& other)=default;
-    solver& operator=(const solver& other) = delete;
-    solver& operator=(solver&& other)=default; 
-    solver(const std::string& urdf_path, const std::string& ee_frame,  std::vector<Datapoint> input_data, bool is_agent1);
-    solver(const std::string& urdf_path, const std::string& ee_frame);
+    Solver()=default;
+    ~Solver() = default;
+    Solver(const Solver& other) = delete;
+    Solver(Solver&& other)=default;
+    Solver& operator=(const Solver& other) = delete;
+    Solver& operator=(Solver&& other)=default; 
+    Solver(const std::string& urdf_path, const std::string& ee_frame,  std::vector<Datapoint> input_data, bool is_agent1);
+    Solver(const std::string& urdf_path, const std::string& ee_frame);
 
 
     bool adjust_weight(const size_t pos, const double weight);
@@ -52,15 +52,16 @@ private:
     int DoF_; 
     Eigen::MatrixXd K_;
     Eigen::MatrixXd W_inv_; 
-    double lambda_ = 1e-6; 
     int max_steps_= 1000;
     double eps_ = 1e-4;
     double damp_ = 1e-6; 
+    double max_time_ = 10;
+    double dt_ = 0.001;  
 
 
     Eigen::VectorXd q_min_;
     Eigen::VectorXd q_max_;
 
-    Input_Trajectory in_traj_; 
+    Input_Trajectory input_traj_; 
 };
 } // namespace nullspace_solver 
