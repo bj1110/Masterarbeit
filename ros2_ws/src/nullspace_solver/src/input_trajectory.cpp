@@ -3,11 +3,15 @@
 
 namespace nullspace_solver{
 
-Input_Trajectory::Input_Trajectory(const std::vector<Datapoint>& data, bool is_agent1): data_(data), is_agent1_(is_agent1)
+Input_Trajectory::Input_Trajectory(const std::vector<geometry_msgs::msg::Pose>& datapoints, const std::vector<double>& timestaps): 
+datapoints_(datapoints), timestamps_(timestaps)
 {
     segment_duration_ = calculate_segment_duration(0); 
-    if(data_.size() < 2)
+    if(datapoints_.size() < 2)
         throw std::runtime_error("Not enough trajectory points");
+    if(datapoints_.size() != timestamps_.size()){
+        throw std::runtime_error("Different number of Positions and timestamps");
+    }
 }
 
 double Input_Trajectory::get_segment_duration() const{
@@ -20,10 +24,10 @@ int Input_Trajectory::get_current_segment_index() const{
 
 
 double Input_Trajectory::calculate_segment_duration(size_t segment) const{
-    if(segment >= data_.size()-1){
+    if(segment >= timestamps_.size()-1){
         return std::numeric_limits<double>::quiet_NaN();
     }
-    double durr = data_[segment+1].time - data_[segment].time; 
+    double durr = timestamps_[segment+1] - timestamps_[segment]; 
     return durr; 
 }   
 
@@ -31,12 +35,12 @@ bool Input_Trajectory::advance_segment(){
     if(all_points_have_been_served()){
         return false;
     }
-    if(current_segment_ >= data_.size() -1 ){
+    if(current_segment_ >= datapoints_.size() -1 ){
         allPointsServed_= true; 
         return false;  
     }
     current_segment_ ++; 
-    if(current_segment_ >= data_.size() - 1){
+    if(current_segment_ >= datapoints_.size() - 1){
         allPointsServed_ = true;
     }
     segment_duration_= calculate_segment_duration(current_segment_);
@@ -48,27 +52,27 @@ bool Input_Trajectory::all_points_have_been_served() const{
 }
 
 Eigen::Vector3d Input_Trajectory::get_current_segment() const{
-    return to_eigen_vector(data_[current_segment_]); 
+    return to_eigen_vector(datapoints_[current_segment_]); 
 }
 
 Eigen::Vector3d Input_Trajectory::get_current_goalpos(double time){
     if(all_points_have_been_served()){
-        return to_eigen_vector(data_.back());
+        return to_eigen_vector(datapoints_.back());
     }
-    if(current_segment_>=data_.size()-1){
-        return to_eigen_vector(data_.back());
+    if(current_segment_>=datapoints_.size()-1){
+        return to_eigen_vector(datapoints_.back());
     }
-    while(current_segment_ < data_.size()-1 && time > data_[current_segment_+1].time) {
+    while(current_segment_ < datapoints_.size()-1 && time > timestamps_[current_segment_+1]) {
         advance_segment();
     }
-    if(current_segment_>=data_.size()-1){
-        return to_eigen_vector(data_.back());
+    if(current_segment_>=datapoints_.size()-1){
+        return to_eigen_vector(datapoints_.back());
     }
-    Datapoint dp1 = data_[current_segment_];
-    Datapoint dp2 = data_[current_segment_+1];
+    geometry_msgs::msg::Pose dp1 = datapoints_[current_segment_];
+    geometry_msgs::msg::Pose dp2 = datapoints_[current_segment_+1];
     double total_time = time;
     
-    double perc = percentage_between_points(dp1, dp2, total_time);
+    double perc = percentage_between_points(current_segment_, current_segment_+1, total_time);
  
     Eigen::Vector3d p1 = to_eigen_vector(dp1);
     Eigen::Vector3d p2 = to_eigen_vector(dp2);
@@ -83,27 +87,27 @@ Eigen::Vector3d Input_Trajectory::get_current_goalpos(double time){
 Eigen::Vector3d Input_Trajectory::approx_v(size_t seg) const {
     if (seg == 0) {
         // Forward difference
-        Eigen::Vector3d p1 = to_eigen_vector(data_[seg + 1]);
-        Eigen::Vector3d p0 = to_eigen_vector(data_[seg]);
-        return (p1 - p0) / (data_[seg + 1].time - data_[seg].time);
+        Eigen::Vector3d p1 = to_eigen_vector(datapoints_[seg + 1]);
+        Eigen::Vector3d p0 = to_eigen_vector(datapoints_[seg]);
+        return (p1 - p0) / (timestamps_[seg + 1] - timestamps_[seg]);
     }
-    if (seg == data_.size() - 1) {
+    if (seg == datapoints_.size() - 1) {
         // Backward difference
-        Eigen::Vector3d p1 = to_eigen_vector(data_[seg]);
-        Eigen::Vector3d p0 = to_eigen_vector(data_[seg - 1]);
-        return (p1 - p0) / (data_[seg].time - data_[seg - 1].time);
+        Eigen::Vector3d p1 = to_eigen_vector(datapoints_[seg]);
+        Eigen::Vector3d p0 = to_eigen_vector(datapoints_[seg - 1]);
+        return (p1 - p0) / (timestamps_[seg] - timestamps_[seg - 1]);
     }
     // Central difference
-    Eigen::Vector3d p_l = to_eigen_vector(data_[seg - 1]);
-    Eigen::Vector3d p_r = to_eigen_vector(data_[seg + 1]);
-    double t_l = data_[seg - 1].time;
-    double t_r = data_[seg + 1].time;
+    Eigen::Vector3d p_l = to_eigen_vector(datapoints_[seg - 1]);
+    Eigen::Vector3d p_r = to_eigen_vector(datapoints_[seg + 1]);
+    double t_l = timestamps_[seg - 1];
+    double t_r = timestamps_[seg + 1];
     return (p_r - p_l) / (t_r - t_l);
 }
 
-double Input_Trajectory::percentage_between_points(const Datapoint& dp1, const Datapoint& dp2, const double total_time){
-    const double t1 = dp1.time;
-    const double t2 = dp2.time;
+double Input_Trajectory::percentage_between_points(const size_t index1, const size_t index2, const double total_time){
+    const double t1 = timestamps_[index1];
+    const double t2 = timestamps_[index2];
     if (t2 <= t1) {
         return (total_time <= t1) ? 0.0 : 1.0;
     }
@@ -132,19 +136,8 @@ Eigen::Vector3d Input_Trajectory::interpolate(
 
 
 
-Eigen::Vector3d Input_Trajectory::to_eigen_vector(Datapoint dp) const{
-    Eigen::Vector3d pos;
-    if(is_agent1_){
-        pos={dp.x1,
-            dp.y1,
-            dp.z1
-        };
-    }else{
-        pos={dp.x2,
-            dp.y2,
-            dp.z2
-        };
-    }
+Eigen::Vector3d Input_Trajectory::to_eigen_vector(geometry_msgs::msg::Pose pose) const{
+    Eigen::Vector3d pos {pose.position.x, pose.position.y, pose.position.z}; 
     return pos; 
 }
 

@@ -13,7 +13,6 @@ find_package(pinocchio REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_core REQUIRED)
 
-find_package(ik_processing REQUIRED)
 
 include_directories(
   include
@@ -36,7 +35,6 @@ ament_target_dependencies(nullspace_solver_lib
   pinocchio
   moveit_ros_planning_interface
   moveit_core
-  ik_processing
 )
 
 
@@ -61,7 +59,6 @@ ament_export_dependencies(
   pinocchio
   moveit_ros_planning_interface
   moveit_core
-  ik_processing
 )
 
 ament_package()

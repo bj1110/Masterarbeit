@@ -25,7 +25,7 @@ public:
     Solver(Solver&& other)=default;
     Solver& operator=(const Solver& other) = delete;
     Solver& operator=(Solver&& other)=default; 
-    Solver(const std::string& urdf_path, const std::string& ee_frame, const std::vector<Datapoint>& input_data, const bool is_agent1);
+    Solver(const std::string& urdf_path, const std::string& ee_frame, const std::vector<geometry_msgs::msg::Pose>& input_data, const std::vector<double> timestamps);
     Solver(const std::string& urdf_path, const std::string& ee_frame);
 
 

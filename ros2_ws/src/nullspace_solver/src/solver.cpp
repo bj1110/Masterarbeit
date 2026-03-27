@@ -76,13 +76,13 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
     return success; 
 }
 
-Solver::Solver(const std::string& urdf_path, const std::string& ee_frame, const std::vector<Datapoint>& input_data, const bool is_agent1):
-    input_traj_(input_data, is_agent1)
+Solver::Solver(const std::string& urdf_path, const std::string& ee_frame, const std::vector<geometry_msgs::msg::Pose>& input_data, const std::vector<double> timestamps):
+    input_traj_(input_data, timestamps)
 {
     initFromURDF(urdf_path, ee_frame);
     DoF_= model_.nv;
     W_inv_ = Eigen::MatrixXd::Identity(DoF_, DoF_); 
-    max_time_= input_data.back().time + 1.0; 
+    max_time_= timestamps.back() + 1.0; 
 }
 
 Solver::Solver(const std::string& urdf_path, const std::string& ee_frame):
