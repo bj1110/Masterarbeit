@@ -25,7 +25,7 @@ public:
     Solver(Solver&& other)=default;
     Solver& operator=(const Solver& other) = delete;
     Solver& operator=(Solver&& other)=default; 
-    Solver(const std::string& urdf_path, const std::string& ee_frame,  std::vector<Datapoint> input_data, bool is_agent1);
+    Solver(const std::string& urdf_path, const std::string& ee_frame, const std::vector<Datapoint>& input_data, const bool is_agent1);
     Solver(const std::string& urdf_path, const std::string& ee_frame);
 
 
@@ -41,6 +41,7 @@ private:
 
     trajectory_msgs::msg::JointTrajectoryPoint create_JTP(const Eigen::VectorXd& q, const Eigen::VectorXd& v, const double time) const; 
 
+    void check_joint_boundary(Eigen::VectorXd& v);
 
 
 private:
@@ -56,7 +57,8 @@ private:
     double eps_ = 1e-4;
     double damp_ = 1e-6; 
     double max_time_ = 10;
-    double dt_ = 0.001;  
+    double dt_ = 0.001; 
+    double margin_ = 1e-4;  
 
 
     Eigen::VectorXd q_min_;

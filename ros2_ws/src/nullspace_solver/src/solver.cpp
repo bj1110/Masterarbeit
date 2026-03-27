@@ -59,6 +59,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
         nullspaceObjective(q, v_secondary);
 
         v.noalias() = v_primary + N*v_secondary; 
+        check_joint_boundary(v); 
         q=pinocchio::integrate(model_, q, v*dt_);
 
         trajectory_msgs::msg::JointTrajectoryPoint point = create_JTP(q,v,time);
@@ -75,7 +76,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
     return success; 
 }
 
-Solver::Solver(const std::string& urdf_path, const std::string& ee_frame, std::vector<Datapoint> input_data, bool is_agent1):
+Solver::Solver(const std::string& urdf_path, const std::string& ee_frame, const std::vector<Datapoint>& input_data, const bool is_agent1):
     input_traj_(input_data, is_agent1)
 {
     initFromURDF(urdf_path, ee_frame);
@@ -151,6 +152,17 @@ trajectory_msgs::msg::JointTrajectoryPoint Solver::create_JTP(const Eigen::Vecto
     return point; 
 }
 
+void Solver::check_joint_boundary(Eigen::VectorXd& v){
+    for(size_t i =0; i< DoF_; ++i){
+        double v_min = (q_min_[i]+margin_-v[i])/dt_;
+        double v_max = (q_max_[i]-margin_-v[i])/dt_;
+        if (v[i] < v_min)
+            v[i] = v_min;
+        else if (v[i] > v_max)
+            v[i] = v_max;
+    }
+
+}
 
 
 } // namespace nullspace_solver 
