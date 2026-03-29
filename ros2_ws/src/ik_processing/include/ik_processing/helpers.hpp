@@ -38,6 +38,8 @@ namespace helpers{
         double erg = d.sec + (d.nanosec / 1e9);
         return erg; 
     }
+
+    std::string print_pose(const geometry_msgs::msg::Pose& pose); 
 }
 
 inline void to_json(json& j, const moveit::planning_interface::MoveGroupInterface& move_group){

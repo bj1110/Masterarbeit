@@ -352,10 +352,22 @@ int main(int argc, char** argv)
 
     move_group.execute(trajectory); 
 
+    const geometry_msgs::msg::Pose ee_final_pose = move_group.getCurrentPose().pose;
+    const geometry_msgs::msg::Pose ee_target_pose = waypoints.back(); 
+    RCLCPP_INFO(LOGGER, "Actual pose: %s", helpers::print_pose(ee_final_pose).c_str());
+    RCLCPP_INFO(LOGGER, "target pose: %s", helpers::print_pose(ee_final_pose).c_str());
+
+
     rclcpp::shutdown();
     return 0;
 
+    /*
     
+        END OF MY CUSTOM SOLVER CALLS 
+    
+    */
+
+
     planning_interface::MotionPlanRequest req;
     req.pipeline_id = "planning_pipeline";
     req.planner_id = "stomp";

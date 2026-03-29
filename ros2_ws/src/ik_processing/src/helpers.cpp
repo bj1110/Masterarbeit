@@ -87,6 +87,13 @@ std::string get_startpos(const Header& header){
     return {}; 
 }
 
+std::string print_pose(const geometry_msgs::msg::Pose& pose){
+    std::ostringstream oss;
+    oss << "translational: " << pose.position.x <<", " <<pose.position.y << ", "<< pose.position.z <<"\n";
+    oss << "rotational: x="<<pose.orientation.x << ", y="<<pose.orientation.y<< ", z= "<<pose.orientation.z << ", w="<<pose.orientation.w <<"\n";
+    return oss.str(); 
+}
+
 
 } //namespace helpers 
 
