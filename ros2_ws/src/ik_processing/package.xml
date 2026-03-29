@@ -16,6 +16,7 @@
   <depend>sensor_msgs</depend>
   <depend>moveit_ros_planning_interface</depend>
   <depend>ament_index_cpp</depend>
+  <depend>nullspace_solver</depend>
 
   <exec_depend>rosidl_default_runtime</exec_depend>
 

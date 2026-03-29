@@ -6,11 +6,22 @@
 #include <pinocchio/algorithm/frames.hpp>
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include <cassert>
+#include <cmath> 
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 namespace nullspace_solver{
 
 bool Solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory){
-    trajectory.joint_trajectory.joint_names = model_.names; 
+    RCLCPP_INFO(LOGGER, "\033[33m Solver received Task\033[0m"); 
+    for (pinocchio::JointIndex i = 1; i < model_.njoints; ++i){
+        const auto& joint = model_.joints[i];
+        if (joint.nq() > 0){
+            trajectory.joint_trajectory.joint_names.push_back(model_.names[i]);
+        }
+    } 
     double time = 0.0;
     
     Eigen::Vector3d curr_goal = input_traj_.get_current_goalpos(time+ dt_); 
@@ -30,12 +41,12 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
     Eigen::VectorXd v_secondary(DoF_);
 
     int iteration=0; 
-
     while(!input_traj_.all_points_have_been_served()){ 
         curr_goal = input_traj_.get_current_goalpos(time+ dt_); 
         oMdes.translation() = curr_goal; 
         pinocchio::forwardKinematics(model_, data_, q);
-        const pinocchio::SE3 dMi = oMdes.actInv(data_.oMi[ee_frame_id_]);
+        pinocchio::updateFramePlacements(model_, data_);
+        const pinocchio::SE3 dMi = oMdes.actInv(data_.oMf[ee_frame_id_]);
         err=pinocchio::log6(dMi).toVector();
         //possibily weigh position/orientation: err.tail<3>() *= 0.1;  // reduce orientation importance
         if(err.norm() < eps_){
@@ -76,26 +87,31 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
     return success; 
 }
 
-Solver::Solver(const std::string& urdf_path, const std::string& ee_frame, const std::vector<geometry_msgs::msg::Pose>& input_data, const std::vector<double> timestamps):
-    input_traj_(input_data, timestamps)
+void Solver::nullspaceObjective(const Eigen::VectorXd& q, Eigen::VectorXd& v){
+    v.setZero(); 
+}
+
+Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, const std::vector<geometry_msgs::msg::Pose>& input_data, const std::vector<double> timestamps, const rclcpp::Logger& logger):
+    input_traj_(input_data, timestamps), LOGGER(logger)
 {
-    initFromURDF(urdf_path, ee_frame);
+    initFromURDF(urdf_string, ee_frame);
     DoF_= model_.nv;
     W_inv_ = Eigen::MatrixXd::Identity(DoF_, DoF_); 
     max_time_= timestamps.back() + 1.0; 
+    RCLCPP_INFO(LOGGER, "\033[33m Solver setup complete\033[0m"); 
 }
 
-Solver::Solver(const std::string& urdf_path, const std::string& ee_frame):
-    input_traj_()
+Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, const rclcpp::Logger& logger):
+    input_traj_(), LOGGER(logger)
 {
-    initFromURDF(urdf_path, ee_frame);
+    initFromURDF(urdf_string, ee_frame);
     DoF_= model_.nv;
     W_inv_ = Eigen::MatrixXd::Identity(DoF_, DoF_); 
 }
 
 
-bool Solver::initFromURDF(const std::string& urdf_path, const std::string& ee_frame){
-    pinocchio::urdf::buildModel(urdf_path, model_);
+bool Solver::initFromURDF(const std::string& urdf_string, const std::string& ee_frame){
+    pinocchio::urdf::buildModelFromXML(urdf_string, model_);
     data_ = pinocchio::Data(model_);
     ee_frame_id_ = model_.getFrameId(ee_frame);
     if (ee_frame_id_ == (pinocchio::FrameIndex)(-1)){
@@ -153,6 +169,13 @@ trajectory_msgs::msg::JointTrajectoryPoint Solver::create_JTP(const Eigen::Vecto
 }
 
 void Solver::check_joint_boundary(Eigen::VectorXd& v){
+    if (q_min_.size() != DoF_ || q_max_.size() != DoF_) {
+        RCLCPP_WARN(LOGGER, "Joint limits size (%ld, %ld) != DoF_ (%ld). Using default limits.",
+                    q_min_.size(), q_max_.size(), DoF_);
+        q_min_ = Eigen::VectorXd::Constant(DoF_, -M_PI);
+        q_max_ = Eigen::VectorXd::Constant(DoF_, M_PI);
+    }
+
     for(size_t i =0; i< DoF_; ++i){
         double v_min = (q_min_[i]+margin_-v[i])/dt_;
         double v_max = (q_max_[i]-margin_-v[i])/dt_;

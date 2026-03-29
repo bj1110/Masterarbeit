@@ -1,3 +1,6 @@
+#include "nullspace_solver/solver.hpp"
+
+
 #include <moveit/move_group_interface/move_group_interface.hpp>
 #include <moveit/planning_scene_interface/planning_scene_interface.hpp>
 
@@ -47,6 +50,7 @@
 #include <moveit/kinematic_constraints/utils.hpp>
 #include <moveit_msgs/msg/display_trajectory.hpp>
 #include <moveit_msgs/msg/planning_scene.hpp>
+
 
 
 #include <cmath>
@@ -290,6 +294,66 @@ int main(int argc, char** argv)
     RCLCPP_INFO(LOGGER, "\033[34mFirst point: (%f, %f, %f)\033[0m", waypoints.front().position.x,waypoints.front().position.y, waypoints.front().position.z); 
     RCLCPP_INFO(LOGGER, "\033[34mLast point: (%f, %f, %f)\033[0m", waypoints.back().position.x,waypoints.back().position.y, waypoints.back().position.z); 
 
+
+    const std::vector<std::string>& variable_names = robot_model->getVariableNames();
+    size_t dof = variable_names.size();
+
+    Eigen::VectorXd q_min(dof);
+    Eigen::VectorXd q_max(dof);
+
+    for (size_t i = 0; i < dof; ++i)
+    {
+        const moveit::core::VariableBounds& bounds =
+            robot_model->getVariableBounds(variable_names[i]);
+
+        q_min[i] = bounds.min_position_;
+        q_max[i] = bounds.max_position_;
+    }
+    
+    /*
+        Set startstate from the default state states_values
+    */
+   
+   std::vector<double> joint_values;
+    for(const std::string& name: variable_names){
+        const double value = states_values[name];
+        joint_values.push_back(value);
+    }
+    Eigen::VectorXd start_configuration = Eigen::Map<Eigen::VectorXd>(joint_values.data(), dof);
+    
+    std::string ee_frame= "can";
+
+    nullspace_solver::Solver solver {urdf_string, ee_frame, waypoints, timesteps, LOGGER}; 
+
+    solver.setJointLimits(q_min, q_max); 
+
+
+    Eigen::Isometry3d goal;
+    const auto& p = waypoints.back();
+
+    goal.translation() = Eigen::Vector3d(p.position.x, p.position.y, p.position.z);
+
+    goal.linear() = Eigen::Quaterniond(
+        p.orientation.w,
+        p.orientation.x,
+        p.orientation.y,
+        p.orientation.z
+    ).toRotationMatrix();
+        
+    moveit_msgs::msg::RobotTrajectory trajectory;
+    
+    RCLCPP_INFO_STREAM(LOGGER, "start config: "<< start_configuration.transpose()); 
+ 
+    solver.solve(start_configuration, goal, trajectory); 
+
+    for(const std::string& name: trajectory.joint_trajectory.joint_names){
+        RCLCPP_INFO(LOGGER, "%s ", name.c_str()); 
+    }
+
+    move_group.execute(trajectory); 
+
+    rclcpp::shutdown();
+    return 0;
 
     
     planning_interface::MotionPlanRequest req;

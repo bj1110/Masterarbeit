@@ -86,7 +86,7 @@ def generate_launch_description():
 
     declare_recalculate=DeclareLaunchArgument(
         'recalculate',
-        default_value='false',
+        default_value='true',
         choices=['true', 'false'],
         description='Bool indicating if previously calculated Path should be used or recalculated and be overridden'
     )

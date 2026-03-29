@@ -14,10 +14,9 @@ namespace nullspace_solver{
 class Solver{
 public: 
     bool solve(const Eigen::VectorXd& start_configuration, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory);
-
     void setJointLimits(const Eigen::VectorXd& q_min, const Eigen::VectorXd& q_max);
 
-    bool initFromURDF(const std::string& urdf_path, const std::string& ee_frame);
+    bool initFromURDF(const std::string& urdf_string, const std::string& ee_frame);
 
     Solver()=default;
     ~Solver() = default;
@@ -25,8 +24,8 @@ public:
     Solver(Solver&& other)=default;
     Solver& operator=(const Solver& other) = delete;
     Solver& operator=(Solver&& other)=default; 
-    Solver(const std::string& urdf_path, const std::string& ee_frame, const std::vector<geometry_msgs::msg::Pose>& input_data, const std::vector<double> timestamps);
-    Solver(const std::string& urdf_path, const std::string& ee_frame);
+    Solver(const std::string& urdf_string, const std::string& ee_frame, const std::vector<geometry_msgs::msg::Pose>& input_data, const std::vector<double> timestamps, const rclcpp::Logger& logger);
+    Solver(const std::string& urdf_string, const std::string& ee_frame, const rclcpp::Logger& logger);
 
 
     bool adjust_weight(const size_t pos, const double weight);
@@ -35,7 +34,7 @@ public:
 
 private:
     
-    void nullspaceObjective(const Eigen::VectorXd& q, Eigen::VectorXd& objective );
+    void nullspaceObjective(const Eigen::VectorXd& q, Eigen::VectorXd& v);
 
     void compute_weighted_J_pinv(pinocchio::Data::Matrix6x& J, const Eigen::VectorXd& q, Eigen::MatrixXd& J_pinv);
 
@@ -47,7 +46,9 @@ private:
 private:
     pinocchio::Model model_;
     pinocchio::Data data_;
-    pinocchio::FrameIndex ee_frame_id_; //could also be int
+    pinocchio::FrameIndex ee_frame_id_; 
+
+    const rclcpp::Logger& LOGGER;
 
 
     size_t DoF_; 

@@ -2,131 +2,99 @@ cmake_minimum_required(VERSION 3.8)
 project(ik_processing)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include(FetchContent)
-FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
-FetchContent_MakeAvailable(json)
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+# Warnings
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# -----------------------------
+# Dependencies
+# -----------------------------
 find_package(ament_cmake REQUIRED)
+
+set(COMMON_DEPS
+  rclcpp
+  geometry_msgs
+  sensor_msgs
+  tf2_ros
+  moveit_ros_planning_interface
+  moveit_core
+  nullspace_solver
+)
+
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
-find_package(ament_index_cpp REQUIRED)
-find_package(RBDL REQUIRED)
-# find_package(rdbl_urdfreader REQUIRED)
-find_package(Eigen3 REQUIRED)
-
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_core REQUIRED)
-# find_package(moveit_visual_tools REQUIRED)
-
+find_package(ament_index_cpp REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(RBDL REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(nullspace_solver REQUIRED)
 
+# -----------------------------
+# External: nlohmann/json
+# -----------------------------
+include(FetchContent)
+FetchContent_Declare(
+  json
+  URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+)
+FetchContent_MakeAvailable(json)
+
+# -----------------------------
+# Libraries
+# -----------------------------
+add_library(ik_helpers src/helpers.cpp)
+add_library(ik_evaluator src/evaluator.cpp)
+add_library(rba src/rigid_body_algorithm.cpp)
+
+set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+foreach(lib ik_helpers ik_evaluator rba)
+  target_include_directories(${lib}
+    PUBLIC
+      $<BUILD_INTERFACE:${PROJECT_INCLUDE_DIR}>
+      $<INSTALL_INTERFACE:include># استاندارد
+  )
+endforeach()
+
+# Dependencies
+ament_target_dependencies(ik_helpers ${COMMON_DEPS})
+ament_target_dependencies(ik_evaluator ${COMMON_DEPS})
+ament_target_dependencies(rba rclcpp Eigen3)
+
+# Link libraries
+target_link_libraries(ik_helpers nlohmann_json::nlohmann_json)
+target_link_libraries(ik_evaluator nlohmann_json::nlohmann_json)
+target_link_libraries(rba rbdl rbdl_urdfreader)
+
+# -----------------------------
+# Executables
+# -----------------------------
 add_executable(solver src/solver.cpp)
 add_executable(fullsim src/fullsim.cpp)
 add_executable(parser src/parser.cpp)
 
-add_library(ik_helpers
-  src/helpers.cpp
-)
-add_library(ik_evaluator
-  src/evaluator.cpp)
+ament_target_dependencies(solver ${COMMON_DEPS})
+ament_target_dependencies(fullsim ${COMMON_DEPS})
+ament_target_dependencies(parser rclcpp ament_index_cpp)
 
-add_library(rba
-  src/rigid_body_algorithm.cpp
-)
-
-target_include_directories(ik_helpers
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-)
-
-target_include_directories(ik_evaluator
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-)
-
-target_include_directories(rba
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-)
-
-ament_target_dependencies(solver
-  rclcpp
-  geometry_msgs
-  sensor_msgs
-  tf2_ros
-  moveit_ros_planning_interface
-  moveit_core
-  #moveit_visual_tools
-)
-
-ament_target_dependencies(fullsim
-  rclcpp
-  geometry_msgs
-  sensor_msgs
-  tf2_ros
-  moveit_ros_planning_interface
-  moveit_core
-  #moveit_visual_tools
-)
-
-ament_target_dependencies(parser
-  rclcpp
-  ament_index_cpp
-)
-
-ament_target_dependencies(ik_helpers
-  rclcpp
-  geometry_msgs
-  sensor_msgs
-  tf2_ros
-  moveit_ros_planning_interface
-  moveit_core
-  #moveit_visual_tools
-)
-
-ament_target_dependencies(ik_evaluator
-  rclcpp
-  geometry_msgs
-  sensor_msgs
-  tf2_ros
-  moveit_ros_planning_interface
-  moveit_core
-)
-
-ament_target_dependencies(rba
-  rclcpp
-  Eigen3
-)
-
+# Linking
 target_link_libraries(fullsim
   ik_helpers
   ik_evaluator
-  nlohmann_json::nlohmann_json
   rba
-)
-
-target_link_libraries(ik_helpers
-  nlohmann_json::nlohmann_json
-)
-target_link_libraries(ik_evaluator
   nlohmann_json::nlohmann_json
 )
 
-target_link_libraries(rba
-  rbdl
-  rbdl_urdfreader
-)
-
+# -----------------------------
+# ROS Interfaces
+# -----------------------------
 set(msg_files
   "msg/Datapoint.msg"
   "msg/Header.msg"
@@ -146,53 +114,36 @@ ament_export_dependencies(rosidl_default_runtime)
 rosidl_get_typesupport_target(cpp_typesupport_target
   ${PROJECT_NAME} rosidl_typesupport_cpp)
 
-target_link_libraries(ik_helpers "${cpp_typesupport_target}")
-target_link_libraries(ik_evaluator "${cpp_typesupport_target}")
+# Link typesupport
+foreach(target
+    ik_helpers ik_evaluator rba
+    parser fullsim solver)
+  target_link_libraries(${target} "${cpp_typesupport_target}")
+endforeach()
 
-target_link_libraries(parser "${cpp_typesupport_target}")
-target_link_libraries(fullsim "${cpp_typesupport_target}")
-target_link_libraries(rba "${cpp_typesupport_target}")
-
-install(DIRECTORY
-  data
-  DESTINATION share/${PROJECT_NAME}
-)
-
-install(TARGETS solver
-  DESTINATION lib/${PROJECT_NAME}
-)
-install(TARGETS fullsim
-  DESTINATION lib/${PROJECT_NAME}
-)
-install(TARGETS parser
+# -----------------------------
+# Install
+# -----------------------------
+install(TARGETS
+  solver fullsim parser
   DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY
-  launch
-  DESTINATION share/${PROJECT_NAME}
-)
-
-install(
-  TARGETS ik_helpers
+install(TARGETS
+  ik_helpers ik_evaluator rba
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
 
-install(
-  TARGETS ik_evaluator
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
-install(
-  TARGETS rba
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-)
-
-install(
-  DIRECTORY include/
+install(DIRECTORY include/
   DESTINATION include
 )
 
+install(DIRECTORY launch data
+  DESTINATION share/${PROJECT_NAME}
+)
+
+# -----------------------------
+# Final
+# -----------------------------
 ament_package()
