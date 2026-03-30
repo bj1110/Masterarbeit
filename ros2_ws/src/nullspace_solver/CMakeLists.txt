@@ -12,6 +12,7 @@ find_package(Eigen3 REQUIRED)
 find_package(pinocchio REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_core REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 
 include_directories(
@@ -35,8 +36,12 @@ ament_target_dependencies(nullspace_solver_lib
   pinocchio
   moveit_ros_planning_interface
   moveit_core
+  yaml-cpp
 )
 
+target_link_libraries(nullspace_solver_lib
+  yaml-cpp
+)
 
 install(
   TARGETS nullspace_solver_lib
@@ -51,6 +56,10 @@ install(
   DESTINATION include/
 )
 
+install(
+  DIRECTORY config/
+  DESTINATION share/${PROJECT_NAME}/config
+)
 
 ament_export_targets(export_nullspace_solver HAS_LIBRARY_TARGET)
 ament_export_dependencies(
@@ -59,6 +68,7 @@ ament_export_dependencies(
   pinocchio
   moveit_ros_planning_interface
   moveit_core
+  yaml-cpp
 )
 
 ament_package()

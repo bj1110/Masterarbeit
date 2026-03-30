@@ -11,6 +11,15 @@
 
 namespace nullspace_solver{
 
+struct SolverConfig{
+    int max_steps_= 100000;
+    double eps_ = 0.001;
+    double damp_ = 1e-6; 
+    double max_time_ = 10;
+    double dt_ = 0.001; 
+    double margin_ = 1e-4;  
+};
+
 class Solver{
 public: 
     bool solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg::RobotTrajectory& trajectory);
@@ -42,6 +51,8 @@ private:
 
     void check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q);
 
+    bool load_config(const std::string& path); 
+
 
 private:
     pinocchio::Model model_;
@@ -54,12 +65,9 @@ private:
     size_t DoF_; 
     Eigen::MatrixXd K_;
     Eigen::MatrixXd W_inv_; 
-    int max_steps_= 100000;
-    double eps_ = 1e-4;
-    double damp_ = 1e-6; 
-    double max_time_ = 10;
-    double dt_ = 0.001; 
-    double margin_ = 1e-4;  
+
+
+    SolverConfig sc_; 
 
 
     Eigen::VectorXd q_min_;

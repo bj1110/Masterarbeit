@@ -168,7 +168,7 @@ int main(int argc, char** argv)
             RCLCPP_INFO(LOGGER, "This has been calculated before, loading..."); 
             std::ifstream inputfile (filepath); 
             if(!inputfile.is_open()){
-                RCLCPP_ERROR(LOGGER, "\033[31mFile could not be opened\033[0m"); 
+                RCLCPP_ERROR(LOGGER, "\033[34mFile could not be opened\033[0m"); 
                 rclcpp::shutdown();
                 return 1;
             }

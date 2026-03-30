@@ -7,6 +7,8 @@
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include <cassert>
 #include <cmath> 
+#include <yaml-cpp/yaml.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -24,9 +26,11 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
     } 
     double time = 0.0;
 
-    const Eigen::Matrix3d goal_orientation = input_traj_.get_orientation_goal();
+    size_t wp_idx=0; 
+    size_t num_wp= input_traj_.get_num_points(); 
     
-    Eigen::Vector3d curr_goal = input_traj_.get_current_goalpos(time+ dt_); 
+    const Eigen::Matrix3d goal_orientation = input_traj_.get_orientation_goal(wp_idx);
+    Eigen::Vector3d curr_goal = input_traj_.get_position_goal(wp_idx); 
     pinocchio::SE3 oMdes(goal_orientation, curr_goal);
     Eigen::VectorXd q = start_configuration; 
 
@@ -43,24 +47,30 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
     Eigen::VectorXd v_secondary(DoF_);
 
     int iteration=0; 
-    while(!input_traj_.all_points_have_been_served()){ 
-        curr_goal = input_traj_.get_current_goalpos(time+ dt_); 
+    while(wp_idx < num_wp){ 
+        curr_goal = input_traj_.get_position_goal(wp_idx); 
         oMdes.translation() = curr_goal; 
         pinocchio::forwardKinematics(model_, data_, q);
         pinocchio::updateFramePlacements(model_, data_);
         const pinocchio::SE3 dMi = oMdes.actInv(data_.oMf[ee_frame_id_]);
         err=pinocchio::log6(dMi).toVector();
         err.tail<3>() *= 0.1;  // reduce orientation importance
-        if(err.norm() < eps_){
-            success=true;
+        if(err.head<3>().norm() < sc_.eps_){
+            if(++wp_idx == num_wp){
+                success=true; 
+                break; 
+            }
+            iteration=0;
+            continue;
+        }
+        if(++iteration >= sc_.max_steps_){
+            success=false;
+            RCLCPP_INFO(LOGGER, "\033[31m NUMBER OF TRIES REACHED. Failed at point %ld of %ld \033[0m", wp_idx, num_wp); 
             break;
         }
-        if(++iteration >= max_steps_){
+        if(time >= sc_.max_time_){
             success=false;
-            break;
-        }
-        if(time >= max_time_){
-            success=false;
+            RCLCPP_INFO(LOGGER, "\033[31m TIME OUT. Failed at point %ld of %ld \033[0m", wp_idx, num_wp);             
             break; 
         }
 
@@ -73,19 +83,18 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
 
         v.noalias() = v_primary + N*v_secondary; 
         check_joint_boundary(v, q); 
-        q=pinocchio::integrate(model_, q, v*dt_);
+        /*
+            maybe lowpass filter v, something like:
+            v = 0.8 * v_prev + 0.2 * v;
+        */
+
+        q=pinocchio::integrate(model_, q, v*sc_.dt_);
 
         trajectory_msgs::msg::JointTrajectoryPoint point = create_JTP(q,v,time);
         trajectory.joint_trajectory.points.push_back(point);
-        time += dt_; 
-
-        // if(!(i%10)){
-        //     std::cout << i << ": error = " << err.transpose() << std::endl;
-        // }
+        time += sc_.dt_; 
     }
-            
-    // std::cout << "\nresult: " << q.transpose() << std::endl;
-    // std::cout << "\nfinal error: " << err.transpose() << std::endl;
+
     return success; 
 }
 
@@ -99,7 +108,11 @@ Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, cons
     initFromURDF(urdf_string, ee_frame);
     DoF_= model_.nv;
     W_inv_ = Eigen::MatrixXd::Identity(DoF_, DoF_); 
-    max_time_= timestamps.back() + 1.0; 
+
+    std::string config_path = ament_index_cpp::get_package_share_directory("nullspace_solver")
+        + "/config/solver_config.yaml";
+    load_config(config_path); 
+    sc_.max_time_= timestamps.back() + 1.0; 
     RCLCPP_INFO(LOGGER, "\033[33m Solver setup complete\033[0m"); 
 }
 
@@ -109,6 +122,9 @@ Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, cons
     initFromURDF(urdf_string, ee_frame);
     DoF_= model_.nv;
     W_inv_ = Eigen::MatrixXd::Identity(DoF_, DoF_); 
+    std::string config_path = ament_index_cpp::get_package_share_directory("nullspace_solver")
+        + "/config/solver_config.yaml";
+    load_config(config_path); 
 }
 
 
@@ -151,10 +167,10 @@ bool Solver::adjust_weight(const Eigen::VectorXd& weights){
 }
 
 void Solver::compute_weighted_J_pinv(pinocchio::Data::Matrix6x& J, const Eigen::VectorXd& q, Eigen::MatrixXd& J_pinv){
-    pinocchio::computeFrameJacobian(model_, data_, q, ee_frame_id_, pinocchio::LOCAL, J); //Frame instead of JointJacobian...
+    pinocchio::computeFrameJacobian(model_, data_, q, ee_frame_id_, pinocchio::LOCAL_WORLD_ALIGNED, J); //Frame instead of JointJacobian...
     pinocchio::Data::Matrix6 JWJt;
     JWJt.noalias() = J * W_inv_* J.transpose();  // J* W^{-1}*J^t
-    JWJt.diagonal().array() += damp_; // JJ^t + Lambda*I
+    JWJt.diagonal().array() += sc_.damp_; // JJ^t + Lambda*I
     J_pinv.noalias() = W_inv_ * J.transpose() * JWJt.ldlt().solve(Eigen::MatrixXd::Identity(6,6));//W^{-1} * J^t ( JJ^t + Lambda*I)^{-1}        
 }
 
@@ -179,8 +195,8 @@ void Solver::check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q){
     }
 
     for(size_t i =0; i< DoF_; ++i){
-        double v_min = (q_min_[i]+margin_-q[i])/dt_;
-        double v_max = (q_max_[i]-margin_-q[i])/dt_;
+        double v_min = (q_min_[i]+sc_.margin_-q[i])/sc_.dt_;
+        double v_max = (q_max_[i]-sc_.margin_-q[i])/sc_.dt_;
         if (v[i] < v_min)
             v[i] = v_min;
         else if (v[i] > v_max)
@@ -188,6 +204,25 @@ void Solver::check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q){
     }
 
 }
+
+bool Solver::load_config(const std::string& path){
+    YAML::Node config = YAML::LoadFile(path);
+
+    auto s =config["solver"];
+    if(s){
+        sc_.max_steps_= s["max_steps"].as<int>();
+        sc_.eps_ = s["eps"].as<double>();
+        sc_.damp_ = s["damp"].as<double>(); 
+        sc_.max_time_ = s["max_time"].as<double>();
+        sc_.dt_ = s["dt"].as<double>(); 
+        sc_.margin_ = s["margin"].as<double>();  
+        return true;
+    }
+    RCLCPP_ERROR(LOGGER, "Config file for solver not found. Shutting down"); 
+    return false;
+
+}
+
 
 
 } // namespace nullspace_solver 
