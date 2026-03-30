@@ -151,6 +151,8 @@ int main(int argc, char** argv)
         RCLCPP_INFO(LOGGER, "Moving to approx. Startposition \"%s\" ", startpos_name.c_str());
         move_group.setJointValueTarget(states_values); 
         move_group.move(); 
+        const geometry_msgs::msg::Pose initial_pose = move_group.getCurrentPose().pose;
+        RCLCPP_INFO(LOGGER, "\033[31m initial pose: \n %s \033[0m", helpers::print_pose(initial_pose).c_str()); 
     }else{
         RCLCPP_WARN(LOGGER, "\033[31mDefault state not found.\033[0m"); 
     }
@@ -291,8 +293,8 @@ int main(int argc, char** argv)
     }
 
 
-    RCLCPP_INFO(LOGGER, "\033[34mFirst point: (%f, %f, %f)\033[0m", waypoints.front().position.x,waypoints.front().position.y, waypoints.front().position.z); 
-    RCLCPP_INFO(LOGGER, "\033[34mLast point: (%f, %f, %f)\033[0m", waypoints.back().position.x,waypoints.back().position.y, waypoints.back().position.z); 
+    RCLCPP_INFO(LOGGER, "\033[34mFirst point: \n %s\033[0m", helpers::print_pose(waypoints.front()).c_str()); 
+    RCLCPP_INFO(LOGGER, "\033[34mLast point: \n %s \033[0m", helpers::print_pose(waypoints.back()).c_str()); 
 
 
     const std::vector<std::string>& variable_names = robot_model->getVariableNames();
@@ -327,35 +329,22 @@ int main(int argc, char** argv)
 
     solver.setJointLimits(q_min, q_max); 
 
-
-    Eigen::Isometry3d goal;
-    const auto& p = waypoints.back();
-
-    goal.translation() = Eigen::Vector3d(p.position.x, p.position.y, p.position.z);
-
-    goal.linear() = Eigen::Quaterniond(
-        p.orientation.w,
-        p.orientation.x,
-        p.orientation.y,
-        p.orientation.z
-    ).toRotationMatrix();
-        
     moveit_msgs::msg::RobotTrajectory trajectory;
     
-    RCLCPP_INFO_STREAM(LOGGER, "start config: "<< start_configuration.transpose()); 
+    // RCLCPP_INFO_STREAM(LOGGER, "start config: "<< start_configuration.transpose()); 
  
-    solver.solve(start_configuration, goal, trajectory); 
+    bool ik_ok= solver.solve(start_configuration, trajectory); 
 
-    for(const std::string& name: trajectory.joint_trajectory.joint_names){
-        RCLCPP_INFO(LOGGER, "%s ", name.c_str()); 
+    if(ik_ok){
+        move_group.execute(trajectory); 
+    }else{
+        RCLCPP_INFO(LOGGER, "\033[31m Solver failed to converge\033[0m"); 
     }
-
-    move_group.execute(trajectory); 
 
     const geometry_msgs::msg::Pose ee_final_pose = move_group.getCurrentPose().pose;
     const geometry_msgs::msg::Pose ee_target_pose = waypoints.back(); 
-    RCLCPP_INFO(LOGGER, "Actual pose: %s", helpers::print_pose(ee_final_pose).c_str());
-    RCLCPP_INFO(LOGGER, "target pose: %s", helpers::print_pose(ee_final_pose).c_str());
+    RCLCPP_INFO(LOGGER, "\033[32m Actual pose: \n %s \033[0m", helpers::print_pose(ee_final_pose).c_str());
+    RCLCPP_INFO(LOGGER, "\033[34m Target pose: \n %s \033[0m", helpers::print_pose(ee_target_pose).c_str());
 
 
     rclcpp::shutdown();

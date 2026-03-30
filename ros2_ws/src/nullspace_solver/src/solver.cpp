@@ -14,7 +14,7 @@
 
 namespace nullspace_solver{
 
-bool Solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory){
+bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg::RobotTrajectory& trajectory){
     RCLCPP_INFO(LOGGER, "\033[33m Solver received Task\033[0m"); 
     for (pinocchio::JointIndex i = 1; i < model_.njoints; ++i){
         const auto& joint = model_.joints[i];
@@ -23,9 +23,11 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
         }
     } 
     double time = 0.0;
+
+    const Eigen::Matrix3d goal_orientation = input_traj_.get_orientation_goal();
     
     Eigen::Vector3d curr_goal = input_traj_.get_current_goalpos(time+ dt_); 
-    pinocchio::SE3 oMdes(goal.rotation(), curr_goal);
+    pinocchio::SE3 oMdes(goal_orientation, curr_goal);
     Eigen::VectorXd q = start_configuration; 
 
     pinocchio::Data::Matrix6x J(6, model_.nv);
@@ -48,7 +50,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
         pinocchio::updateFramePlacements(model_, data_);
         const pinocchio::SE3 dMi = oMdes.actInv(data_.oMf[ee_frame_id_]);
         err=pinocchio::log6(dMi).toVector();
-        //possibily weigh position/orientation: err.tail<3>() *= 0.1;  // reduce orientation importance
+        err.tail<3>() *= 0.1;  // reduce orientation importance
         if(err.norm() < eps_){
             success=true;
             break;
@@ -70,7 +72,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, const Eigen::Isom
         nullspaceObjective(q, v_secondary);
 
         v.noalias() = v_primary + N*v_secondary; 
-        check_joint_boundary(v); 
+        check_joint_boundary(v, q); 
         q=pinocchio::integrate(model_, q, v*dt_);
 
         trajectory_msgs::msg::JointTrajectoryPoint point = create_JTP(q,v,time);
@@ -92,7 +94,7 @@ void Solver::nullspaceObjective(const Eigen::VectorXd& q, Eigen::VectorXd& v){
 }
 
 Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, const std::vector<geometry_msgs::msg::Pose>& input_data, const std::vector<double> timestamps, const rclcpp::Logger& logger):
-    input_traj_(input_data, timestamps), LOGGER(logger)
+    LOGGER(logger), input_traj_(input_data, timestamps)
 {
     initFromURDF(urdf_string, ee_frame);
     DoF_= model_.nv;
@@ -102,7 +104,7 @@ Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, cons
 }
 
 Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, const rclcpp::Logger& logger):
-    input_traj_(), LOGGER(logger)
+    LOGGER(logger), input_traj_()
 {
     initFromURDF(urdf_string, ee_frame);
     DoF_= model_.nv;
@@ -149,7 +151,7 @@ bool Solver::adjust_weight(const Eigen::VectorXd& weights){
 }
 
 void Solver::compute_weighted_J_pinv(pinocchio::Data::Matrix6x& J, const Eigen::VectorXd& q, Eigen::MatrixXd& J_pinv){
-    pinocchio::computeFrameJacobian(model_, data_, q, ee_frame_id_, pinocchio::LOCAL_WORLD_ALIGNED, J); //Frame instead of JointJacobian...
+    pinocchio::computeFrameJacobian(model_, data_, q, ee_frame_id_, pinocchio::LOCAL, J); //Frame instead of JointJacobian...
     pinocchio::Data::Matrix6 JWJt;
     JWJt.noalias() = J * W_inv_* J.transpose();  // J* W^{-1}*J^t
     JWJt.diagonal().array() += damp_; // JJ^t + Lambda*I
@@ -168,7 +170,7 @@ trajectory_msgs::msg::JointTrajectoryPoint Solver::create_JTP(const Eigen::Vecto
     return point; 
 }
 
-void Solver::check_joint_boundary(Eigen::VectorXd& v){
+void Solver::check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q){
     if (q_min_.size() != DoF_ || q_max_.size() != DoF_) {
         RCLCPP_WARN(LOGGER, "Joint limits size (%ld, %ld) != DoF_ (%ld). Using default limits.",
                     q_min_.size(), q_max_.size(), DoF_);
@@ -177,8 +179,8 @@ void Solver::check_joint_boundary(Eigen::VectorXd& v){
     }
 
     for(size_t i =0; i< DoF_; ++i){
-        double v_min = (q_min_[i]+margin_-v[i])/dt_;
-        double v_max = (q_max_[i]-margin_-v[i])/dt_;
+        double v_min = (q_min_[i]+margin_-q[i])/dt_;
+        double v_max = (q_max_[i]-margin_-q[i])/dt_;
         if (v[i] < v_min)
             v[i] = v_min;
         else if (v[i] > v_max)

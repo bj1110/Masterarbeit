@@ -141,7 +141,11 @@ Eigen::Vector3d Input_Trajectory::to_eigen_vector(geometry_msgs::msg::Pose pose)
     return pos; 
 }
 
-
+Eigen::Matrix3d Input_Trajectory::get_orientation_goal() const{
+    geometry_msgs::msg::Quaternion q = datapoints_[current_segment_].orientation;
+    Eigen::Quaternion quat {q.w, q.x, q.y, q.z};
+    return quat.normalized().toRotationMatrix(); 
+}
 
 
 

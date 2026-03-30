@@ -13,7 +13,7 @@ namespace nullspace_solver{
 
 class Solver{
 public: 
-    bool solve(const Eigen::VectorXd& start_configuration, const Eigen::Isometry3d& goal, moveit_msgs::msg::RobotTrajectory& trajectory);
+    bool solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg::RobotTrajectory& trajectory);
     void setJointLimits(const Eigen::VectorXd& q_min, const Eigen::VectorXd& q_max);
 
     bool initFromURDF(const std::string& urdf_string, const std::string& ee_frame);
@@ -40,7 +40,7 @@ private:
 
     trajectory_msgs::msg::JointTrajectoryPoint create_JTP(const Eigen::VectorXd& q, const Eigen::VectorXd& v, const double time) const; 
 
-    void check_joint_boundary(Eigen::VectorXd& v);
+    void check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q);
 
 
 private:
@@ -54,7 +54,7 @@ private:
     size_t DoF_; 
     Eigen::MatrixXd K_;
     Eigen::MatrixXd W_inv_; 
-    int max_steps_= 1000;
+    int max_steps_= 100000;
     double eps_ = 1e-4;
     double damp_ = 1e-6; 
     double max_time_ = 10;

@@ -20,6 +20,8 @@ public:
 
     Eigen::Vector3d get_current_goalpos(double time);
 
+    Eigen::Matrix3d get_orientation_goal() const;
+
     bool advance_segment();
     bool all_points_have_been_served()const; 
 
