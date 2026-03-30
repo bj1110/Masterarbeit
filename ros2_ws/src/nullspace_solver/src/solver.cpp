@@ -210,12 +210,12 @@ bool Solver::load_config(const std::string& path){
 
     auto s =config["solver"];
     if(s){
-        sc_.max_steps_= s["max_steps"].as<int>();
-        sc_.eps_ = s["eps"].as<double>();
-        sc_.damp_ = s["damp"].as<double>(); 
-        sc_.max_time_ = s["max_time"].as<double>();
-        sc_.dt_ = s["dt"].as<double>(); 
-        sc_.margin_ = s["margin"].as<double>();  
+        sc_.max_steps_ = s["max_steps"] ? s["max_steps"].as<int>() : sc_.max_steps_;
+        sc_.eps_ = s["eps"] ? s["eps"].as<double>() : sc_.eps_;
+        sc_.damp_ = s["damp"] ? s["damp"].as<double>() : sc_.damp_; 
+        sc_.max_time_ = s["max_time"] ? s["max_time"].as<double>() : sc_.max_time_;
+        sc_.dt_ = s["dt"] ? s["dt"].as<double>() : sc_.dt_ ; 
+        sc_.margin_ = s["margin"] ? s["margin"].as<double>() : sc_.margin_;  
         return true;
     }
     RCLCPP_ERROR(LOGGER, "Config file for solver not found. Shutting down"); 
