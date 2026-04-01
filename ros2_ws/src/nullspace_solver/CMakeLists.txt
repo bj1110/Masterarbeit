@@ -61,6 +61,10 @@ install(
   DESTINATION share/${PROJECT_NAME}/config
 )
 
+# install(DIRECTORY launch
+#   DESTINATION share/${PROJECT_NAME}
+# )
+
 ament_export_targets(export_nullspace_solver HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   rclcpp

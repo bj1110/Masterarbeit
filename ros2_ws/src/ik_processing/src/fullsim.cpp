@@ -316,7 +316,7 @@ int main(int argc, char** argv)
         Set startstate from the default state states_values
     */
    
-   std::vector<double> joint_values;
+    std::vector<double> joint_values;
     for(const std::string& name: variable_names){
         const double value = states_values[name];
         joint_values.push_back(value);
@@ -332,6 +332,8 @@ int main(int argc, char** argv)
     moveit_msgs::msg::RobotTrajectory trajectory;
     
     // RCLCPP_INFO_STREAM(LOGGER, "start config: "<< start_configuration.transpose()); 
+
+    //TODO: ist start_configuration in der richtigen reihenfolge???
  
     bool ik_ok= solver.solve(start_configuration, trajectory); 
 

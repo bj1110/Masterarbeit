@@ -1,0 +1,2 @@
+arm:
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
