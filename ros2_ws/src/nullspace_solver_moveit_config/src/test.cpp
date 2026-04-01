@@ -8,7 +8,9 @@
 #include <vector>
 #include <moveit/move_group_interface/move_group_interface.hpp>
 #include <cmath>
+#include <sstream>
 
+std::string to_string(const geometry_msgs::msg::Pose& p);
 
 int main(int argc, char** argv)
 {
@@ -65,12 +67,18 @@ int main(int argc, char** argv)
     std::vector<geometry_msgs::msg::Pose> input_data;
     input_data.push_back(ee_pose);
     geometry_msgs::msg::Pose p;
-    for(int i=2; i <= 46; i+=2){
+    for(int i=2; i <= 10; i+=2){
         p.position.x = x_lambda(i, i); p.position.y = 0.0; p.position.z = z_lambda(i, i);
         p.orientation.w = 1.0; p.orientation.x = 0.0; p.orientation.y = 0.0; p.orientation.z = 0.0;
         input_data.push_back(p);
     }
     std::vector<double> timestamps (input_data.size(), 0.0);
+    double dt = 0.1; 
+    auto t_lambda = [&dt] (double& in){
+        in += dt;
+        dt+=0.1; 
+    };
+    std::for_each(timestamps.begin(), timestamps.end(), t_lambda);
 
     std::string ee_frame = "ee";
 
@@ -102,6 +110,16 @@ int main(int argc, char** argv)
     }
     Eigen::VectorXd start_configuration = Eigen::Map<Eigen::VectorXd>(joint_values.data(), dof);
 
+    RCLCPP_INFO_STREAM(LOGGER, "q_min: " << q_min.transpose());
+    RCLCPP_INFO_STREAM(LOGGER, "q_max: " << q_max.transpose());
+    RCLCPP_INFO_STREAM(LOGGER, "startconfig: " << start_configuration.transpose());
+    for(const auto& p: input_data){
+        RCLCPP_INFO_STREAM(LOGGER, "\n"<< to_string(p).c_str());
+    }
+    for(const auto& t: timestamps){
+        RCLCPP_INFO(LOGGER, "%f", t);
+    }
+
     // Solve
     moveit_msgs::msg::RobotTrajectory trajectory;
     bool success = solver.solve(start_configuration, trajectory);
@@ -110,6 +128,7 @@ int main(int argc, char** argv)
     {
         RCLCPP_INFO(LOGGER, "Trajectory successfully computed!");
         RCLCPP_INFO(LOGGER, "Trajectory has %zu points.", trajectory.joint_trajectory.points.size());
+        move_group.execute(trajectory); 
     }
     else
     {
@@ -118,4 +137,11 @@ int main(int argc, char** argv)
 
     rclcpp::shutdown();
     return 0;
+}
+
+std::string to_string(const geometry_msgs::msg::Pose& p){
+    std::stringstream ss;
+    ss << "positional: x=" << p.position.x << ", y=" << p.position.y <<", z=" << p.position.z <<"\n"; 
+    ss << "rotational: x="<<p.orientation.x << ", y="<<p.orientation.y << ", z="<<p.orientation.z << ", w="<<p.orientation.w;
+    return ss.str(); 
 }
