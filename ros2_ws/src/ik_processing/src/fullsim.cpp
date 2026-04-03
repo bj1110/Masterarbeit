@@ -72,7 +72,6 @@ int main(int argc, char** argv)
     const auto LOGGER = move_group_node->get_logger(); 
 
     bool recalculate = move_group_node->get_parameter("recalculate").as_bool();
-    [[maybe_unused]] bool fully_calc = move_group_node->get_parameter("fully_calc").as_bool();
     std::string urdf_string = move_group_node->get_parameter("urdf").as_string(); 
 
 
@@ -84,28 +83,9 @@ int main(int argc, char** argv)
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(move_group_node);
     std::thread([&executor]() { executor.spin(); }).detach();
-
-    
-    robot_model_loader::RobotModelLoaderPtr robotmodelloader(
-        std::make_shared<robot_model_loader::RobotModelLoader>(move_group_node, "robot_description")
-    );
-    planning_scene_monitor::PlanningSceneMonitorPtr psm(
-        std::make_shared<planning_scene_monitor::PlanningSceneMonitor> (move_group_node, robotmodelloader)
-    );
-    psm->startSceneMonitor();
-    psm->startWorldGeometryMonitor();
-    psm->startStateMonitor();
-
-    moveit::core::RobotModelPtr robot_model = robotmodelloader->getModel(); 
-
-    moveit::core::RobotStatePtr robot_state (
-        std::make_shared<moveit::core::RobotState> (planning_scene_monitor::LockedPlanningSceneRO(psm)->getCurrentState())
-    );
-
-    planning_pipeline::PlanningPipelinePtr planning_pipeline(
-        std::make_shared<planning_pipeline::PlanningPipeline> (robot_model, move_group_node, "stomp")
-    );
-
+   
+    robot_model_loader::RobotModelLoader robot_model_loader(move_group_node);
+    const moveit::core::RobotModelPtr robot_model = robot_model_loader.getModel();
 
     // Raw pointers are frequently used to refer to the planning group for improved performance.
     const moveit::core::JointModelGroup* joint_model_group =
@@ -151,8 +131,8 @@ int main(int argc, char** argv)
         RCLCPP_INFO(LOGGER, "Moving to approx. Startposition \"%s\" ", startpos_name.c_str());
         move_group.setJointValueTarget(states_values); 
         move_group.move(); 
-        const geometry_msgs::msg::Pose initial_pose = move_group.getCurrentPose().pose;
-        RCLCPP_INFO(LOGGER, "\033[31m initial pose: \n %s \033[0m", helpers::print_pose(initial_pose).c_str()); 
+        // const geometry_msgs::msg::Pose initial_pose = move_group.getCurrentPose().pose;
+        //RCLCPP_INFO(LOGGER, "\033[34m initial pose: \n %s \033[0m", helpers::print_pose(initial_pose).c_str()); 
     }else{
         RCLCPP_WARN(LOGGER, "\033[31mDefault state not found.\033[0m"); 
     }
@@ -293,8 +273,8 @@ int main(int argc, char** argv)
     }
 
 
-    RCLCPP_INFO(LOGGER, "\033[34mFirst point: \n %s\033[0m", helpers::print_pose(waypoints.front()).c_str()); 
-    RCLCPP_INFO(LOGGER, "\033[34mLast point: \n %s \033[0m", helpers::print_pose(waypoints.back()).c_str()); 
+    // RCLCPP_INFO(LOGGER, "\033[34mFirst point: \n %s\033[0m", helpers::print_pose(waypoints.front()).c_str()); 
+    // RCLCPP_INFO(LOGGER, "\033[34mLast point: \n %s \033[0m", helpers::print_pose(waypoints.back()).c_str()); 
 
 
     const std::vector<std::string>& variable_names = robot_model->getVariableNames();
@@ -331,7 +311,6 @@ int main(int argc, char** argv)
 
     moveit_msgs::msg::RobotTrajectory trajectory;
     
-    // RCLCPP_INFO_STREAM(LOGGER, "start config: "<< start_configuration.transpose()); 
 
     //TODO: ist start_configuration in der richtigen reihenfolge???
  
@@ -339,6 +318,8 @@ int main(int argc, char** argv)
 
     if(ik_ok){
         move_group.execute(trajectory); 
+        outputdata=trajectory; 
+        outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(trajectory, LOGGER); 
     }else{
         RCLCPP_INFO(LOGGER, "\033[31m Solver failed to converge\033[0m"); 
     }
@@ -349,296 +330,10 @@ int main(int argc, char** argv)
     RCLCPP_INFO(LOGGER, "\033[34m Target pose: \n %s \033[0m", helpers::print_pose(ee_target_pose).c_str());
 
 
-    rclcpp::shutdown();
-    return 0;
-
-    /*
-    
-        END OF MY CUSTOM SOLVER CALLS 
-    
-    */
-
-
-    planning_interface::MotionPlanRequest req;
-    req.pipeline_id = "planning_pipeline";
-    req.planner_id = "stomp";
-    req.allowed_planning_time = 1.0;
-    req.max_velocity_scaling_factor = 1.0;
-    req.max_acceleration_scaling_factor = 1.0;
-    planning_interface::MotionPlanResponse res;
-    geometry_msgs::msg::PoseStamped pose;
-    pose.header.frame_id = "base_link";
-    pose.pose.position.x = waypoints.back().position.x;
-    pose.pose.position.y = waypoints.back().position.y;
-    pose.pose.position.z = waypoints.back().position.z;
-    pose.pose.orientation = tf2::toMsg(q);
-
-    std::vector<double> tolerance_pose(3, 0.1);
-    std::vector<double> tolerance_angle(3, 0.1);
-
-    req.group_name = PLANNING_GROUP;
-    moveit_msgs::msg::Constraints pose_goal =
-        kinematic_constraints::constructGoalConstraints("can", pose, tolerance_pose, tolerance_angle);
-    req.goal_constraints.push_back(pose_goal);
-
-    moveit_msgs::msg::RobotState rs_msg;
-    moveit::core::robotStateToRobotStateMsg(*robot_state, rs_msg); 
-    req.start_state = rs_msg;  
-    {
-        planning_scene_monitor::LockedPlanningSceneRO lscene(psm);
-        /* Now, call the pipeline and check whether planning was successful. */
-        /* Check that the planning was successful */
-        if (!planning_pipeline->generatePlan(lscene, req, res) || res.error_code.val != res.error_code.SUCCESS)
-        {
-            RCLCPP_ERROR(LOGGER, "Could not compute plan successfully");
-            rclcpp::shutdown();
-            return -1;
-        }
-        else{
-            RCLCPP_INFO(LOGGER, "\033[31m Success \033[0m");
-        }
-    }
-
-
-
-
-    /*
-        Path constraints:
-        - can must stay upright 
-        - hips must move as little as possible
-    */
-    moveit_msgs::msg::Constraints path_constraints;
-
-    moveit_msgs::msg::OrientationConstraint oc;
-    oc.link_name = "can";
-    oc.header.frame_id = move_group.getPlanningFrame();
-    oc.orientation = tf2::toMsg(q);
-    oc.absolute_x_axis_tolerance = 0.1;  //TODO: allow for tolance which would equal the tilting of the hand
-    oc.absolute_y_axis_tolerance = 0.1;  
-    oc.absolute_z_axis_tolerance = 2*M_PI;  
-    oc.weight = 1.0;
-
-    path_constraints.orientation_constraints.push_back(oc);
-
-    // moveit_msgs::msg::JointConstraint jc;
-    // jc.joint_name="calumna__joint";
-    // double curr_columna = move_group.getCurrentState()->getVariablePosition("columna_flex_joint");
-    // jc.position= curr_columna;
-    // jc.tolerance_above=0.1;
-    // jc.tolerance_below=0.1;
-    // jc.weight=5.0;
-
-    // path_constraints.joint_constraints.push_back(jc);
-
-    move_group.setPathConstraints(path_constraints);
-
-
-
-
-
-    moveit::core::RobotState rs (robot_model);
-    rs.setToDefaultValues(
-        robot_model->getJointModelGroup("arm"),
-        startpos_name
-    );
-    moveit_msgs::msg::RobotState state_msg;
-    moveit::core::robotStateToRobotStateMsg(rs, state_msg);
-    move_group.setStartStateToCurrentState(); 
-
-
-    move_group.setJointValueTarget(waypoints.back()); 
-
-    moveit::planning_interface::MoveGroupInterface::Plan plan;
-
-    bool success = (move_group.plan(plan) ==
-                    moveit::core::MoveItErrorCode::SUCCESS);
-
-    if(success){
-        move_group.execute(plan);
-        RCLCPP_INFO(LOGGER, "\033[37m success with STOMP \033[0m");
-    }
-
-
-    /*
-      get the urdf -> links -> interia  
-    */
-    // const auto urdf = robot_model->getURDF();
-    // std::vector<std::shared_ptr<urdf::Link>> urdf_links {};
-    // urdf->getLinks(urdf_links);
-    // std::unordered_map<std::string, urdf::Inertial> inertias;
-    // std::vector<std::string> link_names;
-    // for(const auto& link: urdf_links){
-    //     std::string link_name= link->name;
-    //     urdf::Inertial link_inertial = *(link->inertial);
-    //     inertias.insert({link_name, link_inertial}); 
-    //     link_names.push_back(link_name);
-    // }
-
-
-    
-    // TODO: initialized targets directly from data
-    /* 2: */
-    Eigen::Isometry3d target;
-    EigenSTL::vector_Isometry3d targets;
-    for(const auto& wp: waypoints){
-        tf2::fromMsg(wp, target);
-        targets.push_back(target);
-    }
-
-    /* 3: */
-    moveit::core::GroupStateValidityCallbackFn callback_fn;
-    kinematics::KinematicsQueryOptions opts;
-    opts.return_approximate_solution = true;
-    auto start_state = move_group.getCurrentState();
-    std::vector<moveit::core::RobotStatePtr> traj;
-    moveit::core::MaxEEFStep max_eef_step(0.01, 0.1);
-    moveit::core::CartesianPrecision cartesian_precision{ .translational = 0.005,
-                                                        .rotational = 0.05,
-                                                        .max_resolution = 5e-3 };
-
-    /* 4: */
-
-    
-    std::vector<double> joint_states;
-    start_state->copyJointGroupPositions(joint_model_group, joint_states);
-    crb crb_{ joint_states , urdf_string , LOGGER}; 
-    crb_.crba(); 
-    Eigen::MatrixXd inertia = crb_.get_inertia_Matrix();
-
-    const double duration = 0.1; 
-    const auto compute_energy = [&crb_, &duration](const std::vector<double>& start, const std::vector<double>& solution){
-        crb_.update_model_state(solution);
-        Eigen::MatrixXd inertia_matrix = crb_.get_inertia_Matrix();
-        Eigen::VectorXd start_positions; 
-        start_positions = Eigen::Map< const Eigen::VectorXd>(
-            start.data(),
-            start.size()
-        );
-        Eigen::VectorXd end_positions;
-        end_positions = Eigen::Map<const Eigen::VectorXd>(
-            solution.data(),
-            solution.size()
-        ); 
-        Eigen::VectorXd speeds = (end_positions - start_positions) / duration; 
-        double T = 0.5 * speeds.transpose() * inertia_matrix * speeds;
-        return T; 
-    };
-
-
-    // const auto compute_l2_norm = [](std::vector<double> solution, std::vector<double> start) {
-    //     double sum = 0.0;
-    //     for (size_t ji = 0; ji < solution.size(); ji++)
-    //     {
-    //         double d = solution[ji] - start[ji];
-    //         sum += d * d;
-    //     }
-    //     return sum;
-    // };
-
-    // const size_t hip_idx = joint_model_group->getVariableGroupIndex("columna_flex_joint");
-    // const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.0005, double penalty_size= 1.0, double penalty_gradient=1.0){
-    //     double d= solution[hip_idx]; 
-    //     double step = 0.5 * (1+ std::tanh(penalty_gradient * (d-delta))); 
-    //     double penalty = penalty_size * step* (d-delta); 
-    //     return penalty; 
-    // };
-
-    // const moveit::core::JointModel* elbow_model = robot_model->getJointModel("elbow_yaw_joint");
-    // const moveit::core::VariableBounds elbowBounds = (elbow_model-> getVariableBounds())[0];
-    // const double elbow_max = elbowBounds.max_position_; /*maximum bend*/ 
-    // const size_t elbow_idx = joint_model_group->getVariableGroupIndex("elbow_yaw_joint");
-    // const auto incentivise_elbow = [&elbow_idx, &elbow_max] (std::vector<double>solution){
-    //     double d= elbow_max - solution[elbow_idx]; 
-    //     return -(d*d) ; 
-    // };
-
-    /* 5: */
-    // const double hip_weight = 0.00009; // added 1x0. better performance on some paths, but less human-like on others. 
-    // const double elbow_weight= 0.000000001; 
-
-    // const double energy_weight = 0.0001; 
-    // const std::vector<std::string> joint_model_names = joint_model_group->getJointModelNames();
-    // const auto cost_fn = [&compute_energy,  &energy_weight]
-    //                                             (const geometry_msgs::msg::Pose& /*goal_pose*/,
-    //                                             const moveit::core::RobotState& solution_state,
-    //                                             moveit::core::JointModelGroup const* jmg,
-    //                                             const std::vector<double>& seed_state) {
-    //     std::vector<double> proposed_joint_positions;
-    //     solution_state.copyJointGroupPositions(jmg, proposed_joint_positions);
-    //     double T = compute_energy(seed_state, proposed_joint_positions); 
-    //     return T ;
-    // };
-    
-    // /* 6: */
-    // const auto frac = moveit::core::CartesianInterpolator::computeCartesianPath(
-    //     start_state.get(), joint_model_group, traj, joint_model_group->getLinkModel("can"), targets, true,
-    //     max_eef_step, cartesian_precision, callback_fn, opts , cost_fn);
-
-    // RCLCPP_INFO(LOGGER, "\033[32mComputed %f percent of cartesian path.\033[0m", frac.value * 100.0);
-
-    // /* 7: */
-    // robot_trajectory::RobotTrajectory rt(start_state->getRobotModel(), PLANNING_GROUP);
-    // for (const moveit::core::RobotStatePtr& traj_state : traj)
-    //     rt.addSuffixWayPoint(traj_state, 0.0);
-    // trajectory_processing::TimeOptimalTrajectoryGeneration time_param;
-    // time_param.computeTimeStamps(rt, 1.0);
-
-    // /* 8: */
-    // moveit_msgs::msg::RobotTrajectory rt_msg;
-    // rt.getRobotTrajectoryMsg(rt_msg);
-    // move_group.execute(rt_msg);
-    // outputdata = rt_msg; 
-
-    // if(frac.value<1.0 && fully_calc){
-    //     RCLCPP_INFO(LOGGER, "Path was not computed fully, attempting to move the last part"); 
-    //     move_group.setPoseTarget(waypoints.back());
-    //     move_group.clearPathConstraints(); 
-    //     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-    //     bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-    //     RCLCPP_INFO(LOGGER, "Computation of missing path %s", success? "successful": "\033[31mFAILURE\033[0m");
-    //     if(success){
-    //         move_group.execute(my_plan); 
-    //         outputdata["info"]["endpoint_reachable"]=true;
-    //     }
-    //     else{
-    //         size_t pt = numElements-2;
-    //         while(pt>0){
-    //             move_group.setPoseTarget(waypoints[pt]);
-    //             moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-    //             bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-    //             if(success){
-    //                 int num_points = numElements; 
-    //                 int num_points_not_movedto = num_points-pt -1;
-    //                 float percentage_reachable = ( (float) pt/(float) num_points) *100.0 ;
-    //                 RCLCPP_INFO(LOGGER, "\033[32mTotal movement: %f, with %d/%d Points not reachable \033[0m",percentage_reachable, num_points_not_movedto, num_points);
-    //                 move_group.execute(my_plan);
-    //                 outputdata["info"]["endpoint_reachable"]=false;
-    //                 outputdata["info"]["max_percentage"]=percentage_reachable;
-    //                 outputdata["info"]["num_poijoint_states = joint_model_group->nts_moved_to"]=num_points_not_movedto;
-    //                 outputdata["info"]["last_pos_movable"]=waypoints[pt]; 
-    //                 break;
-    //             }
-    //             --pt; 
-    //         }
-
-    //     }
-    // }
-    
-    // outputdata["final_pose"]= move_group.getCurrentPose().pose;
-    // to_json(outputdata["final_jointstates"], move_group); 
-    // outputdata["info"]["cartesian_path_completion"]=frac.value;
-
-    // outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(rt_msg, LOGGER); 
     auto input_path_eval = evaluator::endeffector(waypoints, timesteps, LOGGER);
     outputdata["info"]["Endeffector_NJS"] = input_path_eval.get_NJS(); 
 
     outputfile << std::setw(4) <<outputdata <<std::endl; 
-
-
-    planning_pipeline.reset();
-    psm.reset();
-    robotmodelloader.reset();
-    robot_state.reset(); 
 
     rclcpp::shutdown();
     return 0;

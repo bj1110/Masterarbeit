@@ -26,6 +26,9 @@ public:
     
     double get_NJS()const {return NJS;};
     std::string get_name()const {return name;};
+
+private: 
+    std::vector<double> numeric_derivitive(const std::vector<double>& in, const std::vector<double>& step_durations) const; 
     
 };
 

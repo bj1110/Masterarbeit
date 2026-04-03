@@ -22,7 +22,7 @@ struct SolverConfig{
 
 class Solver{
 public: 
-    bool solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg::RobotTrajectory& trajectory);
+    bool solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg::RobotTrajectory& trajectory, const bool DEBUG=false);
     void setJointLimits(const Eigen::VectorXd& q_min, const Eigen::VectorXd& q_max);
 
     bool initFromURDF(const std::string& urdf_string, const std::string& ee_frame);

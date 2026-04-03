@@ -16,7 +16,7 @@
 
 namespace nullspace_solver{
 
-bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg::RobotTrajectory& trajectory){
+bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg::RobotTrajectory& trajectory, const bool DEBUG){
     RCLCPP_INFO(LOGGER, "\033[33m Solver received Task\033[0m"); 
     for (pinocchio::JointIndex i = 1; i < model_.njoints; ++i){
         const auto& joint = model_.joints[i];
@@ -34,10 +34,12 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
     pinocchio::SE3 oMdes(goal_orientation, curr_goal);
     Eigen::VectorXd q = start_configuration; 
 
-    RCLCPP_INFO_STREAM(LOGGER, "startgoal: " << oMdes);
     Eigen::Vector3d ee_pos = data_.oMf[ee_frame_id_].translation();
-    RCLCPP_INFO_STREAM(LOGGER, " ee position" << ee_pos.transpose());  
-
+    
+    if(DEBUG){
+        RCLCPP_INFO_STREAM(LOGGER, "startgoal: " << oMdes);
+        RCLCPP_INFO_STREAM(LOGGER, " ee position" << ee_pos.transpose());  
+    }
     pinocchio::Data::Matrix6x J(6, model_.nv);
     J.setZero();
 
@@ -50,21 +52,17 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
     Eigen::MatrixXd N(DoF_, DoF_);
     Eigen::VectorXd v_secondary(DoF_);
 
+    RCLCPP_INFO_STREAM(LOGGER, "Computing "<< (wp_idx +1) <<"/"<<num_wp<<"..."); 
+
     int iteration=0; 
     while(wp_idx < num_wp){ 
         curr_goal = input_traj_.get_position_goal(wp_idx); 
         oMdes.translation() = curr_goal; 
         pinocchio::forwardKinematics(model_, data_, q);
-        if(!(iteration%1000)){
-            RCLCPP_INFO_STREAM(LOGGER, "turn: "<<iteration << " q: "<<q);
-        }
+
         pinocchio::updateFramePlacements(model_, data_);
         const pinocchio::SE3 dMi = data_.oMf[ee_frame_id_].actInv(oMdes);
-        if(!(iteration%1000)){
-            RCLCPP_INFO_STREAM(LOGGER, "turn: "<<iteration << " dMi: " <<dMi); 
-            Eigen::Vector3d ee_pos = data_.oMf[ee_frame_id_].translation();
-            RCLCPP_INFO_STREAM(LOGGER, "turn: "<<iteration << " ee position" << ee_pos.transpose()); 
-        }
+
         err=pinocchio::log6(dMi).toVector();
         err.head<3>() *= 1.0;
         err.tail<3>() *= 0.1;  // reduce orientation importance
@@ -73,6 +71,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
                 success=true; 
                 break; 
             }
+            RCLCPP_INFO_STREAM(LOGGER, "Computing "<< (wp_idx +1) <<"/"<<num_wp<<"..."); 
             iteration=0;
             continue;
         }
@@ -85,17 +84,10 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
         }
 
         compute_weighted_J_pinv(J,q,J_pinv);
-
-        if(!(iteration%1000)){
-            RCLCPP_INFO_STREAM(LOGGER, "Turn "<< iteration << " J:\n" << J);
-        }
         
         v_primary.noalias() = J_pinv * err ; 
 
-        if(!(iteration%1000)){
-            auto test = J_pinv * err ;
-            RCLCPP_INFO_STREAM(LOGGER, "J_pinv * err: " << test.transpose());
-        }
+
 
         N.noalias() = Eigen::MatrixXd::Identity(DoF_, DoF_) - J_pinv* J;
         nullspaceObjective(q, v_secondary);
@@ -105,15 +97,20 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
         /*
             maybe lowpass filter v, something like:
             v = 0.8 * v_prev + 0.2 * v;
-        */
-        if(!(iteration%1000)){
-            RCLCPP_INFO_STREAM(LOGGER, "Turn "<< iteration << " v: " << v.transpose());
-        }
+        */      
         q=pinocchio::integrate(model_, q, v*sc_.dt_);
-
+        
         trajectory_msgs::msg::JointTrajectoryPoint point = create_JTP(q,v,time);
         trajectory.joint_trajectory.points.push_back(point);
-        if(!(iteration%1000)){
+        if(DEBUG && !(iteration%1000)){
+            RCLCPP_INFO_STREAM(LOGGER, "turn: "<<iteration << " q: "<<q);
+            RCLCPP_INFO_STREAM(LOGGER, "turn: "<<iteration << " dMi: " <<dMi); 
+            Eigen::Vector3d ee_pos = data_.oMf[ee_frame_id_].translation();
+            RCLCPP_INFO_STREAM(LOGGER, "turn: "<<iteration << " ee position" << ee_pos.transpose()); 
+            RCLCPP_INFO_STREAM(LOGGER, "Turn "<< iteration << " J:\n" << J);
+            auto test = J_pinv * err ;
+            RCLCPP_INFO_STREAM(LOGGER, "J_pinv * err: " << test.transpose());
+            RCLCPP_INFO_STREAM(LOGGER, "Turn "<< iteration << " v: " << v.transpose());
             RCLCPP_INFO_STREAM(LOGGER, "Turn "<< iteration <<" Error : " << err.transpose()); 
         }
         time += sc_.dt_; 
