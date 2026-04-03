@@ -28,9 +28,6 @@ int main(int argc, char** argv)
     static const std::string PLANNING_GROUP = "arm";
     moveit::planning_interface::MoveGroupInterface move_group(move_group_node, PLANNING_GROUP);
     
-
-    RCLCPP_INFO(LOGGER, "Planning frame: %s", move_group.getPlanningFrame().c_str());
-
     std::string urdf_string = move_group_node->get_parameter("urdf").as_string(); 
 
     if (urdf_string.empty())
@@ -42,7 +39,7 @@ int main(int argc, char** argv)
 
 
     robot_model_loader::RobotModelLoader robot_model_loader(move_group_node);
-    const moveit::core::RobotModelPtr& robot_model = robot_model_loader.getModel();
+    const moveit::core::RobotModelPtr robot_model = robot_model_loader.getModel();
 
     // Raw pointers are frequently used to refer to the planning group for improved performance.
     const moveit::core::JointModelGroup* joint_model_group =
@@ -59,24 +56,25 @@ int main(int argc, char** argv)
         return link_len* std::sin(theta1) + link_len*std::sin(theta1 + theta2);
     };
     auto z_lambda = [&link_len](double theta1, double theta2){
-        return link_len* std::cos(theta1) + link_len*std::cos(theta1 + theta2);
+        return link_len+ link_len* std::cos(theta1) + link_len*std::cos(theta1 + theta2);
     };
 
 
     // Example EE pose data
     std::vector<geometry_msgs::msg::Pose> input_data;
-    input_data.push_back(ee_pose);
+    //input_data.push_back(ee_pose);
     geometry_msgs::msg::Pose p;
     for(int i=2; i <= 10; i+=2){
-        p.position.x = x_lambda(i, i); p.position.y = 0.0; p.position.z = z_lambda(i, i);
+        double angle= i * M_PI / 180; 
+        p.position.x = x_lambda(angle, angle); p.position.y = 0.0; p.position.z = z_lambda(angle, angle);
         p.orientation.w = 1.0; p.orientation.x = 0.0; p.orientation.y = 0.0; p.orientation.z = 0.0;
         input_data.push_back(p);
     }
     std::vector<double> timestamps (input_data.size(), 0.0);
-    double dt = 0.1; 
+    double dt = 0.0; 
     auto t_lambda = [&dt] (double& in){
         in += dt;
-        dt+=0.1; 
+        dt+=3.0; 
     };
     std::for_each(timestamps.begin(), timestamps.end(), t_lambda);
 

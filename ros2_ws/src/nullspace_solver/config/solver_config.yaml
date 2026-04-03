@@ -1,7 +1,7 @@
 solver:
   max_steps: 100000
-  eps: 0.5
-  damp: 1e-6
+  eps: 0.01
+  damp: 1e-3
   max_time: 10.0
   dt: 0.001
   margin: 1e-4

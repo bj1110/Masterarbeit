@@ -34,6 +34,10 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
     pinocchio::SE3 oMdes(goal_orientation, curr_goal);
     Eigen::VectorXd q = start_configuration; 
 
+    RCLCPP_INFO_STREAM(LOGGER, "startgoal: " << oMdes);
+    Eigen::Vector3d ee_pos = data_.oMf[ee_frame_id_].translation();
+    RCLCPP_INFO_STREAM(LOGGER, " ee position" << ee_pos.transpose());  
+
     pinocchio::Data::Matrix6x J(6, model_.nv);
     J.setZero();
 
@@ -51,11 +55,20 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
         curr_goal = input_traj_.get_position_goal(wp_idx); 
         oMdes.translation() = curr_goal; 
         pinocchio::forwardKinematics(model_, data_, q);
+        if(!(iteration%1000)){
+            RCLCPP_INFO_STREAM(LOGGER, "turn: "<<iteration << " q: "<<q);
+        }
         pinocchio::updateFramePlacements(model_, data_);
-        const pinocchio::SE3 dMi = oMdes.actInv(data_.oMf[ee_frame_id_]);
+        const pinocchio::SE3 dMi = data_.oMf[ee_frame_id_].actInv(oMdes);
+        if(!(iteration%1000)){
+            RCLCPP_INFO_STREAM(LOGGER, "turn: "<<iteration << " dMi: " <<dMi); 
+            Eigen::Vector3d ee_pos = data_.oMf[ee_frame_id_].translation();
+            RCLCPP_INFO_STREAM(LOGGER, "turn: "<<iteration << " ee position" << ee_pos.transpose()); 
+        }
         err=pinocchio::log6(dMi).toVector();
+        err.head<3>() *= 1.0;
         err.tail<3>() *= 0.1;  // reduce orientation importance
-        if(err.head<3>().norm() < sc_.eps_){
+        if(err.head<3>().norm() < sc_.eps_ + sc_.margin_){
             if(++wp_idx == num_wp){
                 success=true; 
                 break; 
@@ -63,36 +76,48 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
             iteration=0;
             continue;
         }
-        if(++iteration >= sc_.max_steps_){
+        if(iteration >= sc_.max_steps_){
             success=false;
-            RCLCPP_INFO(LOGGER, "\033[31m NUMBER OF TRIES REACHED. Failed at point %ld of %ld \033[0m", wp_idx, num_wp); 
+            RCLCPP_INFO(LOGGER, "\033[31m NUMBER OF TRIES REACHED. Failed at point %ld of %ld \033[0m", wp_idx, num_wp);        
+            RCLCPP_INFO_STREAM(LOGGER, "Error at failure: "<< err.transpose());  
+            RCLCPP_INFO_STREAM(LOGGER, "Positional error norm at failure: "<<err.head<3>().norm());    
             break;
-        }
-        if(time >= sc_.max_time_){
-            success=false;
-            RCLCPP_INFO(LOGGER, "\033[31m TIME OUT. Failed at point %ld of %ld \033[0m", wp_idx, num_wp);             
-            break; 
         }
 
         compute_weighted_J_pinv(J,q,J_pinv);
+
+        if(!(iteration%1000)){
+            RCLCPP_INFO_STREAM(LOGGER, "Turn "<< iteration << " J:\n" << J);
+        }
         
         v_primary.noalias() = J_pinv * err ; 
+
+        if(!(iteration%1000)){
+            auto test = J_pinv * err ;
+            RCLCPP_INFO_STREAM(LOGGER, "J_pinv * err: " << test.transpose());
+        }
 
         N.noalias() = Eigen::MatrixXd::Identity(DoF_, DoF_) - J_pinv* J;
         nullspaceObjective(q, v_secondary);
 
         v.noalias() = v_primary + N*v_secondary; 
-        check_joint_boundary(v, q); 
+        //check_joint_boundary(v, q); 
         /*
             maybe lowpass filter v, something like:
             v = 0.8 * v_prev + 0.2 * v;
         */
-
+        if(!(iteration%1000)){
+            RCLCPP_INFO_STREAM(LOGGER, "Turn "<< iteration << " v: " << v.transpose());
+        }
         q=pinocchio::integrate(model_, q, v*sc_.dt_);
 
         trajectory_msgs::msg::JointTrajectoryPoint point = create_JTP(q,v,time);
         trajectory.joint_trajectory.points.push_back(point);
+        if(!(iteration%1000)){
+            RCLCPP_INFO_STREAM(LOGGER, "Turn "<< iteration <<" Error : " << err.transpose()); 
+        }
         time += sc_.dt_; 
+        iteration++; 
     }
 
     return success; 
@@ -167,7 +192,8 @@ bool Solver::adjust_weight(const Eigen::VectorXd& weights){
 }
 
 void Solver::compute_weighted_J_pinv(pinocchio::Data::Matrix6x& J, const Eigen::VectorXd& q, Eigen::MatrixXd& J_pinv){
-    pinocchio::computeFrameJacobian(model_, data_, q, ee_frame_id_, pinocchio::LOCAL_WORLD_ALIGNED, J); //Frame instead of JointJacobian...
+    pinocchio::computeJointJacobians(model_, data_, q);
+    pinocchio::computeFrameJacobian(model_, data_, q, ee_frame_id_, pinocchio::LOCAL, J); //Frame instead of JointJacobian...
     pinocchio::Data::Matrix6 JWJt;
     JWJt.noalias() = J * W_inv_* J.transpose();  // J* W^{-1}*J^t
     JWJt.diagonal().array() += sc_.damp_; // JJ^t + Lambda*I
@@ -197,10 +223,13 @@ void Solver::check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q){
     for(size_t i =0; i< DoF_; ++i){
         double v_min = (q_min_[i]+sc_.margin_-q[i])/sc_.dt_;
         double v_max = (q_max_[i]-sc_.margin_-q[i])/sc_.dt_;
-        if (v[i] < v_min)
+        if (v[i] < v_min){
             v[i] = v_min;
-        else if (v[i] > v_max)
+            RCLCPP_INFO(LOGGER, "Adjusting v");
+        } else if (v[i] > v_max){
             v[i] = v_max;
+            RCLCPP_INFO(LOGGER, "Adjusting v");
+        }
     }
 
 }
