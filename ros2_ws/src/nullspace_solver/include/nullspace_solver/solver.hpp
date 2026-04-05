@@ -18,6 +18,7 @@ struct SolverConfig{
     double max_time_ = 10;
     double dt_ = 0.001; 
     double margin_ = 1e-4;  
+    double storing_intervall_ = 0.01;
 };
 
 class Solver{

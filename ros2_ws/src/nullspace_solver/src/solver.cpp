@@ -25,6 +25,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
         }
     } 
     double time = 0.0;
+    double last_storage = time; 
 
     size_t wp_idx=0; 
     size_t num_wp= input_traj_.get_num_points(); 
@@ -100,8 +101,11 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
         */      
         q=pinocchio::integrate(model_, q, v*sc_.dt_);
         
-        trajectory_msgs::msg::JointTrajectoryPoint point = create_JTP(q,v,time);
-        trajectory.joint_trajectory.points.push_back(point);
+        if(last_storage + sc_.storing_intervall_ <= time){
+            trajectory_msgs::msg::JointTrajectoryPoint point = create_JTP(q,v,time);
+            trajectory.joint_trajectory.points.push_back(point);
+            last_storage = time; 
+        }
         if(DEBUG && !(iteration%1000)){
             RCLCPP_INFO_STREAM(LOGGER, "turn: "<<iteration << " q: "<<q);
             RCLCPP_INFO_STREAM(LOGGER, "turn: "<<iteration << " dMi: " <<dMi); 
@@ -242,9 +246,10 @@ bool Solver::load_config(const std::string& path){
         sc_.max_time_ = s["max_time"] ? s["max_time"].as<double>() : sc_.max_time_;
         sc_.dt_ = s["dt"] ? s["dt"].as<double>() : sc_.dt_ ; 
         sc_.margin_ = s["margin"] ? s["margin"].as<double>() : sc_.margin_;  
+        sc_.storing_intervall_ = s["storing_intervall"] ? s["storing_intervall"].as<double>() : sc_.storing_intervall_; 
         return true;
     }
-    RCLCPP_ERROR(LOGGER, "Config file for solver not found. Shutting down"); 
+    RCLCPP_WARN(LOGGER, "Config file for solver not found. Using default values. The config file should be located here: \"/config/solver_config.yaml\""); 
     return false;
 
 }
