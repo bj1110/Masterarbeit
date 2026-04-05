@@ -39,8 +39,8 @@ public:
     Solver(const std::string& urdf_string, const std::string& ee_frame, const rclcpp::Logger& logger);
 
 
-    bool adjust_weight(const size_t pos, const double weight);
-    bool adjust_weight(const Eigen::VectorXd& weights);
+    bool setJointWeight(const size_t pos, const double weight);
+    bool setJointWeight(const Eigen::VectorXd& weights);
 
 
 private:

@@ -22,6 +22,7 @@ set(COMMON_DEPS
   moveit_ros_planning_interface
   moveit_core
   nullspace_solver
+  yaml-cpp
 )
 
 find_package(rclcpp REQUIRED)
@@ -35,6 +36,7 @@ find_package(Eigen3 REQUIRED)
 find_package(RBDL REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(nullspace_solver REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 # -----------------------------
 # External: nlohmann/json
@@ -90,6 +92,7 @@ target_link_libraries(fullsim
   ik_evaluator
   rba
   nlohmann_json::nlohmann_json
+  yaml-cpp
 )
 
 # -----------------------------
@@ -139,7 +142,7 @@ install(DIRECTORY include/
   DESTINATION include
 )
 
-install(DIRECTORY launch data
+install(DIRECTORY launch data config
   DESTINATION share/${PROJECT_NAME}
 )
 

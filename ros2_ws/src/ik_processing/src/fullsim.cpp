@@ -51,7 +51,7 @@
 #include <moveit_msgs/msg/display_trajectory.hpp>
 #include <moveit_msgs/msg/planning_scene.hpp>
 
-
+#include <yaml-cpp/yaml.h>
 
 #include <cmath>
 
@@ -316,11 +316,40 @@ int main(int argc, char** argv)
 
     solver.setJointLimits(q_min, q_max); 
 
-    moveit_msgs::msg::RobotTrajectory trajectory;
-    
+    std::string config_path = ament_index_cpp::get_package_share_directory("ik_processing")
+        + "/config/config.yaml";
+    YAML::Node config = YAML::LoadFile(config_path); 
 
-    //TODO: ist start_configuration in der richtigen reihenfolge???
- 
+    std::map<std::string, double> joint_weights;
+
+    if(config["joint_weights"]){
+        for(const auto& jw: config["joint_weights"]){
+            joint_weights[jw.first.as<std::string>()] = jw.second.as<double>();
+        }
+    }
+    Eigen::VectorXd joint_weights_vector(dof);
+    for(size_t i=0; i<dof ; ++i){
+        std::string name= variable_names[i]; 
+        if(joint_weights[name]){
+            double weight = joint_weights[name];
+            if(weight> 1.0){
+                RCLCPP_WARN_STREAM(LOGGER, "Joint-weight for "<<name <<" larger than 1. Using 1 instead.");
+                weight=1.0;
+            }
+            if(weight<0){
+                RCLCPP_WARN_STREAM(LOGGER, "Joint-weight for "<<name <<" smaller than 0. Using 0 instead.");
+                weight=0.0; 
+            }
+            joint_weights_vector[i] =  weight; 
+        } else{
+            RCLCPP_WARN_STREAM(LOGGER, "Did not find joint-weight for "<<name <<". Using 1.0 instead.");
+            joint_weights_vector[i] = 1.0;
+        }
+    }
+
+    solver.setJointWeight(joint_weights_vector); 
+
+    moveit_msgs::msg::RobotTrajectory trajectory;
     bool ik_ok= solver.solve(start_configuration, trajectory); 
 
     if(ik_ok){

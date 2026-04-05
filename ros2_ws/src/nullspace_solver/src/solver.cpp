@@ -191,7 +191,7 @@ void Solver::setJointLimits(const Eigen::VectorXd& q_min, const Eigen::VectorXd&
 }
 
 
-bool Solver::adjust_weight(const size_t pos, const double weight){
+bool Solver::setJointWeight(const size_t pos, const double weight){
     assert(pos < DoF_);
     assert(weight>=0 && weight<=1.0); 
     if(weight<0 || weight >1.0){
@@ -204,7 +204,7 @@ bool Solver::adjust_weight(const size_t pos, const double weight){
     return true; 
 }
 
-bool Solver::adjust_weight(const Eigen::VectorXd& weights){
+bool Solver::setJointWeight(const Eigen::VectorXd& weights){
     assert(weights.size() == W_inv_.diagonalSize());
     if(weights.size() != W_inv_.diagonalSize()){
         return false;
