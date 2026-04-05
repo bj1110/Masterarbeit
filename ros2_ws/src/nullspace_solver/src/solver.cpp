@@ -29,6 +29,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
 
     size_t wp_idx=0; 
     size_t num_wp= input_traj_.get_num_points(); 
+    bool log_V_adjustment = true; 
     
     const Eigen::Matrix3d goal_orientation = input_traj_.get_orientation_goal(wp_idx);
     Eigen::Vector3d curr_goal = input_traj_.get_position_goal(wp_idx); 
@@ -70,10 +71,12 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
         if(err.head<3>().norm() < sc_.eps_ + sc_.margin_){
             if(++wp_idx == num_wp){
                 success=true; 
+                RCLCPP_INFO(LOGGER, "\033[33m Solver finished successfully.\033[0m"); 
                 break; 
             }
             RCLCPP_INFO_STREAM(LOGGER, "Computing "<< (wp_idx +1) <<"/"<<num_wp<<"..."); 
             iteration=0;
+            log_V_adjustment = true; 
             continue;
         }
         if(iteration >= sc_.max_steps_){
@@ -94,13 +97,16 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
         nullspaceObjective(q, v_secondary);
 
         v.noalias() = v_primary + N*v_secondary; 
-        //check_joint_boundary(v, q); 
+        //check_joint_boundary(v, q, log_V_adjustment); 
+        avoid_joint_boundary(v, q); 
         /*
             maybe lowpass filter v, something like:
             v = 0.8 * v_prev + 0.2 * v;
         */      
         q=pinocchio::integrate(model_, q, v*sc_.dt_);
         
+        //q = q.cwiseMin((q_max_.array() - sc_.margin_).matrix()).cwiseMax((q_min_.array() + sc_.margin_).matrix());
+
         if(last_storage + sc_.storing_intervall_ <= time){
             trajectory_msgs::msg::JointTrajectoryPoint point = create_JTP(q,v,time);
             trajectory.joint_trajectory.points.push_back(point);
@@ -134,7 +140,10 @@ Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, cons
     initFromURDF(urdf_string, ee_frame);
     DoF_= model_.nv;
     W_inv_ = Eigen::MatrixXd::Identity(DoF_, DoF_); 
-
+    q_min_ = Eigen::VectorXd::Zero(DoF_); 
+    q_max_ = Eigen::VectorXd::Zero(DoF_);
+    q_mid_ = Eigen::VectorXd::Zero(DoF_);
+    joint_ranges_ = Eigen::VectorXd::Zero(DoF_);
     std::string config_path = ament_index_cpp::get_package_share_directory("nullspace_solver")
         + "/config/solver_config.yaml";
     load_config(config_path); 
@@ -147,7 +156,11 @@ Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, cons
 {
     initFromURDF(urdf_string, ee_frame);
     DoF_= model_.nv;
-    W_inv_ = Eigen::MatrixXd::Identity(DoF_, DoF_); 
+    W_inv_ = Eigen::MatrixXd::Identity(DoF_, DoF_);     
+    q_min_ = Eigen::VectorXd::Zero(DoF_); 
+    q_max_ = Eigen::VectorXd::Zero(DoF_);
+    q_mid_ = Eigen::VectorXd::Zero(DoF_);
+    joint_ranges_ = Eigen::VectorXd::Zero(DoF_);
     std::string config_path = ament_index_cpp::get_package_share_directory("nullspace_solver")
         + "/config/solver_config.yaml";
     load_config(config_path); 
@@ -165,8 +178,16 @@ bool Solver::initFromURDF(const std::string& urdf_string, const std::string& ee_
 }
 
 void Solver::setJointLimits(const Eigen::VectorXd& q_min, const Eigen::VectorXd& q_max){
+    if(q_min.size() != DoF_ || q_max.size() != DoF_){
+        RCLCPP_ERROR(LOGGER, "Jointlimit sizes do not match DoF. Cannot set jointlimits with illegal size.");
+        return; 
+    }
     q_min_ = q_min;
     q_max_ = q_max;
+    for(size_t i=0; i<DoF_; ++i){
+        q_mid_ [i] = 0.5 * (q_min_[i] + q_max_[i]);
+        joint_ranges_[i] = q_max_[i] - q_min_[i];
+    }
 }
 
 
@@ -201,6 +222,20 @@ void Solver::compute_weighted_J_pinv(pinocchio::Data::Matrix6x& J, const Eigen::
     J_pinv.noalias() = W_inv_ * J.transpose() * JWJt.ldlt().solve(Eigen::MatrixXd::Identity(6,6));//W^{-1} * J^t ( JJ^t + Lambda*I)^{-1}        
 }
 
+void Solver::avoid_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q){
+    if(q_min_.isZero() && q_max_.isZero()){
+        RCLCPP_WARN(LOGGER, "Jointlimits not set. Please set the jointlimits.");
+        return; 
+    }
+    Eigen::VectorXd gradient = Eigen::VectorXd::Zero(DoF_);
+    for(size_t i=0; i<DoF_; ++i){
+        gradient[i] = -2.0 * (q[i] - q_mid_[i]) / (joint_ranges_[i] * joint_ranges_[i]);
+    }
+    v += sc_.joint_limit_avoidance_gain_ * gradient; 
+}
+
+
+
 trajectory_msgs::msg::JointTrajectoryPoint Solver::create_JTP(const Eigen::VectorXd& q, const Eigen::VectorXd& v, const double time) const{
     trajectory_msgs::msg::JointTrajectoryPoint point;
     point.positions.resize(DoF_);
@@ -213,7 +248,7 @@ trajectory_msgs::msg::JointTrajectoryPoint Solver::create_JTP(const Eigen::Vecto
     return point; 
 }
 
-void Solver::check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q){
+void Solver::check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q, bool& log){
     if (q_min_.size() != DoF_ || q_max_.size() != DoF_) {
         RCLCPP_WARN(LOGGER, "Joint limits size (%ld, %ld) != DoF_ (%ld). Using default limits.",
                     q_min_.size(), q_max_.size(), DoF_);
@@ -226,13 +261,18 @@ void Solver::check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q){
         double v_max = (q_max_[i]-sc_.margin_-q[i])/sc_.dt_;
         if (v[i] < v_min){
             v[i] = v_min;
-            RCLCPP_INFO(LOGGER, "Adjusting v");
+            if(log){
+                RCLCPP_INFO(LOGGER, "Adjusting v");
+                log=false;
+            }
         } else if (v[i] > v_max){
             v[i] = v_max;
-            RCLCPP_INFO(LOGGER, "Adjusting v");
+            if(log){
+                RCLCPP_INFO(LOGGER, "Adjusting v");
+                log=false;
+            }
         }
     }
-
 }
 
 bool Solver::load_config(const std::string& path){
@@ -247,11 +287,11 @@ bool Solver::load_config(const std::string& path){
         sc_.dt_ = s["dt"] ? s["dt"].as<double>() : sc_.dt_ ; 
         sc_.margin_ = s["margin"] ? s["margin"].as<double>() : sc_.margin_;  
         sc_.storing_intervall_ = s["storing_intervall"] ? s["storing_intervall"].as<double>() : sc_.storing_intervall_; 
+        sc_.joint_limit_avoidance_gain_= s["joint_limit_avoidance_gain"] ? s["joint_limit_avoidance_gain"].as<double>() : sc_.joint_limit_avoidance_gain_;
         return true;
     }
     RCLCPP_WARN(LOGGER, "Config file for solver not found. Using default values. The config file should be located here: \"/config/solver_config.yaml\""); 
     return false;
-
 }
 
 

@@ -1,8 +1,9 @@
 solver:
-  max_steps: 100000
+  max_steps: 10000
   eps: 0.01
   damp: 1e-3
   max_time: 10.0
   dt: 0.001
   margin: 1e-4
   storing_intervall: 0.01
+  joint_limit_avoidance_gain: 0.005

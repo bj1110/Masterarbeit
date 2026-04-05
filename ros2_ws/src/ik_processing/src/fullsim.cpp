@@ -125,12 +125,19 @@ int main(int argc, char** argv)
         Move to approx. Startposition     
     */
 
+    auto current_state = move_group.getCurrentState();
+    current_state->enforceBounds();
+
+    move_group.setStartState(*current_state);
+    // move_group.setStartStateToCurrentState(); 
     std::string startpos_name = helpers::get_startpos(header);
     std::map<std::string, double> states_values;
     if (joint_model_group->getVariableDefaultPositions(startpos_name, states_values)){
         RCLCPP_INFO(LOGGER, "Moving to approx. Startposition \"%s\" ", startpos_name.c_str());
         move_group.setJointValueTarget(states_values); 
         move_group.move(); 
+        move_group.setStartStateToCurrentState(); 
+
         // const geometry_msgs::msg::Pose initial_pose = move_group.getCurrentPose().pose;
         //RCLCPP_INFO(LOGGER, "\033[34m initial pose: \n %s \033[0m", helpers::print_pose(initial_pose).c_str()); 
     }else{

@@ -19,6 +19,7 @@ struct SolverConfig{
     double dt_ = 0.001; 
     double margin_ = 1e-4;  
     double storing_intervall_ = 0.01;
+    double joint_limit_avoidance_gain_= 0.05;
 };
 
 class Solver{
@@ -50,7 +51,8 @@ private:
 
     trajectory_msgs::msg::JointTrajectoryPoint create_JTP(const Eigen::VectorXd& q, const Eigen::VectorXd& v, const double time) const; 
 
-    void check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q);
+    void check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q, bool& log);
+    void avoid_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q);
 
     bool load_config(const std::string& path); 
 
@@ -73,6 +75,8 @@ private:
 
     Eigen::VectorXd q_min_;
     Eigen::VectorXd q_max_;
+    Eigen::VectorXd q_mid_;
+    Eigen::VectorXd joint_ranges_;
 
     Input_Trajectory input_traj_; 
 };
