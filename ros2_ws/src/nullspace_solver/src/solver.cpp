@@ -68,7 +68,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
         err=pinocchio::log6(dMi).toVector();
         err.head<3>() *= 1.0;
         err.tail<3>() *= 0.1;  // reduce orientation importance
-        if(err.head<3>().norm() < sc_.eps_ + sc_.margin_){
+        if(err.head<3>().norm() < sc_.eps + sc_.margin){
             if(++wp_idx == num_wp){
                 success=true; 
                 RCLCPP_INFO(LOGGER, "\033[33m Solver finished successfully.\033[0m"); 
@@ -79,7 +79,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
             log_V_adjustment = true; 
             continue;
         }
-        if(iteration >= sc_.max_steps_){
+        if(iteration >= sc_.max_steps){
             success=false;
             RCLCPP_INFO(LOGGER, "\033[31m NUMBER OF TRIES REACHED. Failed at point %ld of %ld \033[0m", wp_idx, num_wp);        
             RCLCPP_INFO_STREAM(LOGGER, "Error at failure: "<< err.transpose());  
@@ -103,11 +103,11 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
             maybe lowpass filter v, something like:
             v = 0.8 * v_prev + 0.2 * v;
         */      
-        q=pinocchio::integrate(model_, q, v*sc_.dt_);
+        q=pinocchio::integrate(model_, q, v*sc_.dt);
         
-        //q = q.cwiseMin((q_max_.array() - sc_.margin_).matrix()).cwiseMax((q_min_.array() + sc_.margin_).matrix());
+        //q = q.cwiseMin((q_max_.array() - sc_.margin).matrix()).cwiseMax((q_min_.array() + sc_.margin).matrix());
 
-        if(last_storage + sc_.storing_intervall_ <= time){
+        if(last_storage + sc_.storing_intervall <= time){
             trajectory_msgs::msg::JointTrajectoryPoint point = create_JTP(q,v,time);
             trajectory.joint_trajectory.points.push_back(point);
             last_storage = time; 
@@ -123,7 +123,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
             RCLCPP_INFO_STREAM(LOGGER, "Turn "<< iteration << " v: " << v.transpose());
             RCLCPP_INFO_STREAM(LOGGER, "Turn "<< iteration <<" Error : " << err.transpose()); 
         }
-        time += sc_.dt_; 
+        time += sc_.dt; 
         iteration++; 
     }
 
@@ -132,6 +132,33 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
 
 void Solver::nullspaceObjective(const Eigen::VectorXd& q, Eigen::VectorXd& v){
     v.setZero(); 
+    Eigen::VectorXd gradient;
+    for(const Nullspace_Objective& nso: nullspace_objectives){
+        gradient = nso.task(q);
+        if(gradient.size() != DoF_ ){
+            RCLCPP_ERROR(LOGGER, "Nullspace task returned a Vector that does not match the Robots DoF.");
+            return; 
+        }
+        v += - nso.weight * gradient;
+    }
+    v *= sc_.overall_nullspace_task_importance; 
+}
+
+void Solver::addNullspaceObjective(Nullspace_task task, double weight){
+    if(weight < 0){
+        weight= 0.0;
+        RCLCPP_WARN_STREAM(LOGGER, "Weights must be positive. Setting to weight to 0.");
+    }
+    Eigen::VectorXd test = Eigen::VectorXd::Ones(DoF_);
+    try{
+        Eigen::VectorXd gradient = task(test);
+    }
+    catch(const std::exception& e){
+        RCLCPP_WARN_STREAM(LOGGER, "\033[31m Error in adding the Nullspace Task " << e.what() << "\n Ignoring this Nullspace Task. \033[0m");
+        return; 
+    }
+    Nullspace_Objective nso {task, weight};
+    nullspace_objectives.push_back(nso);
 }
 
 Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, const std::vector<geometry_msgs::msg::Pose>& input_data, const std::vector<double> timestamps, const rclcpp::Logger& logger):
@@ -147,7 +174,7 @@ Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, cons
     std::string config_path = ament_index_cpp::get_package_share_directory("nullspace_solver")
         + "/config/solver_config.yaml";
     load_config(config_path); 
-    sc_.max_time_= timestamps.back() + 1.0; 
+    sc_.max_time= timestamps.back() + 1.0; 
     RCLCPP_INFO(LOGGER, "\033[33m Solver setup complete\033[0m"); 
 }
 
@@ -218,7 +245,7 @@ void Solver::compute_weighted_J_pinv(pinocchio::Data::Matrix6x& J, const Eigen::
     pinocchio::computeFrameJacobian(model_, data_, q, ee_frame_id_, pinocchio::LOCAL, J); //Frame instead of JointJacobian...
     pinocchio::Data::Matrix6 JWJt;
     JWJt.noalias() = J * W_inv_* J.transpose();  // J* W^{-1}*J^t
-    JWJt.diagonal().array() += sc_.damp_; // JJ^t + Lambda*I
+    JWJt.diagonal().array() += sc_.damp; // JJ^t + Lambda*I
     J_pinv.noalias() = W_inv_ * J.transpose() * JWJt.ldlt().solve(Eigen::MatrixXd::Identity(6,6));//W^{-1} * J^t ( JJ^t + Lambda*I)^{-1}        
 }
 
@@ -231,7 +258,7 @@ void Solver::avoid_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q){
     for(size_t i=0; i<DoF_; ++i){
         gradient[i] = -2.0 * (q[i] - q_mid_[i]) / (joint_ranges_[i] * joint_ranges_[i]);
     }
-    v += sc_.joint_limit_avoidance_gain_ * gradient; 
+    v += sc_.joint_limit_avoidance_gain * gradient; 
 }
 
 
@@ -257,8 +284,8 @@ void Solver::check_joint_boundary(Eigen::VectorXd& v, const Eigen::VectorXd& q, 
     }
 
     for(size_t i =0; i< DoF_; ++i){
-        double v_min = (q_min_[i]+sc_.margin_-q[i])/sc_.dt_;
-        double v_max = (q_max_[i]-sc_.margin_-q[i])/sc_.dt_;
+        double v_min = (q_min_[i]+sc_.margin-q[i])/sc_.dt;
+        double v_max = (q_max_[i]-sc_.margin-q[i])/sc_.dt;
         if (v[i] < v_min){
             v[i] = v_min;
             if(log){
@@ -280,14 +307,15 @@ bool Solver::load_config(const std::string& path){
 
     auto s =config["solver"];
     if(s){
-        sc_.max_steps_ = s["max_steps"] ? s["max_steps"].as<int>() : sc_.max_steps_;
-        sc_.eps_ = s["eps"] ? s["eps"].as<double>() : sc_.eps_;
-        sc_.damp_ = s["damp"] ? s["damp"].as<double>() : sc_.damp_; 
-        sc_.max_time_ = s["max_time"] ? s["max_time"].as<double>() : sc_.max_time_;
-        sc_.dt_ = s["dt"] ? s["dt"].as<double>() : sc_.dt_ ; 
-        sc_.margin_ = s["margin"] ? s["margin"].as<double>() : sc_.margin_;  
-        sc_.storing_intervall_ = s["storing_intervall"] ? s["storing_intervall"].as<double>() : sc_.storing_intervall_; 
-        sc_.joint_limit_avoidance_gain_= s["joint_limit_avoidance_gain"] ? s["joint_limit_avoidance_gain"].as<double>() : sc_.joint_limit_avoidance_gain_;
+        sc_.max_steps = s["max_steps"] ? s["max_steps"].as<int>() : sc_.max_steps;
+        sc_.eps = s["eps"] ? s["eps"].as<double>() : sc_.eps;
+        sc_.damp = s["damp"] ? s["damp"].as<double>() : sc_.damp; 
+        sc_.max_time = s["max_time"] ? s["max_time"].as<double>() : sc_.max_time;
+        sc_.dt = s["dt"] ? s["dt"].as<double>() : sc_.dt; 
+        sc_.margin = s["margin"] ? s["margin"].as<double>() : sc_.margin;  
+        sc_.storing_intervall = s["storing_intervall"] ? s["storing_intervall"].as<double>() : sc_.storing_intervall; 
+        sc_.joint_limit_avoidance_gain= s["joint_limit_avoidance_gain"] ? s["joint_limit_avoidance_gain"].as<double>() : sc_.joint_limit_avoidance_gain;
+        sc_.overall_nullspace_task_importance = s["overall_nullspace_task_importance"] ? s["overall_nullspace_task_importance"].as<double>() :sc_.overall_nullspace_task_importance; 
         return true;
     }
     RCLCPP_WARN(LOGGER, "Config file for solver not found. Using default values. The config file should be located here: \"/config/solver_config.yaml\""); 

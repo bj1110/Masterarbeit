@@ -349,6 +349,17 @@ int main(int argc, char** argv)
 
     solver.setJointWeight(joint_weights_vector); 
 
+
+
+    std::unordered_map<std::string, size_t> name_to_idx;
+    for(size_t i = 0; i < variable_names.size(); ++i){
+        name_to_idx[variable_names[i]] = i;
+    }
+    nullspace_solver::Nullspace_task nst1 = nullspace_solver::tasks::couple_joints(name_to_idx["glenohumeral_yaw_joint"], name_to_idx["sternoclavicular_yaw_joint"], 2.0);
+    solver.addNullspaceObjective(nst1, 1.0); 
+
+
+
     moveit_msgs::msg::RobotTrajectory trajectory;
     bool ik_ok= solver.solve(start_configuration, trajectory); 
 

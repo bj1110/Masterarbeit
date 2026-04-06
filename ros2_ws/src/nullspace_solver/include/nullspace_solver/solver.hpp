@@ -8,18 +8,29 @@
 #include "nullspace_solver/input_trajectory.hpp"
 
 
+#include "nullspace_solver/nullspace_function.hpp"
+
+
 
 namespace nullspace_solver{
 
+using Nullspace_task = std::function<Eigen::VectorXd(const Eigen::VectorXd& q)>;
+
+struct Nullspace_Objective{
+    Nullspace_task task;
+    double weight;
+};
+
 struct SolverConfig{
-    int max_steps_= 100000;
-    double eps_ = 0.001;
-    double damp_ = 1e-6; 
-    double max_time_ = 10;
-    double dt_ = 0.001; 
-    double margin_ = 1e-4;  
-    double storing_intervall_ = 0.01;
-    double joint_limit_avoidance_gain_= 0.05;
+    int max_steps= 100000;
+    double eps = 0.001;
+    double damp = 1e-6; 
+    double max_time = 10;
+    double dt = 0.001; 
+    double margin = 1e-4;  
+    double storing_intervall = 0.01;
+    double joint_limit_avoidance_gain= 0.05;
+    double overall_nullspace_task_importance = 0.1;
 };
 
 class Solver{
@@ -42,6 +53,7 @@ public:
     bool setJointWeight(const size_t pos, const double weight);
     bool setJointWeight(const Eigen::VectorXd& weights);
 
+    void addNullspaceObjective(Nullspace_task task, double weight);
 
 private:
     
@@ -72,6 +84,7 @@ private:
 
     SolverConfig sc_; 
 
+    std::vector<Nullspace_Objective> nullspace_objectives; 
 
     Eigen::VectorXd q_min_;
     Eigen::VectorXd q_max_;
