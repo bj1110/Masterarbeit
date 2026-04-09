@@ -125,10 +125,10 @@ int main(int argc, char** argv)
         Move to approx. Startposition     
     */
 
-    auto current_state = move_group.getCurrentState();
-    current_state->enforceBounds();
+    moveit::core::RobotStatePtr robot_state = move_group.getCurrentState();
+    robot_state->enforceBounds();
 
-    move_group.setStartState(*current_state);
+    move_group.setStartState(*robot_state);
     // move_group.setStartStateToCurrentState(); 
     std::string startpos_name = helpers::get_startpos(header);
     std::map<std::string, double> states_values;
@@ -332,10 +332,10 @@ int main(int argc, char** argv)
         std::string name= variable_names[i]; 
         if(joint_weights[name]){
             double weight = joint_weights[name];
-            if(weight> 1.0){
-                RCLCPP_WARN_STREAM(LOGGER, "Joint-weight for "<<name <<" larger than 1. Using 1 instead.");
-                weight=1.0;
-            }
+            // if(weight> 1.0){
+            //     RCLCPP_WARN_STREAM(LOGGER, "Joint-weight for "<<name <<" larger than 1. Using 1 instead.");
+            //     weight=1.0;
+            // }
             if(weight<0){
                 RCLCPP_WARN_STREAM(LOGGER, "Joint-weight for "<<name <<" smaller than 0. Using 0 instead.");
                 weight=0.0; 
@@ -356,7 +356,12 @@ int main(int argc, char** argv)
         name_to_idx[variable_names[i]] = i;
     }
     nullspace_solver::Nullspace_task nst1 = nullspace_solver::tasks::couple_joints(name_to_idx["glenohumeral_yaw_joint"], name_to_idx["sternoclavicular_yaw_joint"], 2.0);
-    solver.addNullspaceObjective(nst1, 1.0); 
+    nullspace_solver::Nullspace_task nst2 = nullspace_solver::tasks::nudge_joint_towards_nullposition(name_to_idx["columna_flex_joint"]);
+
+    solver.addNullspaceObjective(nst1, 0.5); 
+    solver.addNullspaceObjective(nst2, 0.5); 
+
+    solver.useJointLimitAvoidance(); 
 
 
 
@@ -367,9 +372,26 @@ int main(int argc, char** argv)
         move_group.execute(trajectory); 
         outputdata=trajectory; 
         outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(trajectory, LOGGER); 
+        robot_state->update(true); 
+        double* joint_positions = robot_state->getVariablePositions();
+        for(size_t i=0; i< dof; ++i){
+            double jp = *joint_positions;
+            double lowerlimit = q_min[i];
+            double upperlimit = q_max[i];
+            RCLCPP_INFO_STREAM(LOGGER, "Jointposition "<< variable_names[i]<<": " << jp <<" with limits: "<< lowerlimit<< ", "<< upperlimit);
+            if(jp<lowerlimit){
+                RCLCPP_WARN_STREAM(LOGGER, "\033[31mPosition of "<< variable_names[i]<<" below boundary.\033[0m");
+            }
+            if(jp>upperlimit){
+                RCLCPP_WARN_STREAM(LOGGER, "\033[31mPosition of "<< variable_names[i]<<" above boundary.\033[0m");
+            }
+            joint_positions++; 
+        }
     }else{
         RCLCPP_INFO(LOGGER, "\033[31m Solver failed to converge\033[0m"); 
     }
+
+
 
     const geometry_msgs::msg::Pose ee_final_pose = move_group.getCurrentPose().pose;
     const geometry_msgs::msg::Pose ee_target_pose = waypoints.back(); 

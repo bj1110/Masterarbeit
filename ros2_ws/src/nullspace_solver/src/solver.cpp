@@ -48,12 +48,15 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
     bool success= false; 
     typedef Eigen::Matrix<double, 6, 1> Vector6d;
     Vector6d err;
-    Eigen::VectorXd v(DoF_); // v= q' 
+    Eigen::VectorXd v = Eigen::VectorXd::Zero(DoF_); // v= q' 
     Eigen::MatrixXd J_pinv(DoF_, 6);
     Eigen::VectorXd v_primary(DoF_);
     Eigen::MatrixXd N(DoF_, DoF_);
     Eigen::VectorXd v_secondary(DoF_);
 
+    trajectory_msgs::msg::JointTrajectoryPoint point = create_JTP(q,v,time);
+    trajectory.joint_trajectory.points.push_back(point);
+    
     RCLCPP_INFO_STREAM(LOGGER, "Computing "<< (wp_idx +1) <<"/"<<num_wp<<"..."); 
 
     int iteration=0; 
@@ -81,7 +84,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
         }
         if(iteration >= sc_.max_steps){
             success=false;
-            RCLCPP_INFO(LOGGER, "\033[31m NUMBER OF TRIES REACHED. Failed at point %ld of %ld \033[0m", wp_idx, num_wp);        
+            RCLCPP_INFO(LOGGER, "\033[31m NUMBER OF TRIES REACHED. Failed at point %ld of %ld \033[0m", (wp_idx+1), num_wp);        
             RCLCPP_INFO_STREAM(LOGGER, "Error at failure: "<< err.transpose());  
             RCLCPP_INFO_STREAM(LOGGER, "Positional error norm at failure: "<<err.head<3>().norm());    
             break;
@@ -98,7 +101,7 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
 
         v.noalias() = v_primary + N*v_secondary; 
         //check_joint_boundary(v, q, log_V_adjustment); 
-        avoid_joint_boundary(v, q); 
+        // avoid_joint_boundary(v, q); 
         /*
             maybe lowpass filter v, something like:
             v = 0.8 * v_prev + 0.2 * v;
@@ -191,6 +194,11 @@ Solver::Solver(const std::string& urdf_string, const std::string& ee_frame, cons
     std::string config_path = ament_index_cpp::get_package_share_directory("nullspace_solver")
         + "/config/solver_config.yaml";
     load_config(config_path); 
+}
+
+void Solver::useJointLimitAvoidance(){
+    tasks::Nullspace_task task= tasks::jointlimit_avoidance(model_.lowerPositionLimit, model_.upperPositionLimit, q_mid_);
+    addNullspaceObjective(task, sc_.joint_limit_avoidance_gain);
 }
 
 

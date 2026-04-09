@@ -6,5 +6,5 @@ solver:
   dt: 0.001
   margin: 1e-4
   storing_intervall: 0.01
-  joint_limit_avoidance_gain: 0.005
+  joint_limit_avoidance_gain: 1.0
   overall_nullspace_task_importance: 0.1

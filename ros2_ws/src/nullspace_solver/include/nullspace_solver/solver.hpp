@@ -29,7 +29,7 @@ struct SolverConfig{
     double dt = 0.001; 
     double margin = 1e-4;  
     double storing_intervall = 0.01;
-    double joint_limit_avoidance_gain= 0.05;
+    double joint_limit_avoidance_gain= 1.0;
     double overall_nullspace_task_importance = 0.1;
 };
 
@@ -54,6 +54,8 @@ public:
     bool setJointWeight(const Eigen::VectorXd& weights);
 
     void addNullspaceObjective(Nullspace_task task, double weight);
+
+    void useJointLimitAvoidance();
 
 private:
     
