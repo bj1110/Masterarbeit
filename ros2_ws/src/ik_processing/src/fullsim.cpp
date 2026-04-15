@@ -363,6 +363,12 @@ int main(int argc, char** argv)
 
     solver.useJointLimitAvoidance(); 
 
+    solver.centerJoint(name_to_idx["glenohumeral_yaw_joint"], 0.4);
+    solver.centerJoint(name_to_idx["sternoclavicular_yaw_joint"], 0.4);
+    nullspace_solver::Nullspace_task nst3 = nullspace_solver::tasks::keep_joint_above_threshold(name_to_idx["glenohumeral_yaw_joint"], 0.3);
+    solver.addNullspaceObjective(nst3, 1.0); 
+
+    
 
 
     moveit_msgs::msg::RobotTrajectory trajectory;

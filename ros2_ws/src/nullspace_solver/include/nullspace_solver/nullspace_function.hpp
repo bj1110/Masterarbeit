@@ -125,6 +125,55 @@ Nullspace_task jointlimit_avoidance(const Eigen::VectorXd& q_min, const Eigen::V
 
 
 
+/**
+ * Creates Nullspace task that centers a joint.
+ * This can be used to keep a joint close to the middle of it's range.
+ * 
+ * @param q_mid Vector the middlepoints for all joints. This is created by the solver instance.
+ * @param idx   Index of the joint that shall be kept close to the middle of it's range.
+ * 
+ * @throws      std::invalid_argument if index is out of bounds or q and q_mid sizes do not match.
+ * 
+ * @return      Nullspace task that keeps a joint close to the middle of it's range.
+ */
+Nullspace_task center_joint(const Eigen::VectorXd& q_mid, const size_t idx){
+    if(idx >= q_mid.size()){
+        throw std::invalid_argument("Index out of bounds for jointlimits");
+    }
+    return [q_mid, idx](const Eigen::VectorXd& q){
+        if(q_mid.size() != q.size()){
+            throw std::invalid_argument("Different sizes in Jointlimits and q.");
+        }
+        Eigen::VectorXd gradient = Eigen::VectorXd::Zero(q.size());
+        gradient[idx] = 2*(q[idx]-q_mid[idx]); 
+        return gradient; 
+    };
+}
+
+/**
+ * Creates Nullspace task that keeps a joint above a threshold value.
+ * This can be used to create asymmetric barriers for a joint.
+ * 
+ * @param idx           The index of the respective joint.
+ * @param threshold     The value the joint shall stay above.
+ * 
+ * @throws              std::invalid:argument if index is out of bounds.
+ * 
+ * @returns             Nullspace task that keeps a joint above the specified value. 
+ */
+Nullspace_task keep_joint_above_threshold(const size_t idx, const double threshold){
+    return [idx, threshold](const Eigen::VectorXd& q){
+        if(idx >= q.size()){
+            throw std::invalid_argument("Index out of bounds of for jointstates.");
+        }
+        Eigen::VectorXd gradient = Eigen::VectorXd::Zero(q.size());
+        if(q[idx] < threshold){
+            gradient[idx] = q[idx] - threshold;
+        }
+        return gradient;
+    };
+}
+
 
 
 } // namespace tasks

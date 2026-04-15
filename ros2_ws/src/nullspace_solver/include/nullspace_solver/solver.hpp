@@ -56,6 +56,7 @@ public:
     void addNullspaceObjective(Nullspace_task task, double weight);
 
     void useJointLimitAvoidance();
+    void centerJoint(const size_t idx, const double weight);
 
 private:
     

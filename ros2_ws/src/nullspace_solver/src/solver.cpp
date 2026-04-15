@@ -225,6 +225,11 @@ void Solver::setJointLimits(const Eigen::VectorXd& q_min, const Eigen::VectorXd&
     }
 }
 
+void Solver::centerJoint(const size_t idx, const double weight){
+    tasks::Nullspace_task task= tasks::center_joint(q_mid_, idx);
+    addNullspaceObjective(task, weight);
+}
+
 
 bool Solver::setJointWeight(const size_t pos, const double weight){
     assert(pos < DoF_);
