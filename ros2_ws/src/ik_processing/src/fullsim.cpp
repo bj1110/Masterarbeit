@@ -283,6 +283,17 @@ int main(int argc, char** argv)
     // RCLCPP_INFO(LOGGER, "\033[34mFirst point: \n %s\033[0m", helpers::print_pose(waypoints.front()).c_str()); 
     // RCLCPP_INFO(LOGGER, "\033[34mLast point: \n %s \033[0m", helpers::print_pose(waypoints.back()).c_str()); 
 
+    /*
+        alternative paths with just 3 points.
+    */
+    [[maybe_unused]] std::vector<geometry_msgs::msg::Pose> alt_waypoints;
+    alt_waypoints.push_back(waypoints.front());
+    alt_waypoints.push_back(waypoints[waypoints.size()/2]);
+    alt_waypoints.push_back(waypoints.back());
+    [[maybe_unused]] std::vector<double> alt_timesteps;
+    alt_timesteps.push_back(timesteps.front());
+    alt_timesteps.push_back(timesteps[timesteps.size()/2]);
+    alt_timesteps.push_back(timesteps.back());
 
     const std::vector<std::string>& variable_names = robot_model->getVariableNames();
     size_t dof = variable_names.size();
@@ -332,10 +343,6 @@ int main(int argc, char** argv)
         std::string name= variable_names[i]; 
         if(joint_weights[name]){
             double weight = joint_weights[name];
-            // if(weight> 1.0){
-            //     RCLCPP_WARN_STREAM(LOGGER, "Joint-weight for "<<name <<" larger than 1. Using 1 instead.");
-            //     weight=1.0;
-            // }
             if(weight<0){
                 RCLCPP_WARN_STREAM(LOGGER, "Joint-weight for "<<name <<" smaller than 0. Using 0 instead.");
                 weight=0.0; 
@@ -363,19 +370,35 @@ int main(int argc, char** argv)
 
     solver.useJointLimitAvoidance(); 
 
-    solver.centerJoint(name_to_idx["glenohumeral_yaw_joint"], 0.4);
-    solver.centerJoint(name_to_idx["sternoclavicular_yaw_joint"], 0.4);
-    nullspace_solver::Nullspace_task nst3 = nullspace_solver::tasks::keep_joint_above_threshold(name_to_idx["glenohumeral_yaw_joint"], 0.3);
-    solver.addNullspaceObjective(nst3, 1.0); 
+    /* The following increase computing time but do not (in any significant way) increase performance */
+    // solver.centerJoint(name_to_idx["glenohumeral_yaw_joint"], 0.6);
+    // solver.centerJoint(name_to_idx["sternoclavicular_yaw_joint"], 0.6);
+    // nullspace_solver::Nullspace_task nst3 = nullspace_solver::tasks::keep_joint_above_threshold(name_to_idx["glenohumeral_yaw_joint"], 0.3);
+    // nullspace_solver::Nullspace_task nst4 = nullspace_solver::tasks::keep_joint_above_threshold(name_to_idx["sternoclavicular_yaw_joint"], 0.0);
+    // solver.addNullspaceObjective(nst3, 15.0); 
+    // solver.addNullspaceObjective(nst4, 15.0); 
 
+    // double arm_elevation = 0.5; 
+    // nullspace_solver::Nullspace_task nst5 = nullspace_solver::tasks::nudge_joint_towards_value(name_to_idx["glenohumeral_yaw_joint"], arm_elevation);
+    // solver.addNullspaceObjective(nst5, 15.0); 
     
+    // Eigen::Vector3d p1 {waypoints.front().position.x,waypoints.front().position.y, waypoints.front().position.z};
+    // Eigen::Vector3d p2 {waypoints.back().position.x, waypoints.back().position.y, waypoints.back().position.z};
 
+    // Eigen::Vector3d forarm_axis {0.0, 0.0, -1.0};
+
+    // solver.alignJointWithAxis("elbow_roll_joint", forarm_axis, p1, p2, 10.0);
+    
+    solver.alignNormal("glenohumeral_yaw_joint", "elbow_roll_joint", "forearm_hand_joint", 10.0); 
 
     moveit_msgs::msg::RobotTrajectory trajectory;
     bool ik_ok= solver.solve(start_configuration, trajectory); 
 
     if(ik_ok){
         move_group.execute(trajectory); 
+        double angle= solver.calculate_angle_between_plane_normal_and_z_axis("glenohumeral_yaw_joint", "elbow_roll_joint", "forearm_hand_joint", true);
+        RCLCPP_INFO_STREAM(LOGGER, "\033[32mAngle at endpose: "<< angle <<"°\033[0m");
+        outputdata["info"]["Angle"] = angle; 
         outputdata=trajectory; 
         outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(trajectory, LOGGER); 
         robot_state->update(true); 

@@ -175,6 +175,137 @@ Nullspace_task keep_joint_above_threshold(const size_t idx, const double thresho
 }
 
 
+Nullspace_task align_link_to_axis_xy(const std::shared_ptr<pinocchio::Model> model_ptr, 
+                                    const std::shared_ptr<pinocchio::Data> data_ptr, 
+                                    const std::string& frame_name, 
+                                    const Eigen::Vector3d link_axis_in_frame,
+                                    const Eigen::Vector3d& p1, 
+                                    const Eigen::Vector3d& p2,
+                                    const rclcpp::Logger& LOGGER){
+    int DoF = model_ptr->nv; 
+
+    pinocchio::FrameIndex frame_ID = model_ptr->getFrameId(frame_name);
+    if(frame_ID == (pinocchio::FrameIndex)(-1)){
+        throw std::invalid_argument("Frame not found in model.");
+    }
+
+    Eigen::Vector3d target = p2-p1;
+
+
+    return[model_ptr, data_ptr, DoF, frame_ID, link_axis_in_frame, target, LOGGER](const Eigen::VectorXd& q){
+        if(DoF!= q.size()){
+            throw std::invalid_argument("DoF sizes don't match.");
+        }
+        pinocchio::forwardKinematics(*model_ptr, *data_ptr, q);
+        pinocchio::updateFramePlacements(*model_ptr, *data_ptr);
+        Eigen::VectorXd gradient= Eigen::VectorXd::Zero(DoF);
+    
+        const auto& oMf = data_ptr->oMf[frame_ID];
+
+        Eigen::Vector3d link_dir_world = oMf.rotation() * link_axis_in_frame; 
+
+        Eigen::Vector2d dir_xy(link_dir_world.x(), link_dir_world.y());
+        Eigen::Vector2d target_xy(target.x(), target.y());
+        if(dir_xy.norm() < 1e-6 || target_xy.norm() < 1e-6){
+            RCLCPP_INFO_STREAM(LOGGER, "oMf1: " <<oMf.translation().transpose());
+            // if(dir_xy.norm() < 1e-6 ){
+            //     std::stringstream ss;
+            //     ss << oMf2.translation() << " & oMf1 " << oMf1.translation() << " frameIDs: "<<frame1_ID << ", "<<frame2_ID; 
+            //     std::string s = std::to_string(dir_xy.norm());
+            //     throw std::logic_error(ss.str());
+            // }
+            // throw std::logic_error("target_xy== 0"); 
+            return gradient;
+        }
+
+        dir_xy= dir_xy.normalized();
+        target_xy= target_xy.normalized();
+
+        Eigen::Vector3d target_world(target_xy.x(), target_xy.y(), 0.0);
+        target_world.normalize();
+
+        Eigen::Vector3d omega = link_dir_world.cross(target_world);
+
+        double err = dir_xy.x() * target_xy.y() - dir_xy.y() * target_xy.x();
+
+        // double cross = dir_xy.x() * target_xy.y() - dir_xy.y() * target_xy.x();
+        // double dot   = dir_xy.dot(target_xy);
+        // double err = atan2(cross, dot); 
+
+        // Eigen::Vector3d omega(0.0, 0.0, err);
+
+        pinocchio::Data::Matrix6x J(6, DoF);
+        pinocchio::getFrameJacobian(*model_ptr, *data_ptr, frame_ID,
+                            pinocchio::LOCAL_WORLD_ALIGNED, J);
+
+        auto Jw = J.bottomRows(3);
+        //RCLCPP_INFO_STREAM(LOGGER, "" << Jw.transpose()); 
+
+        gradient = Jw.transpose() * omega;
+
+        return gradient;
+    };
+}
+
+
+Nullspace_task align_normal(const std::shared_ptr<pinocchio::Model> model_ptr, 
+                                    const std::shared_ptr<pinocchio::Data> data_ptr, 
+                                    const std::string& S_name,
+                                    const std::string& E_name,
+                                    const std::string& W_name, 
+                                    const rclcpp::Logger& LOGGER)
+{
+    pinocchio::FrameIndex S_idx = model_ptr->getFrameId(S_name);
+    pinocchio::FrameIndex E_idx = model_ptr->getFrameId(E_name);
+    pinocchio::FrameIndex W_idx = model_ptr->getFrameId(W_name);
+
+    if(S_idx == (pinocchio::FrameIndex) (-1)){
+        throw std::invalid_argument("S_frame not found in model.");
+    }
+    if(W_idx == (pinocchio::FrameIndex) (-1)){
+        throw std::invalid_argument("W_frame not found in model.");
+    } 
+    if(E_idx == (pinocchio::FrameIndex) (-1)){
+        throw std::invalid_argument("E_frame not found in model.");
+    }
+
+    int DoF = model_ptr->nv; 
+
+    return [S_idx, W_idx, E_idx, model_ptr, data_ptr, DoF, LOGGER](const Eigen::VectorXd& q){
+        const Eigen::Vector3d align_dir {0.0, 0.0, 1.0};
+
+        pinocchio::forwardKinematics(*model_ptr, *data_ptr, q);
+        pinocchio::updateFramePlacements(*model_ptr, *data_ptr);
+        
+        const auto& E_f = data_ptr->oMf[E_idx];
+        const auto& W_f = data_ptr->oMf[W_idx];
+        const auto& S_f = data_ptr->oMf[S_idx];
+
+        const Eigen::Vector3d& E = E_f.translation();
+        const Eigen::Vector3d& W = W_f.translation();
+        const Eigen::Vector3d& S = S_f.translation();
+        
+        Eigen::Vector3d e = E-S;
+        Eigen::Vector3d w = W-E;
+
+        pinocchio::Data::Matrix6x J_e (6, DoF);
+        pinocchio::Data::Matrix6x J_w (6, DoF);
+        pinocchio::Data::Matrix6x J_s (6, DoF);
+        pinocchio::getFrameJacobian(*model_ptr, *data_ptr, E_idx, pinocchio::LOCAL_WORLD_ALIGNED, J_e);
+        pinocchio::getFrameJacobian(*model_ptr, *data_ptr, W_idx, pinocchio::LOCAL_WORLD_ALIGNED, J_w);
+        pinocchio::getFrameJacobian(*model_ptr, *data_ptr, S_idx, pinocchio::LOCAL_WORLD_ALIGNED, J_s);
+
+        const Eigen::MatrixXd& J_e_pos = J_e.topRows(3);
+        const Eigen::MatrixXd& J_w_pos = J_w.topRows(3);
+        const Eigen::MatrixXd& J_s_pos = J_s.topRows(3);
+
+        Eigen::VectorXd gradient = Eigen::VectorXd::Zero(DoF);
+
+        gradient = -(J_e_pos - J_s_pos).transpose() * (w.cross(align_dir)) + (J_w_pos -J_e_pos).transpose() * (e.cross(align_dir));
+        
+        return gradient;
+    };
+}
 
 } // namespace tasks
 } //namespace nullspace_solver

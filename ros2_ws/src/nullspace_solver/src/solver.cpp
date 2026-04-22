@@ -99,6 +99,9 @@ bool Solver::solve(const Eigen::VectorXd& start_configuration, moveit_msgs::msg:
         N.noalias() = Eigen::MatrixXd::Identity(DoF_, DoF_) - J_pinv* J;
         nullspaceObjective(q, v_secondary);
 
+        // RCLCPP_INFO_STREAM(LOGGER, "Nullspace v: "<< v_secondary << " & N*v: "<< N*v_secondary);
+
+
         v.noalias() = v_primary + N*v_secondary; 
         //check_joint_boundary(v, q, log_V_adjustment); 
         // avoid_joint_boundary(v, q); 
@@ -230,6 +233,58 @@ void Solver::centerJoint(const size_t idx, const double weight){
     addNullspaceObjective(task, weight);
 }
 
+void Solver::alignJointWithAxis(const std::string& j1, const Eigen::Vector3d& link_axis_in_frame, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, double weight){
+    auto model_ptr = std::make_shared<pinocchio::Model>(model_);
+    auto data_ptr = std::make_shared<pinocchio::Data>(data_);
+
+    tasks::Nullspace_task task = tasks::align_link_to_axis_xy(model_ptr, data_ptr, j1, link_axis_in_frame, p1, p2, LOGGER);
+    addNullspaceObjective(task, weight);
+}
+
+void Solver::alignNormal(const std::string& S_name, const std::string& E_name, const std::string& W_name, double weight){
+    auto model_ptr = std::make_shared<pinocchio::Model>(model_);
+    auto data_ptr = std::make_shared<pinocchio::Data>(data_);
+
+    tasks::Nullspace_task task = tasks::align_normal(model_ptr, data_ptr, S_name, E_name, W_name, LOGGER);
+    addNullspaceObjective(task, weight);
+}
+
+double Solver::calculate_angle_between_plane_normal_and_z_axis(const std::string& S_name, const std::string& E_name, const std::string& W_name, const bool degrees){
+    pinocchio::FrameIndex S_idx = model_.getFrameId(S_name);
+    pinocchio::FrameIndex E_idx = model_.getFrameId(E_name);
+    pinocchio::FrameIndex W_idx = model_.getFrameId(W_name);
+
+    if(S_idx == (pinocchio::FrameIndex) (-1)){
+        RCLCPP_ERROR_STREAM(LOGGER, "S_frame not found in model.");
+    }
+    if(W_idx == (pinocchio::FrameIndex) (-1)){
+        RCLCPP_ERROR_STREAM(LOGGER, "W_frame not found in model.");
+    } 
+    if(E_idx == (pinocchio::FrameIndex) (-1)){
+        RCLCPP_ERROR_STREAM(LOGGER, "E_frame not found in model.");
+    }
+
+    const auto& E_f = data_.oMf[E_idx];
+    const auto& W_f = data_.oMf[W_idx];
+    const auto& S_f = data_.oMf[S_idx];
+
+    const Eigen::Vector3d& E = E_f.translation();
+    const Eigen::Vector3d& W = W_f.translation();
+    const Eigen::Vector3d& S = S_f.translation();
+    
+    Eigen::Vector3d e = E-S;
+    Eigen::Vector3d w = W-E;
+
+    Eigen::Vector3d n = e.cross(w);
+    Eigen::Vector3d z {0.0, 0.0, 1.0};
+
+    double angle = std::acos(n.normalized().dot(z.normalized()));
+    if(degrees){
+        double angle_degree= angle * 180 / M_PI; 
+        return angle_degree;
+    }
+    return angle;
+}
 
 bool Solver::setJointWeight(const size_t pos, const double weight){
     assert(pos < DoF_);
@@ -255,7 +310,8 @@ bool Solver::setJointWeight(const Eigen::VectorXd& weights){
 
 void Solver::compute_weighted_J_pinv(pinocchio::Data::Matrix6x& J, const Eigen::VectorXd& q, Eigen::MatrixXd& J_pinv){
     pinocchio::computeJointJacobians(model_, data_, q);
-    pinocchio::computeFrameJacobian(model_, data_, q, ee_frame_id_, pinocchio::LOCAL, J); //Frame instead of JointJacobian...
+    pinocchio::computeFrameJacobian(model_, data_, q, ee_frame_id_, pinocchio::LOCAL, J); 
+    pinocchio::updateFramePlacements(model_, data_);
     pinocchio::Data::Matrix6 JWJt;
     JWJt.noalias() = J * W_inv_* J.transpose();  // J* W^{-1}*J^t
     JWJt.diagonal().array() += sc_.damp; // JJ^t + Lambda*I
