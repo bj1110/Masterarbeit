@@ -23,6 +23,11 @@ def generate_launch_description():
     ])
     urdf= ParameterValue(Command(['xacro ', modelpath]), value_type=str)
     
+    config_file = PathJoinSubstitution([
+        this_package,
+        'config',
+        "config.yaml"
+    ])
 
     is_baseline = LaunchConfiguration('is_baseline')
     is_agent1 = LaunchConfiguration('is_agent1')
@@ -132,7 +137,8 @@ def generate_launch_description():
             moveit_config.planning_pipelines,
             {'recalculate':recalculate},
             {'urdf' : urdf },
-            {'fully_calc':fully_calc}
+            {'fully_calc':fully_calc},
+            config_file
         ],
     )
 

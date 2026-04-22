@@ -327,33 +327,30 @@ int main(int argc, char** argv)
 
     solver.setJointLimits(q_min, q_max); 
 
-    std::string config_path = ament_index_cpp::get_package_share_directory("ik_processing")
-        + "/config/config.yaml";
-    YAML::Node config = YAML::LoadFile(config_path); 
-
-    std::map<std::string, double> joint_weights;
-
-    if(config["joint_weights"]){
-        for(const auto& jw: config["joint_weights"]){
-            joint_weights[jw.first.as<std::string>()] = jw.second.as<double>();
-        }
-    }
     Eigen::VectorXd joint_weights_vector(dof);
-    for(size_t i=0; i<dof ; ++i){
-        std::string name= variable_names[i]; 
-        if(joint_weights[name]){
-            double weight = joint_weights[name];
-            if(weight<0){
-                RCLCPP_WARN_STREAM(LOGGER, "Joint-weight for "<<name <<" smaller than 0. Using 0 instead.");
-                weight=0.0; 
+    {size_t i=0;
+    for (const auto& name : variable_names) {
+        double val;
+        std::string param_name = "joint_weights." + name;
+        if (move_group_node->get_parameter(param_name, val)) {
+            if (val < 0.0) {
+                RCLCPP_WARN_STREAM(LOGGER,
+                    "Joint-weight for " << name << " < 0. Using 0.");
+                val = 0.0;
             }
-            joint_weights_vector[i] =  weight; 
-        } else{
-            RCLCPP_WARN_STREAM(LOGGER, "Did not find joint-weight for "<<name <<". Using 1.0 instead.");
+            joint_weights_vector[i] = val;
+            // RCLCPP_INFO_STREAM(LOGGER, "value "<< i << " "<< val); 
+        } else {
+            RCLCPP_WARN_STREAM(LOGGER,
+                "Did not find joint-weight for " << name << ". Using 1.0.");
             joint_weights_vector[i] = 1.0;
         }
+        ++i; 
+        if(i>dof){
+            RCLCPP_ERROR(LOGGER, "too many joints"); 
+        }
     }
-
+}
     solver.setJointWeight(joint_weights_vector); 
 
 
