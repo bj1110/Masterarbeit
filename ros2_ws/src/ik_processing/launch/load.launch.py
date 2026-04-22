@@ -39,6 +39,7 @@ def generate_launch_description():
     exNum=LaunchConfiguration('exNum')
     recalculate=LaunchConfiguration('recalculate')
     fully_calc=LaunchConfiguration('fully_calc')
+    num_requests=LaunchConfiguration('num_requests')
 
     declare_baseline=DeclareLaunchArgument(
         'is_baseline',
@@ -102,6 +103,12 @@ def generate_launch_description():
         choices=['true', 'false'],
         description='Bool indicating if path should be completed using setPoseTarget() if CartesianPath not complete'
     )
+    
+    declare_num_requests=DeclareLaunchArgument(
+        'num_requests',
+        default_value='1',
+        description='Number of requests to the parser before it shuts down'
+    )
 
     moveit_config = MoveItConfigsBuilder("alt_human_arm_model", package_name="moveit_config") \
         .robot_description(file_path="config/alt_human_arm_model.urdf.xacro") \
@@ -122,7 +129,8 @@ def generate_launch_description():
             {'startpos2': startpos2},
             {'goalpos2': goalpos2},
             {'datafile': datafile},
-            {'exNum': exNum}
+            {'exNum': exNum},
+            {'num_requests': num_requests}
         ]  
     )
 
@@ -165,6 +173,7 @@ def generate_launch_description():
         declare_exNum,
         declare_recalculate,
         declare_fully_calc, 
+        declare_num_requests,
         start_parser_node,
         delay,
     ])

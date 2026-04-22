@@ -42,6 +42,8 @@ class Parser: public rclcpp::Node{
         _datafile = this->get_parameter("datafile").as_int();
         this->declare_parameter("exNum", 1);
         _exnum = static_cast<u_short>(this->get_parameter("exNum").as_int());
+        this->declare_parameter("num_requests", 1);
+        num_requests_ = this->get_parameter("num_requests").as_int();
 
         if(_is_baseline){
             filepath /= "baselines";
@@ -90,8 +92,12 @@ class Parser: public rclcpp::Node{
             (void)request; 
             response ->header = header_;
             response->data = data; 
-            RCLCPP_INFO(this->get_logger(), "Packets send, shutting down");
-            service_completed_ = true; 
+            -- num_requests_;
+            RCLCPP_INFO_STREAM(this->get_logger(), "\033[35mPackets send, " << num_requests_<< " left\033[0m");
+            if(num_requests_ <= 0){
+                RCLCPP_INFO_STREAM(this->get_logger(), "Shutting down.");
+                service_completed_ = true; 
+            }
         };
         _service_server = this->create_service<Data>("parse_data", handle_service);
         RCLCPP_INFO(this->get_logger(), "Ready for requests");
@@ -111,6 +117,7 @@ class Parser: public rclcpp::Node{
     std::vector<Datapoint> create_datapoints(std::ifstream& file);
     rclcpp::Service<Data>::SharedPtr _service_server;
     bool service_completed_ =false; 
+    int num_requests_=1; 
 
     std::string create_file_info(){
         using namespace std::string_literals;
