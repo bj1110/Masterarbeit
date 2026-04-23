@@ -73,6 +73,7 @@ int main(int argc, char** argv)
 
     bool recalculate = move_group_node->get_parameter("recalculate").as_bool();
     std::string urdf_string = move_group_node->get_parameter("urdf").as_string(); 
+    bool display_path = move_group_node->get_parameter("display_path").as_bool();
 
 
     static const std::string PLANNING_GROUP = "arm";
@@ -392,38 +393,36 @@ int main(int argc, char** argv)
     bool ik_ok= solver.solve(start_configuration, trajectory); 
 
     if(ik_ok){
-        move_group.execute(trajectory); 
+        if(display_path){
+            move_group.execute(trajectory);
+            const geometry_msgs::msg::Pose ee_final_pose = move_group.getCurrentPose().pose;
+            const geometry_msgs::msg::Pose ee_target_pose = waypoints.back(); 
+            RCLCPP_INFO(LOGGER, "\033[32m Actual pose: \n %s \033[0m", helpers::print_pose(ee_final_pose).c_str());
+            RCLCPP_INFO(LOGGER, "\033[34m Target pose: \n %s \033[0m", helpers::print_pose(ee_target_pose).c_str());
+        }
         double angle= solver.calculate_angle_between_plane_normal_and_z_axis("glenohumeral_yaw_joint", "elbow_roll_joint", "forearm_hand_joint", true);
         RCLCPP_INFO_STREAM(LOGGER, "\033[32mAngle at endpose: "<< angle <<"°\033[0m");
         outputdata["info"]["Angle"] = angle; 
         outputdata=trajectory; 
-        outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(trajectory, LOGGER); 
+        outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(trajectory, LOGGER, evaluator::LogLevel::info); 
         robot_state->update(true); 
-        double* joint_positions = robot_state->getVariablePositions();
-        for(size_t i=0; i< dof; ++i){
-            double jp = *joint_positions;
-            double lowerlimit = q_min[i];
-            double upperlimit = q_max[i];
-            RCLCPP_INFO_STREAM(LOGGER, "Jointposition "<< variable_names[i]<<": " << jp <<" with limits: "<< lowerlimit<< ", "<< upperlimit);
-            if(jp<lowerlimit){
-                RCLCPP_WARN_STREAM(LOGGER, "\033[31mPosition of "<< variable_names[i]<<" below boundary.\033[0m");
-            }
-            if(jp>upperlimit){
-                RCLCPP_WARN_STREAM(LOGGER, "\033[31mPosition of "<< variable_names[i]<<" above boundary.\033[0m");
-            }
-            joint_positions++; 
-        }
+        // double* joint_positions = robot_state->getVariablePositions();
+        // for(size_t i=0; i< dof; ++i){
+        //     double jp = *joint_positions;
+        //     double lowerlimit = q_min[i];
+        //     double upperlimit = q_max[i];
+        //     RCLCPP_INFO_STREAM(LOGGER, "Jointposition "<< variable_names[i]<<": " << jp <<" with limits: "<< lowerlimit<< ", "<< upperlimit);
+        //     if(jp<lowerlimit){
+        //         RCLCPP_WARN_STREAM(LOGGER, "\033[31mPosition of "<< variable_names[i]<<" below boundary.\033[0m");
+        //     }
+        //     if(jp>upperlimit){
+        //         RCLCPP_WARN_STREAM(LOGGER, "\033[31mPosition of "<< variable_names[i]<<" above boundary.\033[0m");
+        //     }
+        //     joint_positions++; 
+        // }
     }else{
         RCLCPP_INFO(LOGGER, "\033[31m Solver failed to converge\033[0m"); 
     }
-
-
-
-    const geometry_msgs::msg::Pose ee_final_pose = move_group.getCurrentPose().pose;
-    const geometry_msgs::msg::Pose ee_target_pose = waypoints.back(); 
-    RCLCPP_INFO(LOGGER, "\033[32m Actual pose: \n %s \033[0m", helpers::print_pose(ee_final_pose).c_str());
-    RCLCPP_INFO(LOGGER, "\033[34m Target pose: \n %s \033[0m", helpers::print_pose(ee_target_pose).c_str());
-
 
     auto input_path_eval = evaluator::endeffector(waypoints, timesteps, LOGGER);
     outputdata["info"]["Endeffector_NJS"] = input_path_eval.get_NJS(); 

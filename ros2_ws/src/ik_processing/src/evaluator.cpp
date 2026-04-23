@@ -22,7 +22,7 @@ LOGGER_(logger)
     std::vector<double> accelerations;
     accelerations.reserve(jtps.size());
     if (jtps[0].accelerations.empty()){
-        RCLCPP_INFO_STREAM(LOGGER_, "No acceleration entries for " << name <<" calculating via numeric derivation");
+        // RCLCPP_INFO_STREAM(LOGGER_, "No acceleration entries for " << name <<" calculating via numeric derivation");
         std::vector<double> velocities;
         for(size_t i=0; i<jtps.size(); ++i){
             velocities.push_back(jtps[i].velocities[arr_pos]);
@@ -81,7 +81,7 @@ LOGGER_(logger)
     return res; 
 }
 
-double calculate_total_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger){
+double calculate_total_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger, LogLevel loglevel){
     std::vector<joint> joints;
     double num_joints  = rt.joint_trajectory.joint_names.size();
     for(int i=0; i<num_joints ; ++i){
@@ -89,16 +89,20 @@ double calculate_total_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rc
     }
     double NJS=0;
     for(const auto& j:joints){
-        RCLCPP_INFO_STREAM(logger, "" << j.get_name() << ": " <<j.get_NJS()); 
+        RCLCPP_INFO_STREAM_EXPRESSION (logger, loglevel==LogLevel::verbose ,"" << j.get_name() << ": " <<j.get_NJS()); 
         NJS += j.get_NJS(); 
     }
     return NJS; 
 }
-double calculate_av_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger){
+double calculate_av_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger, LogLevel loglevel){
     double num_joints  = rt.joint_trajectory.joint_names.size();
-    double NJS_total = calculate_total_NJS(rt, logger);
+    double NJS_total = calculate_total_NJS(rt, logger, loglevel);
+    double NJS_av = NJS_total / num_joints; 
+    if(loglevel== LogLevel::error){
+        return NJS_av; 
+    }
     RCLCPP_INFO(logger, "\033[33m NJS total %.2f \033[0m", NJS_total);
-    return NJS_total / num_joints; 
+    return NJS_av; 
 }
 
 endeffector::endeffector(const std::vector<geometry_msgs::msg::Pose>& waypoints, const std::vector<double>& timesteps, const rclcpp::Logger& logger):

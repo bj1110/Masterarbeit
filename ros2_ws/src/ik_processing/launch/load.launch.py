@@ -40,6 +40,7 @@ def generate_launch_description():
     recalculate=LaunchConfiguration('recalculate')
     fully_calc=LaunchConfiguration('fully_calc')
     num_requests=LaunchConfiguration('num_requests')
+    display_path=LaunchConfiguration('display_path')
 
     declare_baseline=DeclareLaunchArgument(
         'is_baseline',
@@ -110,6 +111,12 @@ def generate_launch_description():
         description='Number of requests to the parser before it shuts down'
     )
 
+    declare_display_path=DeclareLaunchArgument(
+        'display_path',
+        default_value='true',
+        description='Bool indicating if calculated path should be displayed in RVIZ'
+    )
+
     moveit_config = MoveItConfigsBuilder("alt_human_arm_model", package_name="moveit_config") \
         .robot_description(file_path="config/alt_human_arm_model.urdf.xacro") \
         .robot_description_semantic(file_path="config/alt_human_arm_model.srdf") \
@@ -146,7 +153,8 @@ def generate_launch_description():
             {'recalculate':recalculate},
             {'urdf' : urdf },
             {'fully_calc':fully_calc},
-            config_file
+            config_file,
+            {'display_path':display_path}
         ],
     )
 
@@ -174,6 +182,7 @@ def generate_launch_description():
         declare_recalculate,
         declare_fully_calc, 
         declare_num_requests,
+        declare_display_path,
         start_parser_node,
         delay,
     ])

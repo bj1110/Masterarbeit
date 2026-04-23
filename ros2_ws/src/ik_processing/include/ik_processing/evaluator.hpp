@@ -11,6 +11,8 @@
 
 namespace evaluator{
 
+enum LogLevel{verbose, info, error}; 
+
 class joint{
 private:
     std::string name;
@@ -32,8 +34,8 @@ private:
     
 };
 
-double calculate_total_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger);
-double calculate_av_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger);
+double calculate_total_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger, LogLevel loglevel=info);
+double calculate_av_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger, LogLevel loglevel=info);
 
 class endeffector{
     private:
