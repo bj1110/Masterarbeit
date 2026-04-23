@@ -74,6 +74,7 @@ int main(int argc, char** argv)
     bool recalculate = move_group_node->get_parameter("recalculate").as_bool();
     std::string urdf_string = move_group_node->get_parameter("urdf").as_string(); 
     bool display_path = move_group_node->get_parameter("display_path").as_bool();
+    bool grid_search = move_group_node->get_parameter("grid_search").as_bool(); 
 
 
     static const std::string PLANNING_GROUP = "arm";
@@ -406,6 +407,18 @@ int main(int argc, char** argv)
         outputdata=trajectory; 
         outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(trajectory, LOGGER, evaluator::LogLevel::info); 
         robot_state->update(true); 
+        if (grid_search) {
+            int turn = move_group_node->get_parameter("experiment_id").as_int();
+
+            helpers::dump_gridsearch_result(
+                LOGGER,
+                turn,
+                angle,
+                joint_weights_vector,
+                name_to_idx
+            );
+        }
+
         // double* joint_positions = robot_state->getVariablePositions();
         // for(size_t i=0; i< dof; ++i){
         //     double jp = *joint_positions;

@@ -23,11 +23,6 @@ def generate_launch_description():
     ])
     urdf= ParameterValue(Command(['xacro ', modelpath]), value_type=str)
     
-    config_file = PathJoinSubstitution([
-        this_package,
-        'config',
-        "config.yaml"
-    ])
 
     is_baseline = LaunchConfiguration('is_baseline')
     is_agent1 = LaunchConfiguration('is_agent1')
@@ -41,6 +36,8 @@ def generate_launch_description():
     fully_calc=LaunchConfiguration('fully_calc')
     num_requests=LaunchConfiguration('num_requests')
     display_path=LaunchConfiguration('display_path')
+    config_file=LaunchConfiguration('config_file')
+    grid_search=LaunchConfiguration('grid_search')
 
     declare_baseline=DeclareLaunchArgument(
         'is_baseline',
@@ -117,6 +114,23 @@ def generate_launch_description():
         description='Bool indicating if calculated path should be displayed in RVIZ'
     )
 
+    declare_config_file=DeclareLaunchArgument(
+        'config_file',
+        default_value= PathJoinSubstitution([
+            this_package,
+            'config',
+            "config.yaml"
+        ]),
+        description='Path to the yaml config file'
+    )
+
+    declare_grid_search=DeclareLaunchArgument(
+        'grid_search',
+        default_value='false',
+        choices=['true', 'false'],
+        description='Flag to indicate grid_search and thus allowing dumping into special file'
+    )
+
     moveit_config = MoveItConfigsBuilder("alt_human_arm_model", package_name="moveit_config") \
         .robot_description(file_path="config/alt_human_arm_model.urdf.xacro") \
         .robot_description_semantic(file_path="config/alt_human_arm_model.srdf") \
@@ -154,7 +168,8 @@ def generate_launch_description():
             {'urdf' : urdf },
             {'fully_calc':fully_calc},
             config_file,
-            {'display_path':display_path}
+            {'display_path':display_path},
+            {'grid_search': grid_search}
         ],
     )
 
@@ -166,7 +181,7 @@ def generate_launch_description():
     )
 
     delay = TimerAction(
-        period=5.0,
+        period=1.0,
         actions=[start_sim]
     )
 
@@ -183,6 +198,8 @@ def generate_launch_description():
         declare_fully_calc, 
         declare_num_requests,
         declare_display_path,
+        declare_config_file,
+        declare_grid_search,
         start_parser_node,
         delay,
     ])

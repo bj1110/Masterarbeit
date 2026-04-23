@@ -146,6 +146,11 @@ install(DIRECTORY launch data config
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(PROGRAMS
+  scripts/run_gridsearch.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 # -----------------------------
 # Final
 # -----------------------------

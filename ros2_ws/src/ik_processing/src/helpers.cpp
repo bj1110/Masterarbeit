@@ -94,6 +94,48 @@ std::string print_pose(const geometry_msgs::msg::Pose& pose){
     return oss.str(); 
 }
 
+void dump_gridsearch_result(
+    const rclcpp::Logger& LOGGER,
+    int turn,
+    double angle,
+    const Eigen::VectorXd& joint_weights_vector,
+    const std::unordered_map<std::string, size_t>& name_to_idx) 
+{
+    const char* home = std::getenv("HOME");
+    if (!home) {
+        RCLCPP_ERROR(LOGGER, "HOME environment variable not set");
+        return;
+    }
+
+    std::filesystem::path dir = std::filesystem::path(home) / "Projects/Masterarbeit/simdata";
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    if (ec) {
+        RCLCPP_ERROR(LOGGER, "Failed to create %s: %s", dir.c_str(), ec.message().c_str());
+        return;
+    }
+
+    std::filesystem::path filepath = dir / "grid_search_data.jsonl";
+
+    std::ofstream file(filepath, std::ios::app);
+    if (!file.is_open()) {
+        RCLCPP_ERROR(LOGGER, "Failed to open: %s", filepath.c_str());
+        return;
+    }
+
+    json dump_data = {
+        {"turn", turn},
+        {"angle", angle},
+        {"glenohumeral_roll_joint", joint_weights_vector[(name_to_idx.at("glenohumeral_roll_joint"))]},
+        {"glenohumeral_yaw_joint", joint_weights_vector[(name_to_idx.at("glenohumeral_yaw_joint"))]},
+        {"sternoclavicular_pitch_joint", joint_weights_vector[(name_to_idx.at("sternoclavicular_pitch_joint"))]},
+        {"sternoclavicular_yaw_joint", joint_weights_vector[(name_to_idx.at("sternoclavicular_yaw_joint"))]}
+    };
+
+    file << dump_data.dump() << "\n";
+
+    RCLCPP_INFO(LOGGER, "Appended grid search result");
+}
 
 } //namespace helpers 
 

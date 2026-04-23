@@ -40,6 +40,13 @@ namespace helpers{
     }
 
     std::string print_pose(const geometry_msgs::msg::Pose& pose); 
+
+    void dump_gridsearch_result(
+        const rclcpp::Logger& LOGGER,
+        int turn,
+        double angle,
+        const Eigen::VectorXd& joint_weights_vector,
+        const std::unordered_map<std::string, size_t>& name_to_idx);
 }
 
 inline void to_json(json& j, const moveit::planning_interface::MoveGroupInterface& move_group){
