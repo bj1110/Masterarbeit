@@ -5,6 +5,7 @@ from launch.substitutions import PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from ament_index_python.packages import get_package_share_directory
 from pathlib import Path
+import argparse
 
 def create_grid(joints, offsets, base_values):
     grid = []
@@ -16,6 +17,14 @@ def create_grid(joints, offsets, base_values):
         grid.append(cfg)
 
     return grid
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--start_value', dest='start_value', type=int, help='Step where gridsearch shall be started. Default is at beginning (0).')
+args = parser.parse_args()
+if (args.start_value):
+    startvalue = args.start_value
+else:
+    startvalue = 0
 
 this_package = get_package_share_directory("ik_processing")
 config_file_path = os.path.join(this_package, "config", "config.yaml")
@@ -40,7 +49,7 @@ if not home:
 dump_dir_path = Path(home) / "Projects/Masterarbeit/simdata"
 dump_path = dump_dir_path / "grid_search_data.json"
 
-if dump_path.exists():
+if dump_path.exists() and startvalue != 0:
     dump_path.unlink()
     print("\033[32mDeleted old grid seach file.\033[0m")
 
@@ -50,6 +59,10 @@ print("Info: grid length:", len(grid))
 tmp_path = "/tmp/grid_config.yaml" 
 
 for i, params in enumerate(grid):
+    if i < startvalue:
+        print('skipping ', i)
+        continue
+
     cfg = copy.deepcopy(base)
 
     for joint in joints:
