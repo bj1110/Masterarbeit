@@ -23,7 +23,7 @@ def generate_launch_description():
     urdf= ParameterValue(Command(['xacro ', modelpath]), value_type=str)
     
     recalculate=LaunchConfiguration('recalculate')
-    display_path=LaunchConfiguration('display_path')
+    use_rviz=LaunchConfiguration('use_rviz')
     config_file=LaunchConfiguration('config_file')
     grid_search=LaunchConfiguration('grid_search')
 
@@ -35,9 +35,10 @@ def generate_launch_description():
         description='Bool indicating if previously calculated Path should be used or recalculated and be overridden'
     )
 
-    declare_display_path=DeclareLaunchArgument(
-        'display_path',
+    declare_use_rviz=DeclareLaunchArgument(
+        'use_rviz',
         default_value='true',
+        choices=['true', 'false'],
         description='Bool indicating if calculated path should be displayed in RVIZ'
     )
 
@@ -79,14 +80,14 @@ def generate_launch_description():
             {'recalculate':recalculate},
             {'urdf' : urdf },
             config_file,
-            {'display_path':display_path},
+            {'use_rviz':use_rviz},
             {'grid_search': grid_search}
         ],
     )
 
     return LaunchDescription([
         declare_recalculate,
-        declare_display_path,
+        declare_use_rviz,
         declare_config_file,
         declare_grid_search,
         start_sim,

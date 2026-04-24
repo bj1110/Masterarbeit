@@ -73,7 +73,7 @@ int main(int argc, char** argv)
 
     bool recalculate = move_group_node->get_parameter("recalculate").as_bool();
     std::string urdf_string = move_group_node->get_parameter("urdf").as_string(); 
-    bool display_path = move_group_node->get_parameter("display_path").as_bool();
+    bool display_path = move_group_node->get_parameter("use_rviz").as_bool();
     bool grid_search = move_group_node->get_parameter("grid_search").as_bool(); 
 
 
