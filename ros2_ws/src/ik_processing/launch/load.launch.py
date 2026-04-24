@@ -13,193 +13,22 @@ from moveit_configs_utils import MoveItConfigsBuilder
 
 def generate_launch_description():
     this_package = FindPackageShare('ik_processing')
-    moveit_package = FindPackageShare("moveit_config")
-    model_package = FindPackageShare('human_arm_model')
+    launch_dir = PathJoinSubstitution([this_package, 'launch'])
 
-    modelpath = PathJoinSubstitution([
-        model_package,
-        'urdf',
-        'alt_model.urdf.xacro'
-    ])
-    urdf= ParameterValue(Command(['xacro ', modelpath]), value_type=str)
-    
-
-    is_baseline = LaunchConfiguration('is_baseline')
-    is_agent1 = LaunchConfiguration('is_agent1')
-    startpos1=LaunchConfiguration('startpos1')
-    goalpos1=LaunchConfiguration('goalpos1')
-    startpos2=LaunchConfiguration('startpos2')
-    goalpos2=LaunchConfiguration('goalpos2')
-    datafile=LaunchConfiguration('datafile')
-    exNum=LaunchConfiguration('exNum')
-    recalculate=LaunchConfiguration('recalculate')
-    fully_calc=LaunchConfiguration('fully_calc')
-    num_requests=LaunchConfiguration('num_requests')
-    display_path=LaunchConfiguration('display_path')
-    config_file=LaunchConfiguration('config_file')
-    grid_search=LaunchConfiguration('grid_search')
-
-    declare_baseline=DeclareLaunchArgument(
-        'is_baseline',
-        default_value= 'true',
-        choices=['true', 'false'],
-        description='Bool indicating if baseline or interaction data should be loaded'
-    )
-    declare_agent= DeclareLaunchArgument(
-        'is_agent1',
-        default_value='true',
-        choices=['true', 'false'],
-        description='Bool indicating if agent1 or agent2 data should be loaded'
-    )
-    declare_startpos1= DeclareLaunchArgument(
-        'startpos1',
-        default_value='1',
-        choices=['1', '3'],
-        description= '(short u_)Int indicating the Startposition for agent 1'
-    )
-    declare_goalpos1=DeclareLaunchArgument(
-        'goalpos1',
-        default_value='3',
-        choices=['1', '3', '4', '5', '6', '7', '8', '9'],
-        description='(short u_)Int indicating the Gaolposition for agent 1'
-    )
-    declare_startpos2= DeclareLaunchArgument(
-        'startpos2',
-        default_value='5',
-        choices=['5', '7'],
-        description= '(short u_)Int indicating the Startposition for agent 2'
-    )
-    declare_goalpos2=DeclareLaunchArgument(
-        'goalpos2',
-        default_value='7',
-        choices=['1', '2', '3', '4', '5', '7', '8', '9'],
-        description='(short u_)Int indicating the Gaolposition for agent 2'
-    )
-    declare_datafile=DeclareLaunchArgument(
-        'datafile',
-        default_value='1',
-        choices=[ str(i) for i in range(1,5)], 
-        description='(short u_)Int indicating the experimentfile (in baseline data)'
-    )
-    declare_exNum=DeclareLaunchArgument(
-        'exNum',
-        default_value='1',
-        choices= [str(i) for i in range(1, 52)],
-        description='value indicating the experiment number'
+    launch_parser = IncludeLaunchDescription(
+        PathJoinSubstitution([launch_dir, 'parser.launch.py'])
     )
 
-    declare_recalculate=DeclareLaunchArgument(
-        'recalculate',
-        default_value='true',
-        choices=['true', 'false'],
-        description='Bool indicating if previously calculated Path should be used or recalculated and be overridden'
+    launch_simulation=IncludeLaunchDescription(
+        PathJoinSubstitution([launch_dir, 'sim.launch.py'])
     )
 
-    declare_fully_calc=DeclareLaunchArgument(
-        'fully_calc',
-        default_value='true',
-        choices=['true', 'false'],
-        description='Bool indicating if path should be completed using setPoseTarget() if CartesianPath not complete'
-    )
-    
-    declare_num_requests=DeclareLaunchArgument(
-        'num_requests',
-        default_value='1',
-        description='Number of requests to the parser before it shuts down'
-    )
-
-    declare_display_path=DeclareLaunchArgument(
-        'display_path',
-        default_value='true',
-        description='Bool indicating if calculated path should be displayed in RVIZ'
-    )
-
-    declare_config_file=DeclareLaunchArgument(
-        'config_file',
-        default_value= PathJoinSubstitution([
-            this_package,
-            'config',
-            "config.yaml"
-        ]),
-        description='Path to the yaml config file'
-    )
-
-    declare_grid_search=DeclareLaunchArgument(
-        'grid_search',
-        default_value='false',
-        choices=['true', 'false'],
-        description='Flag to indicate grid_search and thus allowing dumping into special file'
-    )
-
-    moveit_config = MoveItConfigsBuilder("alt_human_arm_model", package_name="moveit_config") \
-        .robot_description(file_path="config/alt_human_arm_model.urdf.xacro") \
-        .robot_description_semantic(file_path="config/alt_human_arm_model.srdf") \
-        .robot_description_kinematics(file_path="config/kinematics.yaml") \
-        .joint_limits(file_path="config/joint_limits.yaml") \
-        .planning_pipelines( "stomp", ["stomp"])\
-        .to_moveit_configs()
-
-    start_parser_node = Node(
-        package='ik_processing',
-        executable='parser',
-        parameters=[
-            {'is_baseline': is_baseline},
-            {'is_agent1': is_agent1},
-            {'startpos1': startpos1},
-            {'goalpos1': goalpos1},
-            {'startpos2': startpos2},
-            {'goalpos2': goalpos2},
-            {'datafile': datafile},
-            {'exNum': exNum},
-            {'num_requests': num_requests}
-        ]  
-    )
-
-    start_sim = Node(
-        package='ik_processing',
-        executable='fullsim',
-        parameters=[
-            moveit_config.robot_description,
-            moveit_config.robot_description_semantic,
-            moveit_config.robot_description_kinematics,
-            moveit_config.joint_limits,
-            moveit_config.planning_pipelines,
-            {'recalculate':recalculate},
-            {'urdf' : urdf },
-            {'fully_calc':fully_calc},
-            config_file,
-            {'display_path':display_path},
-            {'grid_search': grid_search}
-        ],
-    )
-
-    begin_sim=RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=start_parser_node,
-            on_exit=[start_sim]
-        )
-    )
-
-    delay = TimerAction(
+    delayed_simulation_start = TimerAction(
         period=1.0,
-        actions=[start_sim]
+        actions=[launch_simulation]
     )
 
     return LaunchDescription([
-        declare_baseline,
-        declare_agent,
-        declare_startpos1,
-        declare_goalpos1,
-        declare_startpos2,
-        declare_goalpos2,
-        declare_datafile,
-        declare_exNum,
-        declare_recalculate,
-        declare_fully_calc, 
-        declare_num_requests,
-        declare_display_path,
-        declare_config_file,
-        declare_grid_search,
-        start_parser_node,
-        delay,
+        launch_parser,
+        delayed_simulation_start,
     ])
