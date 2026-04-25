@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-import yaml, subprocess, tempfile, copy, os
+import yaml, subprocess, copy, os
 from itertools import product
-from launch.substitutions import PathJoinSubstitution
-from launch_ros.substitutions import FindPackageShare
 from ament_index_python.packages import get_package_share_directory
 from pathlib import Path
 import argparse
+import time
 
 def create_grid(joints, offsets, base_values):
     grid = []
@@ -53,8 +52,19 @@ if dump_path.exists() and startvalue != 0:
     dump_path.unlink()
     print("\033[32mDeleted old grid seach file.\033[0m")
 
+num_combinations = len(grid)
 
-print("Info: grid length:", len(grid))
+subprocess.Popen([
+    "ros2", "launch", "ik_processing", "gridsearch.launch.py",
+    "use_rviz:=false",
+    "startpos1:=3",
+    "goalpos1:=7",
+    "num_requests:=" + str(num_combinations),
+])
+
+time.sleep(5)
+
+print("Info: grid length:", num_combinations, "starting gridsearch")
 
 tmp_path = "/tmp/grid_config.yaml" 
 
@@ -73,13 +83,11 @@ for i, params in enumerate(grid):
     with open(tmp_path, "w") as f:
         yaml.dump(cfg, f)
 
-    print("\033[31mRunning Experiment ID: ", i, "/", len(grid)-1, "\033[0m")
+    print("\033[31mRunning Experiment ID: ", i, "/", num_combinations-1, "\033[0m")
 
     subprocess.run([
-        "ros2", "launch", "ik_processing", "load.launch.py",
+        "ros2", "launch", "ik_processing", "sim.launch.py",
         f"config_file:={tmp_path}",
-        "display_path:=false",
-        "startpos1:=3",
-        "goalpos1:=7",
+        "use_rviz:=false",
         "grid_search:=true"
     ])
