@@ -54,6 +54,8 @@ if dump_path.exists() and startvalue != 0:
 
 num_combinations = len(grid)
 
+startime = time.time()
+
 subprocess.Popen([
     "ros2", "launch", "ik_processing", "gridsearch.launch.py",
     "use_rviz:=false",
@@ -69,6 +71,7 @@ print("Info: grid length:", num_combinations, "starting gridsearch")
 tmp_path = "/tmp/grid_config.yaml" 
 
 for i, params in enumerate(grid):
+    current_durr = time.time()
     if i < startvalue:
         print('skipping ', i)
         continue
@@ -91,3 +94,5 @@ for i, params in enumerate(grid):
         "use_rviz:=false",
         "grid_search:=true"
     ])
+
+    print(f"\033[31mTime elapsed {(time.time()-startime)/60:.2f} Minutes. This iteration took {(time.time()-current_durr)/60:.2f} Minutes.\033[0m")
