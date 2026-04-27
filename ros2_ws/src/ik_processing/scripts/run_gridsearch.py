@@ -19,12 +19,16 @@ def create_grid(joints, offsets, base_values):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--start_value', dest='start_value', type=int, help='Step where gridsearch shall be started. Default is at beginning (0).')
+parser.add_argument('--delete_prev', dest='delete_prev', type=bool, help='delete the previous calculations and start with a fresh file.')
 args = parser.parse_args()
 if (args.start_value):
     startvalue = args.start_value
 else:
     startvalue = 0
-
+if(args.delete_prev):
+    delete_prev= args.delete_prev
+else: 
+    delete_prev = False
 this_package = get_package_share_directory("ik_processing")
 config_file_path = os.path.join(this_package, "config", "config.yaml")
 
@@ -48,7 +52,7 @@ if not home:
 dump_dir_path = Path(home) / "Projects/Masterarbeit/simdata"
 dump_path = dump_dir_path / "grid_search_data.json"
 
-if dump_path.exists() and startvalue != 0:
+if dump_path.exists() and startvalue != 0 and delete_prev == True:
     dump_path.unlink()
     print("\033[32mDeleted old grid seach file.\033[0m")
 
@@ -61,7 +65,7 @@ subprocess.Popen([
     "use_rviz:=false",
     "startpos1:=3",
     "goalpos1:=7",
-    "num_requests:=" + str(num_combinations),
+    "num_requests:=" + str(num_combinations - startvalue),
 ])
 
 time.sleep(5)
