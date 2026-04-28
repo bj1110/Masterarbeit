@@ -50,7 +50,7 @@ home = os.environ.get("HOME")
 if not home:
     raise RuntimeError("HOME environment variable not set")
 dump_dir_path = Path(home) / "Projects/Masterarbeit/simdata"
-dump_path = dump_dir_path / "grid_search_data.json"
+dump_path = dump_dir_path / "grid_search_data.jsonl"
 
 if dump_path.exists() and startvalue != 0 and delete_prev == True:
     dump_path.unlink()
