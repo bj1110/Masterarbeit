@@ -7,7 +7,7 @@ Fullsim_Node:
       elbow_yaw_joint: 1.0
       glenohumeral_pitch_joint: 1.0
       glenohumeral_roll_joint: 1.0
-      glenohumeral_yaw_joint: 1.0
-      sternoclavicular_pitch_joint: 0.6
+      glenohumeral_yaw_joint: 0.5
+      sternoclavicular_pitch_joint: 0.1
       sternoclavicular_roll_joint: 0.6
-      sternoclavicular_yaw_joint: 0.6
+      sternoclavicular_yaw_joint: 0.1

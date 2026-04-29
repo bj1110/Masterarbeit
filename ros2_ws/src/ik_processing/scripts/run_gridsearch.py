@@ -5,6 +5,7 @@ from ament_index_python.packages import get_package_share_directory
 from pathlib import Path
 import argparse
 import time
+import itertools
 
 def create_grid(joints, offsets, base_values):
     grid = []
@@ -16,6 +17,20 @@ def create_grid(joints, offsets, base_values):
         grid.append(cfg)
 
     return grid
+
+def create_grid_different_values(joints, offsets1, offsets2, base_values):
+    grid =[]
+
+    combinations = itertools.product(offsets1, offsets2)
+
+    for o1, o2 in combinations:
+        cfg = {}
+        # erster und tweiter eintrag unterscheiden 
+        cfg[joints[0]] = base_values[joints[0]] + o1
+        cfg[joints[1]] = base_values[joints[1]] + o2
+        grid.append(cfg)
+    
+    return grid 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--start_value', dest='start_value', type=int, help='Step where gridsearch shall be started. Default is at beginning (0).')
@@ -36,21 +51,22 @@ with open(config_file_path) as f:
     base = yaml.safe_load(f)
 
 joints = [
-    "glenohumeral_yaw_joint",
     "glenohumeral_roll_joint",
-    "sternoclavicular_yaw_joint",
     "sternoclavicular_pitch_joint"
 ]
 
 base_joint_weights = base["Fullsim_Node"]["ros__parameters"]["joint_weights"]
 values = [-0.5, -0.25, 0, 0.25, 0.5]
-grid = create_grid(joints, values, base_joint_weights)
+v1 = [-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75]
+v2 = [-0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2]
+# grid = create_grid(joints, values, base_joint_weights)
+grid = create_grid_different_values(joints, v1, v2, base_joint_weights)
 
 home = os.environ.get("HOME")
 if not home:
     raise RuntimeError("HOME environment variable not set")
 dump_dir_path = Path(home) / "Projects/Masterarbeit/simdata"
-dump_path = dump_dir_path / "grid_search_data.jsonl"
+dump_path = dump_dir_path / "grid_search_data_2.jsonl"
 
 if dump_path.exists() and startvalue != 0 and delete_prev == True:
     dump_path.unlink()
