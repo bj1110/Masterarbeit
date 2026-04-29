@@ -6,6 +6,8 @@ from pathlib import Path
 import argparse
 import time
 import itertools
+import signal
+import sys
 
 def create_grid(joints, offsets, base_values):
     grid = []
@@ -57,8 +59,8 @@ joints = [
 
 base_joint_weights = base["Fullsim_Node"]["ros__parameters"]["joint_weights"]
 values = [-0.5, -0.25, 0, 0.25, 0.5]
-v1 = [-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75]
-v2 = [-0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2]
+v1 = [-0.5, -0.25, 0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5]
+v2 = [-0.05, 0, 0.05]
 # grid = create_grid(joints, values, base_joint_weights)
 grid = create_grid_different_values(joints, v1, v2, base_joint_weights)
 
@@ -66,7 +68,7 @@ home = os.environ.get("HOME")
 if not home:
     raise RuntimeError("HOME environment variable not set")
 dump_dir_path = Path(home) / "Projects/Masterarbeit/simdata"
-dump_path = dump_dir_path / "grid_search_data_2.jsonl"
+dump_path = dump_dir_path / "grid_search_data_3.jsonl"
 
 if dump_path.exists() and startvalue != 0 and delete_prev == True:
     dump_path.unlink()
@@ -76,13 +78,22 @@ num_combinations = len(grid)
 
 startime = time.time()
 
-subprocess.Popen([
+proc= subprocess.Popen([
     "ros2", "launch", "ik_processing", "gridsearch.launch.py",
     "use_rviz:=false",
     "startpos1:=3",
     "goalpos1:=7",
     "num_requests:=" + str(num_combinations - startvalue),
-])
+], preexec_fn=os.setsid
+)
+
+
+def handler(sig, frame):
+    print("Shutting down...")
+    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, handler)
 
 time.sleep(5)
 
@@ -116,3 +127,5 @@ for i, params in enumerate(grid):
     ])
 
     print(f"\033[31mTime elapsed {(time.time()-startime)/60:.2f} Minutes. This iteration took {(time.time()-current_durr)/60:.2f} Minutes.\033[0m")
+
+os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
