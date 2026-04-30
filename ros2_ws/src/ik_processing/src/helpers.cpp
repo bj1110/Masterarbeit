@@ -115,7 +115,7 @@ void dump_gridsearch_result(
         return;
     }
 
-    std::filesystem::path filepath = dir / "grid_search_data_4.jsonl";
+    std::filesystem::path filepath = dir / "grid_search_data_8.jsonl";
 
     std::ofstream file(filepath, std::ios::app);
     if (!file.is_open()) {
@@ -126,8 +126,8 @@ void dump_gridsearch_result(
     json dump_data = {
         {"turn", turn},
         {"angle", angle},
-        {"glenohumeral_roll_joint", joint_weights_vector[(name_to_idx.at("glenohumeral_roll_joint"))]},
-        {"sternoclavicular_pitch_joint", joint_weights_vector[(name_to_idx.at("sternoclavicular_pitch_joint"))]}
+        {"glenohumeral_pitch_joint", joint_weights_vector[(name_to_idx.at("glenohumeral_pitch_joint"))]},
+        {"glenohumeral_roll_joint", joint_weights_vector[(name_to_idx.at("glenohumeral_roll_joint"))]}
     };
 
     file << dump_data.dump() << "\n";
