@@ -25,7 +25,7 @@ def generate_launch_description():
     )
 
     delayed_simulation_start = TimerAction(
-        period=5.0,
+        period=8.0,
         actions=[launch_simulation]
     )
 
