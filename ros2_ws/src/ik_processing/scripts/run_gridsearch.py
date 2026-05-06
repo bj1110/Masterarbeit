@@ -54,13 +54,13 @@ with open(config_file_path) as f:
 
 joints = [
     "glenohumeral_pitch_joint",
-    "glenohumeral_roll_joint"
+    "sternoclavicular_pitch_joint"
 ]
 
 base_joint_weights = base["Fullsim_Node"]["ros__parameters"]["joint_weights"]
 values = [-0.5, -0.25, 0, 0.25, 0.5]
-v1 = [-0.2, -0.1,  0, 0.1, 0.2 ]
-v2 = [-0.5, 0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+v1 = [-0.3, -0.15,  0, 0.05 ]
+v2 = [-0.5, 0, 0.5]
 # grid = create_grid(joints, values, base_joint_weights)
 grid = create_grid_different_values(joints, v1, v2, base_joint_weights)
 
@@ -68,7 +68,7 @@ home = os.environ.get("HOME")
 if not home:
     raise RuntimeError("HOME environment variable not set")
 dump_dir_path = Path(home) / "Projects/Masterarbeit/simdata"
-dump_path = dump_dir_path / "grid_search_data_10.jsonl"
+dump_path = dump_dir_path / "grid_search_data_11.jsonl"
 
 if dump_path.exists() and startvalue != 0 and delete_prev == True:
     dump_path.unlink()

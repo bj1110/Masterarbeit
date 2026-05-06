@@ -335,11 +335,11 @@ int main(int argc, char** argv)
         double val;
         std::string param_name = "joint_weights." + name;
         if (move_group_node->get_parameter(param_name, val)) {
-            if (val < 0.0) {
-                RCLCPP_WARN_STREAM(LOGGER,
-                    "Joint-weight for " << name << " < 0. Using 0.");
-                val = 0.0;
-            }
+            // if (val < 0.0) {
+            //     RCLCPP_WARN_STREAM(LOGGER,
+            //         "Joint-weight for " << name << " < 0. Using 0.");
+            //     val = 0.0;
+            // }
             joint_weights_vector[i] = val;
             // RCLCPP_INFO_STREAM(LOGGER, "value "<< i << " "<< val); 
         } else {
