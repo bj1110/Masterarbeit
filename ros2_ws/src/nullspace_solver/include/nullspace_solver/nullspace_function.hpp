@@ -175,6 +175,49 @@ Nullspace_task keep_joint_above_threshold(const size_t idx, const double thresho
 }
 
 
+/**
+ * Gummiband fn, doesnt help.
+ */
+Nullspace_task pull_towards(const std::shared_ptr<pinocchio::Model> model_ptr,
+                            const std::shared_ptr<pinocchio::Data> data_ptr,
+                            const std::string& frame_name,
+                            const Eigen::Vector3d& target_pose,
+                            const Eigen::MatrixXd& W_inv,  
+                            const double damp, 
+                            const rclcpp::Logger& LOGGER){
+
+    pinocchio::FrameIndex frame_ID = model_ptr->getFrameId(frame_name);
+    if(frame_ID == (pinocchio::FrameIndex)(-1)){
+        throw std::invalid_argument("Frame not found in model.");
+    }
+
+    return [model_ptr, data_ptr, frame_ID, target_pose, W_inv, damp, LOGGER](const Eigen::VectorXd& q){
+        Eigen::VectorXd gradient = Eigen::VectorXd::Zero(q.size());
+        pinocchio::forwardKinematics(*model_ptr, *data_ptr, q);
+        pinocchio::updateFramePlacements(*model_ptr, *data_ptr);
+
+
+        typedef Eigen::Matrix<double, 6, 1> Vector6d;
+        Vector6d err;
+        const pinocchio::SE3 oMdes(Eigen::Matrix3d::Identity(), target_pose);
+        const pinocchio::SE3 dMi = (*data_ptr).oMf[frame_ID].actInv(oMdes);
+        err=pinocchio::log6(dMi).toVector();
+
+        pinocchio::Data::Matrix6x J(6, model_ptr->nv);
+        J.setZero();  
+
+        /**Pseudo_inverse: */
+        pinocchio::computeJointJacobians(*model_ptr, *data_ptr, q);
+        pinocchio::computeFrameJacobian(*model_ptr, *data_ptr, q, frame_ID, pinocchio::LOCAL, J); 
+    
+        gradient.noalias() = J.transpose() * err ; 
+
+        return gradient; 
+    };
+}
+
+
+
 Nullspace_task align_link_to_axis_xy(const std::shared_ptr<pinocchio::Model> model_ptr, 
                                     const std::shared_ptr<pinocchio::Data> data_ptr, 
                                     const std::string& frame_name, 

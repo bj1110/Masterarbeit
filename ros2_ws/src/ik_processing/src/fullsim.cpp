@@ -363,9 +363,11 @@ int main(int argc, char** argv)
     }
     nullspace_solver::Nullspace_task nst1 = nullspace_solver::tasks::couple_joints(name_to_idx["glenohumeral_yaw_joint"], name_to_idx["sternoclavicular_yaw_joint"], 2.0);
     nullspace_solver::Nullspace_task nst2 = nullspace_solver::tasks::nudge_joint_towards_nullposition(name_to_idx["columna_flex_joint"]);
+    nullspace_solver::Nullspace_task nst3 = nullspace_solver::tasks::nudge_joint_towards_nullposition(name_to_idx["columna_rot_joint"]);
 
-    solver.addNullspaceObjective(nst1, 0.5); 
+    // solver.addNullspaceObjective(nst1, 0.5); 
     solver.addNullspaceObjective(nst2, 0.5); 
+    // solver.addNullspaceObjective(nst3, 0.5); 
 
     solver.useJointLimitAvoidance(); 
 
