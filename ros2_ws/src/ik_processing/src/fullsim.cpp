@@ -371,6 +371,8 @@ int main(int argc, char** argv)
 
     solver.useJointLimitAvoidance(); 
 
+    solver.push_away_from_origin("elbow_roll_joint", 0.5); 
+
     /* The following increase computing time but do not (in any significant way) increase performance */
     // solver.centerJoint(name_to_idx["glenohumeral_yaw_joint"], 0.6);
     // solver.centerJoint(name_to_idx["sternoclavicular_yaw_joint"], 0.6);
@@ -390,7 +392,7 @@ int main(int argc, char** argv)
 
     // solver.alignJointWithAxis("elbow_roll_joint", forarm_axis, p1, p2, 10.0);
     
-    solver.alignNormal("glenohumeral_yaw_joint", "elbow_roll_joint", "forearm_hand_joint", 10.0); 
+    // solver.alignNormal("glenohumeral_yaw_joint", "elbow_roll_joint", "forearm_hand_joint", 10.0); 
 
     moveit_msgs::msg::RobotTrajectory trajectory;
     bool ik_ok= solver.solve(start_configuration, trajectory); 

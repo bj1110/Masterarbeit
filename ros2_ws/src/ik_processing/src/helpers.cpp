@@ -29,12 +29,7 @@ void store(json& j, const moveit::planning_interface::MoveGroupInterface& move_g
 }
 
 std::filesystem::path create_datapath(const rclcpp::Logger& LOGGER, const Header& header){
-    const char* home = std::getenv("HOME");
-    if (!home) {
-        RCLCPP_ERROR(LOGGER, "HOME environment variable not set");
-        return {};
-    }
-    std::filesystem::path dir( std::filesystem::path(home) / "Projects/Masterarbeit/simdata");
+    std::filesystem::path dir = std::filesystem::temp_directory_path()/"simdata";
     std::error_code ec; 
     std::filesystem::create_directories(dir, ec);
     if (ec) {
@@ -100,14 +95,8 @@ void dump_gridsearch_result(
     double angle,
     const Eigen::VectorXd& joint_weights_vector,
     const std::unordered_map<std::string, size_t>& name_to_idx) 
-{
-    const char* home = std::getenv("HOME");
-    if (!home) {
-        RCLCPP_ERROR(LOGGER, "HOME environment variable not set");
-        return;
-    }
-
-    std::filesystem::path dir = std::filesystem::path(home) / "Projects/Masterarbeit/simdata";
+{ 
+    std::filesystem::path dir = std::filesystem::temp_directory_path()/"simdata";
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
     if (ec) {

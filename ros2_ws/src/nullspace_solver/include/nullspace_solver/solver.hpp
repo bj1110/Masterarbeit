@@ -59,6 +59,7 @@ public:
     void centerJoint(const size_t idx, const double weight);
     void alignJointWithAxis(const std::string& j1, const Eigen::Vector3d& link_axis_in_frame, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, double weight);
     void alignNormal(const std::string& S_name, const std::string& E_name, const std::string& W_name, double weight);
+    void push_away_from_origin(const std::string& name, double weight); 
 
     double calculate_angle_between_plane_normal_and_z_axis(const std::string& S_name, const std::string& E_name, const std::string& W_name, const bool degrees=false);
 

@@ -218,6 +218,49 @@ Nullspace_task pull_towards(const std::shared_ptr<pinocchio::Model> model_ptr,
 
 
 
+Nullspace_task push_away_from_origin(const std::shared_ptr<pinocchio::Model> model_ptr, 
+                                     const std::shared_ptr<pinocchio::Data> data_ptr,
+                                    const std::string& frame_name)
+{
+    Eigen::Vector3d origin{0.0, 0.0, 0.6};
+
+    pinocchio::FrameIndex frame_id = model_ptr->getFrameId(frame_name);
+    if(frame_id == (pinocchio::FrameIndex)(-1)){
+        throw std::invalid_argument("Frame not found in model.");
+    }
+
+    return [frame_id, origin, model_ptr, data_ptr](const Eigen::VectorXd& q)
+    {
+        // Run forward kinematics
+        pinocchio::forwardKinematics(*model_ptr, *data_ptr, q);
+        pinocchio::updateFramePlacements(*model_ptr, *data_ptr);
+
+        Eigen::VectorXd gradient = Eigen::VectorXd::Zero(q.size());
+
+        // Current frame position
+        const auto& oMf = data_ptr->oMf[frame_id];
+        Eigen::Vector3d x = oMf.translation();
+
+        // Cartesian gradient (push away)
+        Eigen::Vector3d grad_x = x - origin;
+
+        // Compute Jacobian
+        Eigen::Matrix<double, 6, Eigen::Dynamic> J(6, q.size());
+        pinocchio::computeFrameJacobian(*model_ptr, *data_ptr, q, frame_id,
+                                       pinocchio::LOCAL_WORLD_ALIGNED, J);
+
+        // Use only linear part
+        Eigen::MatrixXd J_pos = J.topRows<3>();
+
+        // Map to joint space
+        gradient = J_pos.transpose() * grad_x;
+
+        return gradient;
+    };
+}
+
+
+
 Nullspace_task align_link_to_axis_xy(const std::shared_ptr<pinocchio::Model> model_ptr, 
                                     const std::shared_ptr<pinocchio::Data> data_ptr, 
                                     const std::string& frame_name, 

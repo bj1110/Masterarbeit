@@ -249,6 +249,15 @@ void Solver::alignNormal(const std::string& S_name, const std::string& E_name, c
     addNullspaceObjective(task, weight);
 }
 
+void Solver::push_away_from_origin(const std::string& name, double weight){
+    auto model_ptr = std::make_shared<pinocchio::Model>(model_);
+    auto data_ptr = std::make_shared<pinocchio::Data>(data_);
+
+    tasks::Nullspace_task task = tasks::push_away_from_origin(model_ptr, data_ptr, name);
+    addNullspaceObjective(task, weight);
+}
+
+
 double Solver::calculate_angle_between_plane_normal_and_z_axis(const std::string& S_name, const std::string& E_name, const std::string& W_name, const bool degrees){
     pinocchio::FrameIndex S_idx = model_.getFrameId(S_name);
     pinocchio::FrameIndex E_idx = model_.getFrameId(E_name);

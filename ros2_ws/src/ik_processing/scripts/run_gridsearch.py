@@ -64,16 +64,6 @@ v2 = [-0.5, 0, 0.5]
 # grid = create_grid(joints, values, base_joint_weights)
 grid = create_grid_different_values(joints, v1, v2, base_joint_weights)
 
-home = os.environ.get("HOME")
-if not home:
-    raise RuntimeError("HOME environment variable not set")
-dump_dir_path = Path(home) / "Projects/Masterarbeit/simdata"
-dump_path = dump_dir_path / "grid_search_data_11.jsonl"
-
-if dump_path.exists() and startvalue != 0 and delete_prev == True:
-    dump_path.unlink()
-    print("\033[32mDeleted old grid seach file.\033[0m")
-
 num_combinations = len(grid)
 
 startime = time.time()
