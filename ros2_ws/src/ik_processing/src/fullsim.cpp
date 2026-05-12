@@ -26,7 +26,6 @@
 
 #include "ik_processing/helpers.hpp"
 #include "ik_processing/evaluator.hpp"
-#include "ik_processing/rigid_body_algorithm.hpp"
 
 #include <moveit/move_group_interface/move_group_interface.hpp>
 #include <moveit/planning_scene_interface/planning_scene_interface.hpp>
@@ -60,7 +59,6 @@ using json = nlohmann::json;
 using Datapoint = ik_processing::msg::Datapoint; 
 using Header = ik_processing::msg::Header; 
 using Data = ik_processing::srv::Data; 
-using crb = rigid_body_algorithm::crb; 
 
 
 int main(int argc, char** argv)
