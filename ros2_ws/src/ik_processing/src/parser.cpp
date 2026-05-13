@@ -124,11 +124,16 @@ class Parser: public rclcpp::Node{
         std::string file_info =
             (_is_baseline ? "Baseline "s : "Interaction "s) +
             (_is_agent1 ? "Agent 1 "s : "Agent 2 "s)+
-            "Positions: "s +
-            ((_is_agent1 && _is_baseline)? std::to_string(_startpos1) + "-"s + std::to_string(_goalpos1) :
-                 std::to_string(_startpos2) + "-"s + std::to_string(_goalpos2))+
-            (!_is_baseline ? ("_"s + std::to_string(_startpos2) + "-"s + std::to_string(_goalpos2)) : ""s) +
-            " Experiment Number: "s + std::to_string(_exnum) +
+            "Positions: "s;
+            if(_is_baseline){
+                file_info += ((_is_agent1 )? std::to_string(_startpos1) + "-"s + std::to_string(_goalpos1) :
+                std::to_string(_startpos2) + "-"s + std::to_string(_goalpos2));
+            }
+            else{
+                file_info += std::to_string(_startpos1) + "-"s + std::to_string(_goalpos1) +
+                ("_"s + std::to_string(_startpos2) + "-"s + std::to_string(_goalpos2));
+            }
+            file_info += " Experiment Number: "s + std::to_string(_exnum) +
             (_is_baseline ? (" run: "s + std::to_string(_datafile)) : ""s);
         return file_info; 
     }
