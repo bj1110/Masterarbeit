@@ -95,6 +95,8 @@ int main(int argc, char** argv)
     /*
         Get the Data from the Parser
     */
+    constexpr int MAX_TRIES = 10;
+    int tries=0; 
     auto client = move_group_node->create_client<Data>("parse_data");
     while(!client->wait_for_service(std::chrono::seconds(1))){
         if(!rclcpp::ok()){
@@ -103,6 +105,11 @@ int main(int argc, char** argv)
             return 1;
         }
         RCLCPP_INFO(LOGGER, "Waiting for data...");
+        if(++tries == MAX_TRIES){
+            RCLCPP_ERROR(LOGGER, "Did not receive data from parser. Shutting down.");
+            rclcpp::shutdown();
+            return 1;
+        }
     }
     auto request = std::make_shared<Data::Request>();
     request->str = "Req";

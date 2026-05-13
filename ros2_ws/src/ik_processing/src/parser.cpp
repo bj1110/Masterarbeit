@@ -71,7 +71,8 @@ class Parser: public rclcpp::Node{
             data = create_datapoints(file); 
         }
         else{
-            RCLCPP_ERROR(this->get_logger(), "Failed to open file with path: %s", filepath.c_str());
+            RCLCPP_FATAL(this->get_logger(), "Failed to open file with path: %s", filepath.c_str());
+            throw std::runtime_error("Parser could not find file");
         }
 
         header_ = Header();
@@ -147,6 +148,18 @@ std::vector<Datapoint> Parser::create_datapoints(std::ifstream& file){
     while(std::getline(file, line)){
         vss.emplace_back(line);
     }
+    if(vss.empty()){
+        RCLCPP_FATAL(this->get_logger(), "Empty file");
+        throw std::runtime_error("Parser opened empty file"); 
+    }
+    if(_is_baseline && vss.size() <5){
+        RCLCPP_FATAL(this->get_logger(), "Not enough datapoints for baseline");
+        throw std::runtime_error("Parser opened faulty file"); 
+    }
+    else if(!_is_baseline && vss.size() <9){
+        RCLCPP_FATAL(this->get_logger(), "Not enough datapoints for interaction");
+        throw std::runtime_error("Parser opened faulty file"); 
+    }
     if(_is_baseline && _is_agent1){
         std::array<float, 5> f;
         while(vss[0]>>f[0]){
@@ -202,9 +215,15 @@ std::vector<Datapoint> Parser::create_datapoints(std::ifstream& file){
 
 int main(int argc, char* argv[]){
     rclcpp::init(argc, argv);
-    auto node= std::make_shared<Parser>();
-    while(rclcpp::ok() && !(node->is_service_done())){
-        rclcpp::spin_some(node);
+    try{
+        auto node = std::make_shared<Parser>();
+
+        while(rclcpp::ok() && !(node->is_service_done())){
+            rclcpp::spin_some(node);
+        }
+    }
+    catch(const std::exception& e){
+        std::cerr << e.what() << std::endl;
     }
     rclcpp::shutdown(); 
     return 0; 
