@@ -15,6 +15,7 @@
 #include <moveit_msgs/msg/display_trajectory.hpp>
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 // for convenience
 using json = nlohmann::json;
@@ -47,6 +48,11 @@ namespace helpers{
         double angle,
         const Eigen::VectorXd& joint_weights_vector,
         const std::unordered_map<std::string, size_t>& name_to_idx);
+
+    std::vector<geometry_msgs::msg::Pose> robotTrajectory_to_EE_path(const moveit_msgs::msg::RobotTrajectory& rt,
+                                                                    moveit::core::RobotState& robot_state,
+                                                                    const moveit::core::JointModelGroup* jmg,
+                                                                    const std::string& ee_link);
 }
 
 inline void to_json(json& j, const moveit::planning_interface::MoveGroupInterface& move_group){

@@ -59,7 +59,7 @@ foreach(lib ik_helpers ik_evaluator)
   target_include_directories(${lib}
     PUBLIC
       $<BUILD_INTERFACE:${PROJECT_INCLUDE_DIR}>
-      $<INSTALL_INTERFACE:include># استاندارد
+      $<INSTALL_INTERFACE:include> 
   )
 endforeach()
 
@@ -143,6 +143,7 @@ install(DIRECTORY launch data config
 
 install(PROGRAMS
   scripts/run_gridsearch.py
+  scripts/sim_all.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -124,5 +124,29 @@ void dump_gridsearch_result(
     RCLCPP_INFO(LOGGER, "Appended grid search result");
 }
 
+std::vector<geometry_msgs::msg::Pose> robotTrajectory_to_EE_path(const moveit_msgs::msg::RobotTrajectory& rt,
+                                                                    moveit::core::RobotState& robot_state,
+                                                                    const moveit::core::JointModelGroup* jmg,
+                                                                    const std::string& ee_link)
+{
+    std::vector<geometry_msgs::msg::Pose> ee_path;
+
+    for (const auto& p : rt.joint_trajectory.points)
+    {
+        robot_state.setJointGroupPositions(jmg, p.positions);
+        robot_state.update();
+
+        const Eigen::Isometry3d& tf =
+            robot_state.getGlobalLinkTransform(ee_link);
+
+        geometry_msgs::msg::Pose pose =
+            tf2::toMsg(tf);
+
+        ee_path.push_back(pose);
+    }
+
+    return ee_path;
+}
+
 } //namespace helpers 
 

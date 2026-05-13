@@ -421,21 +421,16 @@ int main(int argc, char** argv)
             );
         }
 
-        // double* joint_positions = robot_state->getVariablePositions();
-        // for(size_t i=0; i< dof; ++i){
-        //     double jp = *joint_positions;
-        //     double lowerlimit = q_min[i];
-        //     double upperlimit = q_max[i];
-        //     RCLCPP_INFO_STREAM(LOGGER, "Jointposition "<< variable_names[i]<<": " << jp <<" with limits: "<< lowerlimit<< ", "<< upperlimit);
-        //     if(jp<lowerlimit){
-        //         RCLCPP_WARN_STREAM(LOGGER, "\033[31mPosition of "<< variable_names[i]<<" below boundary.\033[0m");
-        //     }
-        //     if(jp>upperlimit){
-        //         RCLCPP_WARN_STREAM(LOGGER, "\033[31mPosition of "<< variable_names[i]<<" above boundary.\033[0m");
-        //     }
-        //     joint_positions++; 
-        // }
+        std::vector<double> times;
+        for (const auto& p : trajectory.joint_trajectory.points)
+            times.push_back(helpers::to_double(p.time_from_start));
+
+        auto ee_path = helpers::robotTrajectory_to_EE_path(trajectory, *robot_state, joint_model_group, "can");
+        evaluator::endeffector ee_eval(ee_path, times, LOGGER);
+        outputdata["info"]["Calculated_EE_NJS"] = ee_eval.get_NJS();
     }else{
+        outputdata["trajectory"] = {};
+        outputdata["info"]["Calculated_EE_NJS"] = 0; 
         RCLCPP_INFO(LOGGER, "\033[31m Solver failed to converge\033[0m"); 
     }
 

@@ -166,7 +166,7 @@ std::vector<Eigen::Vector3d> endeffector::numeric_derivitive(const std::vector<E
 double endeffector::calculate_NJS(){
     double movement_length = (positions_.back() - positions_.front()).norm(); 
     double jerk_integral = 0.0;
-    for(size_t i=0; i<jerks_.size(); ++i){
+    for(size_t i=0; i<timestepsizes_.size(); ++i){
         double jerksize = jerks_[i].norm();
         jerk_integral += jerksize * jerksize * timestepsizes_[i]; 
     }
