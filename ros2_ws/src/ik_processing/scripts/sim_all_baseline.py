@@ -78,8 +78,8 @@ try:
                         f"is_baseline:=true",
                         f"is_agent1:={'true' if agent == 'agent1' else 'false'}",
 
-                        f"startpos1:={start}",
-                        f"goalpos1:={goal}",
+                        f"{'startpos1' if agent == 'agent1' else 'startpos2'}:={start}",
+                        f"{'goalpos1' if agent == 'agent1'  else 'goalpos2'}:={goal}",
 
                         f"datafile:={datafile}",
                         f"exNum:={int(exnum)}",

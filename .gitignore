@@ -1,2 +1,4 @@
 simdata/
 calibration/build
+
+*.tar
