@@ -62,7 +62,7 @@ def generate_launch_description():
     declare_datafile=DeclareLaunchArgument(
         'datafile',
         default_value='1',
-        choices=[ str(i) for i in range(1,5)], 
+        choices=[ str(i) for i in range(1,6)], 
         description='(short u_)Int indicating the experimentfile (in baseline data)'
     )
     declare_exNum=DeclareLaunchArgument(
