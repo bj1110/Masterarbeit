@@ -53,7 +53,10 @@ try:
         preexec_fn=os.setsid,
     )
 
-    time.sleep(2)
+    time.sleep(10)
+
+    MAX_ITER = 100
+    iter=0
 
     for agentdir in baseline_folder.iterdir():
         agent = agentdir.name
@@ -88,7 +91,31 @@ try:
 
                     print("RUNNING:", " ".join(cmd))
 
-                    subprocess.run(cmd, check=True)
+                    iter += 1
+
+                    try:
+                        subprocess.run(cmd, check=True)
+                    except subprocess.CalledProcessError as e:
+                        print(f"FAILED: {dat}")
+                        print(e)
+                        continue
+
+                    if iter%MAX_ITER ==0 :
+                        print("relaunching moveit")
+                        cleanup()
+                        
+                        moveit_proc = subprocess.Popen(
+                            [
+                                "ros2",
+                                "launch",
+                                "ik_processing",
+                                "moveit.launch.py",
+                                "use_rviz:=false",
+                            ],
+                            preexec_fn=os.setsid,
+                        )
+
+                        time.sleep(10)
 
 finally:
     cleanup()

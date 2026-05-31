@@ -53,7 +53,10 @@ try:
         preexec_fn=os.setsid,
     )
 
-    time.sleep(2)
+    time.sleep(10)
+
+    MAX_ITER= 100
+    iter=0
 
     for paths in interaction_folder.iterdir():
         agent1, agent2 = paths.name.split("_")
@@ -66,7 +69,7 @@ try:
             dat_files = sorted(exdir.glob("*.dat"))
             for dat in dat_files:
                 datafile = dat.stem
-                for ag in ["agnet1", "agent2"]:
+                for ag in ["agent1", "agent2"]:
 
                     cmd = [
                         "ros2",
@@ -88,8 +91,33 @@ try:
                     ]
 
                     print("RUNNING:", " ".join(cmd))
+                    
+                    iter +=1
 
-                    subprocess.run(cmd, check=True)
+                    try:
+                        subprocess.run(cmd, check=True)
+                    except subprocess.CalledProcessError as e:
+                        print(f"FAILED: {dat}")
+                        print(e)
+                        continue
+
+                    if iter%MAX_ITER ==0 :
+                        print("relaunching moveit")
+                        cleanup()
+                        
+                        moveit_proc = subprocess.Popen(
+                            [
+                                "ros2",
+                                "launch",
+                                "ik_processing",
+                                "moveit.launch.py",
+                                "use_rviz:=false",
+                            ],
+                            preexec_fn=os.setsid,
+                        )
+
+                        time.sleep(10)
+
 
 finally:
     cleanup()
