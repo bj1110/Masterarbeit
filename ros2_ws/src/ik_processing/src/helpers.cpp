@@ -17,7 +17,7 @@ std::ofstream create_file(const rclcpp::Logger& LOGGER, const Header& header ){
         );
         return {}; 
     }
-    RCLCPP_INFO(LOGGER, "Output file opened");
+    RCLCPP_INFO(LOGGER, "Output file opened @ %s", filepath.c_str());
     return file; 
 }
 
@@ -51,7 +51,12 @@ std::string create_outputname(const Header& header){
     name += std::to_string(header.exnum);
     name += "agent" ; 
     name += header.is_agent1 ? "1_":"2_";
-    name += std::to_string(header.startpos1) + "-" + std::to_string(header.goalpos1);
+    if(header.is_baseline && header.is_agent1){
+        name += std::to_string(header.startpos1) + "-" + std::to_string(header.goalpos1);
+    }
+    else if(header.is_baseline){
+        name += std::to_string(header.startpos2) + "-" + std::to_string(header.goalpos2);
+    }
     if(!header.is_baseline){
         name += "_" + std::to_string(header.startpos2) + "-" + std::to_string(header.goalpos2);
     }
