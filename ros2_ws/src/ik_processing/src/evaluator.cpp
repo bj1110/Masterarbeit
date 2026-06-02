@@ -177,4 +177,44 @@ double endeffector::calculate_NJS(){
 double endeffector::get_NJS() const{
     return NJS_; 
 }
+
+
+
+
+double diff_waypoint_path(const std::vector<geometry_msgs::msg::Pose>& ee_traj, const std::vector<geometry_msgs::msg::Pose>& waypoints, const  std::vector<Datapoint>& data, bool is_agent1){
+    std::vector<double> error;
+    for(const auto& dp: data){
+        float err = is_agent1 ? dp.error1 : dp.error2;
+        error.push_back(err);
+    }
+    size_t cnt =0; 
+    double erg=0; 
+    for(const auto& wp: waypoints){
+        double d = std::numeric_limits<double>::max();
+        double err = error.at(cnt);
+        for(const auto& ee_pose: ee_traj){
+            double dist = calculate_pose_distance(ee_pose, wp);
+            dist /= err; 
+            if(dist < d){
+                d = dist;
+            }
+        }
+        erg += d;
+        ++cnt; 
+    }
+    erg /= waypoints.size(); 
+    return erg; 
+}
+
+
+double calculate_pose_distance(const geometry_msgs::msg::Pose& p1, const geometry_msgs::msg::Pose& p2){
+    const double dx = p2.position.x - p1.position.x;
+    const double dy = p2.position.y - p1.position.y;
+    const double dz = p2.position.z - p1.position.z;
+
+    return std::sqrt(dx*dx + dy*dy + dz*dz);
+}
+
+
+
 } // namespace evaluator

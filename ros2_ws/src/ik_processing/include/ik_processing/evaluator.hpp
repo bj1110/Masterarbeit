@@ -58,6 +58,9 @@ class endeffector{
 
 };
 
+double diff_waypoint_path(const std::vector<geometry_msgs::msg::Pose>& ee_traj, const std::vector<geometry_msgs::msg::Pose>& waypoints, const  std::vector<Datapoint>& data, bool is_agent1);
+
+double calculate_pose_distance(const geometry_msgs::msg::Pose& p1, const geometry_msgs::msg::Pose& p2); 
 
 
 } //namespace evaluator

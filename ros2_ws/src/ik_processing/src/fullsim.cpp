@@ -434,7 +434,9 @@ int main(int argc, char** argv)
 
         auto ee_path = helpers::robotTrajectory_to_EE_path(trajectory, *robot_state, joint_model_group, "can");
         evaluator::endeffector ee_eval(ee_path, times, LOGGER);
+        double distance_to_target = evaluator::diff_waypoint_path(ee_path, waypoints, data, header.is_agent1);
         outputdata["info"]["Calculated_EE_NJS"] = ee_eval.get_NJS();
+        outputdata["info"]["av_dist_to_target"] = distance_to_target; 
     }else{
         outputdata["trajectory"] = {};
         outputdata["info"]["Calculated_EE_NJS"] = 0; 
