@@ -412,8 +412,8 @@ int main(int argc, char** argv)
         }
         double angle= solver.calculate_angle_between_plane_normal_and_z_axis("glenohumeral_yaw_joint", "elbow_roll_joint", "forearm_hand_joint", true);
         RCLCPP_INFO_STREAM(LOGGER, "\033[32mAngle at endpose: "<< angle <<"°\033[0m");
-        outputdata["info"]["Angle"] = angle; 
         outputdata=trajectory; 
+        outputdata["info"]["Angle"] = angle; 
         outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(trajectory, LOGGER, evaluator::LogLevel::info); 
         robot_state->update(true); 
         if (grid_search) {
