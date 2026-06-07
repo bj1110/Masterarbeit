@@ -49,10 +49,24 @@ namespace helpers{
         const Eigen::VectorXd& joint_weights_vector,
         const std::unordered_map<std::string, size_t>& name_to_idx);
 
+    double calculate_pose_distance(const geometry_msgs::msg::Pose& p1, const geometry_msgs::msg::Pose& p2);
+
     std::vector<geometry_msgs::msg::Pose> robotTrajectory_to_EE_path(const moveit_msgs::msg::RobotTrajectory& rt,
                                                                     moveit::core::RobotState& robot_state,
                                                                     const moveit::core::JointModelGroup* jmg,
                                                                     const std::string& ee_link);
+
+    /**
+     * Function that cuts away all Points of the trajectory before the first waypoint.
+     * This is only meassured by the cartesian distance to said point.
+     * In cyclic motions this could become a problem!
+     */
+    std::vector<geometry_msgs::msg::Pose> cut_Trajectory_before_first_waypoint(const moveit_msgs::msg::RobotTrajectory& rt,
+                                                                    const std::vector<geometry_msgs::msg::Pose>& waypoints,
+                                                                    moveit::core::RobotState& robot_state,
+                                                                    const moveit::core::JointModelGroup* jmg,
+                                                                    const std::string& ee_link);
+
 }
 
 inline void to_json(json& j, const moveit::planning_interface::MoveGroupInterface& move_group){

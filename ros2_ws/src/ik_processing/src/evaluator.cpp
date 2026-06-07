@@ -1,5 +1,4 @@
 #include "ik_processing/evaluator.hpp"
-#include "ik_processing/evaluator.hpp"
 
 namespace evaluator{
 
@@ -193,7 +192,7 @@ double diff_waypoint_path(const std::vector<geometry_msgs::msg::Pose>& ee_traj, 
         double d = std::numeric_limits<double>::max();
         double err = error.at(cnt);
         for(const auto& ee_pose: ee_traj){
-            double dist = calculate_pose_distance(ee_pose, wp);
+            double dist = helpers::calculate_pose_distance(ee_pose, wp);
             dist /= err; 
             if(dist < d){
                 d = dist;
@@ -207,13 +206,7 @@ double diff_waypoint_path(const std::vector<geometry_msgs::msg::Pose>& ee_traj, 
 }
 
 
-double calculate_pose_distance(const geometry_msgs::msg::Pose& p1, const geometry_msgs::msg::Pose& p2){
-    const double dx = p2.position.x - p1.position.x;
-    const double dy = p2.position.y - p1.position.y;
-    const double dz = p2.position.z - p1.position.z;
 
-    return std::sqrt(dx*dx + dy*dy + dz*dz);
-}
 
 
 

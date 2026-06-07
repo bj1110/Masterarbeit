@@ -69,7 +69,7 @@ ament_target_dependencies(ik_evaluator ${COMMON_DEPS})
 
 # Link libraries
 target_link_libraries(ik_helpers nlohmann_json::nlohmann_json)
-target_link_libraries(ik_evaluator nlohmann_json::nlohmann_json)
+target_link_libraries(ik_evaluator ik_helpers nlohmann_json::nlohmann_json)
 
 # -----------------------------
 # Executables

@@ -437,6 +437,17 @@ int main(int argc, char** argv)
         double distance_to_target = evaluator::diff_waypoint_path(ee_path, waypoints, data, header.is_agent1);
         outputdata["info"]["Calculated_EE_NJS"] = ee_eval.get_NJS();
         outputdata["info"]["av_dist_to_target"] = distance_to_target; 
+        auto ee_path_cropped = helpers::cut_Trajectory_before_first_waypoint(trajectory, waypoints, *robot_state, joint_model_group, "can");
+        auto cropped_offset = ee_path.size() - ee_path_cropped.size();
+        std::vector<double> times_cropped;
+        for(size_t i= 0; i< ee_path_cropped.size(); ++i){
+            auto t = trajectory.joint_trajectory.points.at(i+cropped_offset).time_from_start;
+            times_cropped.push_back(helpers::to_double(t)); 
+        }
+        evaluator::endeffector ee_eval_cropped (ee_path_cropped, times_cropped, LOGGER);
+        outputdata["info"]["EE_NJS_cropped"] = ee_eval_cropped.get_NJS();
+        RCLCPP_INFO_STREAM(LOGGER, "\033[32mCropped NJS: "<< ee_eval_cropped.get_NJS() <<"°\033[0m");
+        
     }else{
         outputdata["trajectory"] = {};
         outputdata["info"]["Calculated_EE_NJS"] = 0; 

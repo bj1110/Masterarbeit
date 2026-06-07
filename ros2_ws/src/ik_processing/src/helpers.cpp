@@ -153,5 +153,40 @@ std::vector<geometry_msgs::msg::Pose> robotTrajectory_to_EE_path(const moveit_ms
     return ee_path;
 }
 
+
+std::vector<geometry_msgs::msg::Pose> cut_Trajectory_before_first_waypoint(const moveit_msgs::msg::RobotTrajectory& rt,
+                                                                    const std::vector<geometry_msgs::msg::Pose>& waypoints,
+                                                                    moveit::core::RobotState& robot_state,
+                                                                    const moveit::core::JointModelGroup* jmg,
+                                                                    const std::string& ee_link)
+{
+    double min_dist = std::numeric_limits<double>::max();
+    std::vector<geometry_msgs::msg::Pose> ee_path = helpers::robotTrajectory_to_EE_path(rt, robot_state, jmg, ee_link);
+    auto startpos = waypoints.front(); 
+    size_t min_idx =0; 
+    for(size_t i=0; i<ee_path.size(); ++i){
+        double curr_dist = calculate_pose_distance(ee_path.at(i), startpos);
+        if(curr_dist<min_dist){
+            min_dist= curr_dist;
+            min_idx = i;
+
+        }
+    }
+    std::vector<geometry_msgs::msg::Pose> erg;
+    for(size_t i=min_idx; i<ee_path.size(); ++i){
+        erg.push_back(ee_path.at(i));
+    }
+    return erg; 
+}
+
+double calculate_pose_distance(const geometry_msgs::msg::Pose& p1, const geometry_msgs::msg::Pose& p2){
+    const double dx = p2.position.x - p1.position.x;
+    const double dy = p2.position.y - p1.position.y;
+    const double dz = p2.position.z - p1.position.z;
+
+    return std::sqrt(dx*dx + dy*dy + dz*dz);
+}
+
+
 } //namespace helpers 
 
