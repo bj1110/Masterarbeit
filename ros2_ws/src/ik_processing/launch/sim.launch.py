@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, AppendEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, AppendEnvironmentVariable, RegisterEventHandler, TimerAction
 from launch.substitutions import PythonExpression, FileContent, LaunchConfiguration, PathJoinSubstitution, Command
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
@@ -7,89 +7,88 @@ import os
 from launch_ros.parameter_descriptions import ParameterValue
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.event_handlers import OnProcessExit
 
+from moveit_configs_utils import MoveItConfigsBuilder
 
 def generate_launch_description():
     this_package = FindPackageShare('ik_processing')
-    moveit_package = FindPackageShare('config_moveit_model3')
+    model_package = FindPackageShare('human_arm_model')
 
-    start_demo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                moveit_package,
-                'launch',
-                'demo.launch.py'
-            ])
-        ])
+    modelpath = PathJoinSubstitution([
+        model_package,
+        'urdf',
+        'alt_model.urdf.xacro'
+    ])
+    urdf= ParameterValue(Command(['xacro ', modelpath]), value_type=str)
+    
+    recalculate=LaunchConfiguration('recalculate')
+    use_rviz=LaunchConfiguration('use_rviz')
+    config_file=LaunchConfiguration('config_file')
+    grid_search=LaunchConfiguration('grid_search')
+
+ 
+    declare_recalculate=DeclareLaunchArgument(
+        'recalculate',
+        default_value='true',
+        choices=['true', 'false'],
+        description='Bool indicating if previously calculated Path should be used or recalculated and be overridden'
     )
 
-    start_rsp = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                moveit_package,
-                'launch',
-                'rsp.launch.py'
-            ])
-        ])
+    declare_use_rviz=DeclareLaunchArgument(
+        'use_rviz',
+        default_value='true',
+        choices=['true', 'false'],
+        description='Bool indicating if calculated path should be displayed in RVIZ'
     )
 
-    start_controllers = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                moveit_package,
-                'launch',
-                'spawn_controllers.launch.py'
-            ])
-        ])
+    declare_config_file=DeclareLaunchArgument(
+        'config_file',
+        default_value= PathJoinSubstitution([
+            this_package,
+            'config',
+            "config.yaml"
+        ]),
+        description='Path to the yaml config file'
     )
 
-    start_joint_state_broadcaster_cmd = Node(
-    package="controller_manager",
-    executable="spawner",
-    arguments=[
-      "joint_state_broadcaster",
-      "--controller-manager",
-      "/controller_manager"
-      ]
+    declare_grid_search=DeclareLaunchArgument(
+        'grid_search',
+        default_value='false',
+        choices=['true', 'false'],
+        description='Flag to indicate grid_search and thus allowing dumping into special file'
     )
 
-    start_move_group = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                moveit_package,
-                'launch',
-                'custom_move_group.launch.py'
-            ])
-        ])
-    )
+    moveit_config = MoveItConfigsBuilder("alt_human_arm_model", package_name="moveit_config") \
+        .robot_description(file_path="config/alt_human_arm_model.urdf.xacro") \
+        .robot_description_semantic(file_path="config/alt_human_arm_model.srdf") \
+        .robot_description_kinematics(file_path="config/kinematics.yaml") \
+        .joint_limits(file_path="config/joint_limits.yaml") \
+        .planning_pipelines( "stomp", ["stomp"])\
+        .to_moveit_configs()
 
-    start_rviz= IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                moveit_package,
-                'launch',
-                'moveit_rviz.launch.py'
-            ])
-        ])
-    )
-
-    start_parser_node = Node(
-        package='ik_processing',
-        executable='parser'
-    )
 
     start_sim = Node(
         package='ik_processing',
-        executable='fullsim'
+        executable='fullsim',
+        parameters=[
+            moveit_config.robot_description,
+            moveit_config.robot_description_semantic,
+            moveit_config.robot_description_kinematics,
+            moveit_config.joint_limits,
+            moveit_config.planning_pipelines,
+            {'recalculate':recalculate},
+            {'urdf' : urdf },
+            config_file,
+            {'use_rviz':use_rviz},
+            {'grid_search': grid_search}
+        ],
     )
 
     return LaunchDescription([
-        start_parser_node,
-        start_rsp,
-        start_controllers,
-        start_joint_state_broadcaster_cmd,
-        start_move_group,
-        start_rviz,
-        # start_demo, 
+        declare_recalculate,
+        declare_use_rviz,
+        declare_config_file,
+        declare_grid_search,
         start_sim,
     ])

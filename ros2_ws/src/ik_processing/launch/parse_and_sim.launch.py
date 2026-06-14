@@ -25,16 +25,11 @@ def generate_launch_description():
     )
 
     delayed_simulation_start = TimerAction(
-        period=8.0,
+        period=3.0,
         actions=[launch_simulation]
-    )
-
-    launch_moveit = IncludeLaunchDescription(
-        PathJoinSubstitution([launch_dir, 'moveit.launch.py'])
     )
 
     return LaunchDescription([
         launch_parser,
-        launch_moveit,
         delayed_simulation_start,
     ])

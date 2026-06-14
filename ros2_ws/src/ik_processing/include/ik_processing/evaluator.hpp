@@ -11,6 +11,8 @@
 
 namespace evaluator{
 
+enum LogLevel{verbose, info, error}; 
+
 class joint{
 private:
     std::string name;
@@ -26,11 +28,14 @@ public:
     
     double get_NJS()const {return NJS;};
     std::string get_name()const {return name;};
+
+private: 
+    std::vector<double> numeric_derivitive(const std::vector<double>& in, const std::vector<double>& step_durations) const; 
     
 };
 
-double calculate_total_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger);
-double calculate_av_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger);
+double calculate_total_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger, LogLevel loglevel=info);
+double calculate_av_NJS(const moveit_msgs::msg::RobotTrajectory& rt, const rclcpp::Logger& logger, LogLevel loglevel=info);
 
 class endeffector{
     private:
@@ -53,6 +58,9 @@ class endeffector{
 
 };
 
+double diff_waypoint_path(const std::vector<geometry_msgs::msg::Pose>& ee_traj, const std::vector<geometry_msgs::msg::Pose>& waypoints, const  std::vector<Datapoint>& data, bool is_agent1);
+
+double calculate_pose_distance(const geometry_msgs::msg::Pose& p1, const geometry_msgs::msg::Pose& p2); 
 
 
 } //namespace evaluator

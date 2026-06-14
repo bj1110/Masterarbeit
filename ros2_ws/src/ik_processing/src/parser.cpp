@@ -42,6 +42,8 @@ class Parser: public rclcpp::Node{
         _datafile = this->get_parameter("datafile").as_int();
         this->declare_parameter("exNum", 1);
         _exnum = static_cast<u_short>(this->get_parameter("exNum").as_int());
+        this->declare_parameter("num_requests", 1);
+        num_requests_ = this->get_parameter("num_requests").as_int();
 
         if(_is_baseline){
             filepath /= "baselines";
@@ -69,7 +71,8 @@ class Parser: public rclcpp::Node{
             data = create_datapoints(file); 
         }
         else{
-            RCLCPP_ERROR(this->get_logger(), "Failed to open file with path: %s", filepath.c_str());
+            RCLCPP_FATAL(this->get_logger(), "Failed to open file with path: %s", filepath.c_str());
+            throw std::runtime_error("Parser could not find file");
         }
 
         header_ = Header();
@@ -90,8 +93,12 @@ class Parser: public rclcpp::Node{
             (void)request; 
             response ->header = header_;
             response->data = data; 
-            RCLCPP_INFO(this->get_logger(), "Packets send, shutting down");
-            service_completed_ = true; 
+            -- num_requests_;
+            RCLCPP_INFO_STREAM(this->get_logger(), "\033[35mPackets send, " << num_requests_<< " left\033[0m");
+            if(num_requests_ <= 0){
+                RCLCPP_INFO_STREAM(this->get_logger(), "Shutting down.");
+                service_completed_ = true; 
+            }
         };
         _service_server = this->create_service<Data>("parse_data", handle_service);
         RCLCPP_INFO(this->get_logger(), "Ready for requests");
@@ -111,17 +118,23 @@ class Parser: public rclcpp::Node{
     std::vector<Datapoint> create_datapoints(std::ifstream& file);
     rclcpp::Service<Data>::SharedPtr _service_server;
     bool service_completed_ =false; 
+    int num_requests_=1; 
 
     std::string create_file_info(){
         using namespace std::string_literals;
         std::string file_info =
             (_is_baseline ? "Baseline "s : "Interaction "s) +
             (_is_agent1 ? "Agent 1 "s : "Agent 2 "s)+
-            "Positions: "s +
-            ((_is_agent1 && _is_baseline)? std::to_string(_startpos1) + "-"s + std::to_string(_goalpos1) :
-                 std::to_string(_startpos2) + "-"s + std::to_string(_goalpos2))+
-            (!_is_baseline ? ("_"s + std::to_string(_startpos2) + "-"s + std::to_string(_goalpos2)) : ""s) +
-            " Experiment Number: "s + std::to_string(_exnum) +
+            "Positions: "s;
+            if(_is_baseline){
+                file_info += ((_is_agent1 )? std::to_string(_startpos1) + "-"s + std::to_string(_goalpos1) :
+                std::to_string(_startpos2) + "-"s + std::to_string(_goalpos2));
+            }
+            else{
+                file_info += std::to_string(_startpos1) + "-"s + std::to_string(_goalpos1) +
+                ("_"s + std::to_string(_startpos2) + "-"s + std::to_string(_goalpos2));
+            }
+            file_info += " Experiment Number: "s + std::to_string(_exnum) +
             (_is_baseline ? (" run: "s + std::to_string(_datafile)) : ""s);
         return file_info; 
     }
@@ -134,6 +147,18 @@ std::vector<Datapoint> Parser::create_datapoints(std::ifstream& file){
     std::string line;
     while(std::getline(file, line)){
         vss.emplace_back(line);
+    }
+    if(vss.empty()){
+        RCLCPP_FATAL(this->get_logger(), "Empty file");
+        throw std::runtime_error("Parser opened empty file"); 
+    }
+    if(_is_baseline && vss.size() <5){
+        RCLCPP_FATAL(this->get_logger(), "Not enough datapoints for baseline");
+        throw std::runtime_error("Parser opened faulty file"); 
+    }
+    else if(!_is_baseline && vss.size() <9){
+        RCLCPP_FATAL(this->get_logger(), "Not enough datapoints for interaction");
+        throw std::runtime_error("Parser opened faulty file"); 
     }
     if(_is_baseline && _is_agent1){
         std::array<float, 5> f;
@@ -190,9 +215,15 @@ std::vector<Datapoint> Parser::create_datapoints(std::ifstream& file){
 
 int main(int argc, char* argv[]){
     rclcpp::init(argc, argv);
-    auto node= std::make_shared<Parser>();
-    while(rclcpp::ok() && !(node->is_service_done())){
-        rclcpp::spin_some(node);
+    try{
+        auto node = std::make_shared<Parser>();
+
+        while(rclcpp::ok() && !(node->is_service_done())){
+            rclcpp::spin_some(node);
+        }
+    }
+    catch(const std::exception& e){
+        std::cerr << e.what() << std::endl;
     }
     rclcpp::shutdown(); 
     return 0; 
