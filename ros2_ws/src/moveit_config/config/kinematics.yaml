@@ -1,3 +1,6 @@
+# arm:
+#   kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+
 arm:
   kinematics_solver: pick_ik/PickIkPlugin
   kinematics_solver_timeout: 0.5
@@ -9,21 +12,3 @@ arm:
   position_scale: 0.5
   rotation_scale: 0.1
   minimal_displacement_weight: 0.001
-
-
-# arm:
-#   kinematics_solver: pick_ik/PickIkPlugin
-#   kinematics_solver_timeout: 0.05
-#   kinematics_solver_attempts: 10
-#   mode: local
-#   stop_optimization_on_valid_solution: false
-#   position_scale: 1.0
-#   rotation_scale: 0.0
-#   position_threshold: 0.001
-#   orientation_threshold: 0.01
-#   cost_threshold: 0.001
-#   minimal_displacement_weight: 0.01
-#   gd_step_size: 0.00001
-#   center_joints_weight: 0.01
-#   avoid_joint_limits_weight: 0.01
-#   memetic_num_threads: 4

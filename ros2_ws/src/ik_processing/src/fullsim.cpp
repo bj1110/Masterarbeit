@@ -7,7 +7,7 @@
 #include <moveit_msgs/msg/attached_collision_object.hpp>
 #include <moveit_msgs/msg/collision_object.hpp>
 
-#include <moveit_visual_tools/moveit_visual_tools.h>
+// #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <chrono>
 #include <thread>
 
@@ -36,11 +36,11 @@
 #include <moveit_msgs/msg/collision_object.hpp>
 
 #include <tf2_eigen/tf2_eigen.hpp>
-#include <moveit_visual_tools/moveit_visual_tools.h>
 #include <moveit/robot_state/robot_state.hpp>
 #include <moveit/robot_state/conversions.hpp>
 
 #include <cmath>
+#include <fstream>
 
 // for convenience
 using json = nlohmann::json;
@@ -59,7 +59,6 @@ int main(int argc, char** argv)
     const auto LOGGER = move_group_node->get_logger(); 
 
     bool recalculate = move_group_node->get_parameter("recalculate").as_bool();
-    bool fully_calc = move_group_node->get_parameter("fully_calc").as_bool();
     std::string urdf_string = move_group_node->get_parameter("urdf").as_string(); 
 
 
@@ -381,48 +380,49 @@ int main(int argc, char** argv)
     };
 
 
-    // const auto compute_l2_norm = [](std::vector<double> solution, std::vector<double> start) {
-    //     double sum = 0.0;
-    //     for (size_t ji = 0; ji < solution.size(); ji++)
-    //     {
-    //         double d = solution[ji] - start[ji];
-    //         sum += d * d;
-    //     }
-    //     return sum;
-    // };
+    const auto compute_l2_norm = [](std::vector<double> solution, std::vector<double> start) {
+        double sum = 0.0;
+        for (size_t ji = 0; ji < solution.size(); ji++)
+        {
+            double d = solution[ji] - start[ji];
+            sum += d * d;
+        }
+        return sum;
+    };
 
-    // const size_t hip_idx = joint_model_group->getVariableGroupIndex("columna_flex_joint");
-    // const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.0005, double penalty_size= 1.0, double penalty_gradient=1.0){
-    //     double d= solution[hip_idx]; 
-    //     double step = 0.5 * (1+ std::tanh(penalty_gradient * (d-delta))); 
-    //     double penalty = penalty_size * step* (d-delta); 
-    //     return penalty; 
-    // };
+    const size_t hip_idx = joint_model_group->getVariableGroupIndex("columna_flex_joint");
+    const auto penalize_hip = [&hip_idx](std::vector<double>solution, double delta=0.0005, double penalty_size= 1.0, double penalty_gradient=1.0){
+        double d= solution[hip_idx]; 
+        double step = 0.5 * (1+ std::tanh(penalty_gradient * (d-delta))); 
+        double penalty = penalty_size * step* (d-delta); 
+        return penalty; 
+    };
 
-    // const moveit::core::JointModel* elbow_model = robot_model->getJointModel("elbow_yaw_joint");
-    // const moveit::core::VariableBounds elbowBounds = (elbow_model-> getVariableBounds())[0];
-    // const double elbow_max = elbowBounds.max_position_; /*maximum bend*/ 
-    // const size_t elbow_idx = joint_model_group->getVariableGroupIndex("elbow_yaw_joint");
-    // const auto incentivise_elbow = [&elbow_idx, &elbow_max] (std::vector<double>solution){
-    //     double d= elbow_max - solution[elbow_idx]; 
-    //     return -(d*d) ; 
-    // };
+    const moveit::core::JointModel* elbow_model = robot_model->getJointModel("elbow_yaw_joint");
+    const moveit::core::VariableBounds elbowBounds = (elbow_model-> getVariableBounds())[0];
+    const double elbow_max = elbowBounds.max_position_; /*maximum bend*/ 
+    const size_t elbow_idx = joint_model_group->getVariableGroupIndex("elbow_yaw_joint");
+    const auto incentivise_elbow = [&elbow_idx, &elbow_max] (std::vector<double>solution){
+        double d= elbow_max - solution[elbow_idx]; 
+        return -(d*d) ; 
+    };
 
     /* 5: */
-    // const double hip_weight = 0.00009; // added 1x0. better performance on some paths, but less human-like on others. 
-    // const double elbow_weight= 0.000000001; 
+    const double hip_weight = 0.00009; // added 1x0. better performance on some paths, but less human-like on others. 
+    const double elbow_weight= 0.000000001; 
 
     const double energy_weight = 0.0001; 
     const std::vector<std::string> joint_model_names = joint_model_group->getJointModelNames();
-    const auto cost_fn = [&compute_energy,  &energy_weight]
+    const auto cost_fn = [&compute_energy,  &energy_weight, &penalize_hip]
                                                 (const geometry_msgs::msg::Pose& /*goal_pose*/,
                                                 const moveit::core::RobotState& solution_state,
                                                 moveit::core::JointModelGroup const* jmg,
                                                 const std::vector<double>& seed_state) {
         std::vector<double> proposed_joint_positions;
         solution_state.copyJointGroupPositions(jmg, proposed_joint_positions);
-        double T = compute_energy(seed_state, proposed_joint_positions); 
-        return T ;
+        double T = penalize_hip(proposed_joint_positions);
+        // double T = compute_energy(seed_state, proposed_joint_positions); 
+        return 0.0;
     };
     
     /* 6: */
@@ -440,51 +440,84 @@ int main(int argc, char** argv)
     time_param.computeTimeStamps(rt, 1.0);
 
     /* 8: */
-    moveit_msgs::msg::RobotTrajectory rt_msg;
-    rt.getRobotTrajectoryMsg(rt_msg);
-    move_group.execute(rt_msg);
-    outputdata = rt_msg; 
+    if(frac.value>0){
+        moveit::core::RobotStatePtr robot_state = move_group.getCurrentState();
+        moveit_msgs::msg::RobotTrajectory rt_msg;
+        rt.getRobotTrajectoryMsg(rt_msg);
+        move_group.execute(rt_msg);
+        outputdata = rt_msg; 
+        // double angle= solver.calculate_angle_between_plane_normal_and_z_axis("glenohumeral_yaw_joint", "elbow_roll_joint", "forearm_hand_joint", true);
+        // RCLCPP_INFO_STREAM(LOGGER, "\033[32mAngle at endpose: "<< angle <<"°\033[0m");
+        // outputdata["info"]["Angle"] = angle; 
+        outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(rt_msg, LOGGER, evaluator::LogLevel::info); 
 
-    if(frac.value<1.0 && fully_calc){
-        RCLCPP_INFO(LOGGER, "Path was not computed fully, attempting to move the last part"); 
-        move_group.setPoseTarget(waypoints.back());
-        move_group.clearPathConstraints(); 
-        moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-        bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-        RCLCPP_INFO(LOGGER, "Computation of missing path %s", success? "successful": "\033[31mFAILURE\033[0m");
-        if(success){
-            move_group.execute(my_plan); 
-            outputdata["info"]["endpoint_reachable"]=true;
-        }
-        else{
-            size_t pt = numElements-2;
-            while(pt>0){
-                move_group.setPoseTarget(waypoints[pt]);
-                moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-                bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-                if(success){
-                    int num_points = numElements; 
-                    int num_points_not_movedto = num_points-pt -1;
-                    float percentage_reachable = ( (float) pt/(float) num_points) *100.0 ;
-                    RCLCPP_INFO(LOGGER, "\033[32mTotal movement: %f, with %d/%d Points not reachable \033[0m",percentage_reachable, num_points_not_movedto, num_points);
-                    move_group.execute(my_plan);
-                    outputdata["info"]["endpoint_reachable"]=false;
-                    outputdata["info"]["max_percentage"]=percentage_reachable;
-                    outputdata["info"]["num_poijoint_states = joint_model_group->nts_moved_to"]=num_points_not_movedto;
-                    outputdata["info"]["last_pos_movable"]=waypoints[pt]; 
-                    break;
-                }
-                --pt; 
-            }
+        outputdata["info"]["cartesian_path_completion"]=frac.value;
 
-        }
+        outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(rt_msg, LOGGER); 
+        std::vector<double> times;
+        for (const auto& p : rt_msg.joint_trajectory.points)
+            times.push_back(helpers::to_double(p.time_from_start));
+
+        auto ee_path = helpers::robotTrajectory_to_EE_path(rt_msg, *robot_state, joint_model_group, "can");
+        evaluator::endeffector ee_eval(ee_path, times, LOGGER);
+        double distance_to_target = evaluator::diff_waypoint_path(ee_path, waypoints, data, header.is_agent1);
+        outputdata["info"]["Calculated_EE_NJS"] = ee_eval.get_NJS();
+        outputdata["info"]["av_dist_to_target"] = distance_to_target; 
+        // auto ee_path_cropped = helpers::cut_Trajectory_before_first_waypoint(rt_msg, waypoints, *robot_state, joint_model_group, "can");
+        // auto cropped_offset = ee_path.size() - ee_path_cropped.size();
+        // std::vector<double> times_cropped;
+        // for(size_t i= 0; i< ee_path_cropped.size(); ++i){
+        //     auto t = rt_msg.joint_trajectory.points.at(i+cropped_offset).time_from_start;
+        //     times_cropped.push_back(helpers::to_double(t)); 
+        // }
+        // evaluator::endeffector ee_eval_cropped (ee_path_cropped, times_cropped, LOGGER);
+        // outputdata["info"]["EE_NJS_cropped"] = ee_eval_cropped.get_NJS();
+        // RCLCPP_INFO_STREAM(LOGGER, "\033[32mCropped NJS: "<< ee_eval_cropped.get_NJS() <<"°\033[0m");
+
     }
-    
-    outputdata["final_pose"]= move_group.getCurrentPose().pose;
-    to_json(outputdata["final_jointstates"], move_group); 
-    outputdata["info"]["cartesian_path_completion"]=frac.value;
+    // if(frac.value<1.0 ){
+    //     RCLCPP_INFO(LOGGER, "Path was not computed fully, attempting to move the last part"); 
+    //     move_group.setPoseTarget(waypoints.back());
+    //     move_group.clearPathConstraints(); 
+    //     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    //     bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    //     RCLCPP_INFO(LOGGER, "Computation of missing path %s", success? "successful": "\033[31mFAILURE\033[0m");
+    //     if(success){
+    //         move_group.execute(my_plan); 
+    //         outputdata["info"]["endpoint_reachable"]=true;
+    //     }
+    //     else{
+    //         size_t pt = numElements-2;
+    //         while(pt>0){
+    //             move_group.setPoseTarget(waypoints[pt]);
+    //             moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    //             bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    //             if(success){
+    //                 int num_points = numElements; 
+    //                 int num_points_not_movedto = num_points-pt -1;
+    //                 float percentage_reachable = ( (float) pt/(float) num_points) *100.0 ;
+    //                 RCLCPP_INFO(LOGGER, "\033[32mTotal movement: %f, with %d/%d Points not reachable \033[0m",percentage_reachable, num_points_not_movedto, num_points);
+    //                 move_group.execute(my_plan);
+    //                 outputdata["info"]["endpoint_reachable"]=false;
+    //                 outputdata["info"]["max_percentage"]=percentage_reachable;
+    //                 outputdata["info"]["num_poijoint_states = joint_model_group->nts_moved_to"]=num_points_not_movedto;
+    //                 outputdata["info"]["last_pos_movable"]=waypoints[pt]; 
+    //                 break;
+    //             }
+    //             --pt; 
+    //         }
 
-    outputdata["info"]["NJS"] = evaluator::calculate_av_NJS(rt_msg, LOGGER); 
+    //     }
+    //     bool found = move_group.getCurrentState()->setFromIK(
+    //         joint_model_group,
+    //         waypoints.back()
+    //     );
+    //     if(found){
+    //         RCLCPP_INFO_STREAM(LOGGER, "Found some solution");
+    //     }
+    // }
+    
+
     auto input_path_eval = evaluator::endeffector(waypoints, timesteps, LOGGER);
     outputdata["info"]["Endeffector_NJS"] = input_path_eval.get_NJS(); 
 

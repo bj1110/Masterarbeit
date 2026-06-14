@@ -3,7 +3,7 @@
     <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
 
     <!-- Import alt_human_arm_model urdf file -->
-    <xacro:include filename="/home/bjoern/Projects/Masterarbeit/ros2_ws/alt_model.urdf" />
+    <xacro:include filename="$(find human_arm_model)/urdf/alt_model.urdf.xacro" />
 
     <!-- Import control_xacro -->
     <xacro:include filename="alt_human_arm_model.ros2_control.xacro" />
