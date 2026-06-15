@@ -24,6 +24,13 @@ RUN apt-get update && apt-get install -y \
     ros-jazzy-gz-ros2-control \
     && rm -rf /var/lib/apt/lists/*
 
+RUN git clone --recursive https://github.com/rbdl/rbdl.git /tmp/rbdl && \
+    mkdir /tmp/rbdl/build && \
+    cd /tmp/rbdl/build && \
+    cmake .. -DRBDL_BUILD_ADDON_URDFREADER=ON && \
+    make -j$(nproc) && \
+    make install && \
+    rm -rf /tmp/rbdl
 # ----------------------------------------------------------------------
 # Workspace build stage
 # ----------------------------------------------------------------------
