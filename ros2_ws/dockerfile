@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
     ros-jazzy-ros-gz-image \
     ros-jazzy-ros-gz-sim \
     ros-jazzy-gz-ros2-control \
+    ros-jazzy-pick-ik \
     && rm -rf /var/lib/apt/lists/*
 
 RUN git clone --recursive https://github.com/rbdl/rbdl.git /tmp/rbdl && \
@@ -31,6 +32,9 @@ RUN git clone --recursive https://github.com/rbdl/rbdl.git /tmp/rbdl && \
     make -j$(nproc) && \
     make install && \
     rm -rf /tmp/rbdl
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/rbdl.conf && \
+    ldconfig
+
 # ----------------------------------------------------------------------
 # Workspace build stage
 # ----------------------------------------------------------------------

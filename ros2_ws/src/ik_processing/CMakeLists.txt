@@ -196,4 +196,12 @@ install(
   DESTINATION include
 )
 
+install(PROGRAMS
+  scripts/run_gridsearch.py
+  scripts/sim_all_baseline.py
+  scripts/sim_all_interaction.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+
 ament_package()
