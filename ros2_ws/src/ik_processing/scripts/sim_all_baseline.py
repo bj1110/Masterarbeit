@@ -96,6 +96,21 @@ try:
                     try:
                         subprocess.run(cmd, check=True)
                     except subprocess.CalledProcessError as e:
+                        if(e.returncode == -2):
+                            cleanup()
+                        
+                            moveit_proc = subprocess.Popen(
+                                [
+                                    "ros2",
+                                    "launch",
+                                    "ik_processing",
+                                    "moveit.launch.py",
+                                    "use_rviz:=false",
+                                ],
+                                preexec_fn=os.setsid,
+                            )
+
+                            time.sleep(10)
                         print(f"FAILED: {dat}")
                         print(e)
                         continue

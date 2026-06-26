@@ -142,7 +142,18 @@ int main(int argc, char** argv)
     if (joint_model_group->getVariableDefaultPositions(startpos_name, states_values)){
         RCLCPP_INFO(LOGGER, "Moving to approx. Startposition \"%s\" ", startpos_name.c_str());
         move_group.setJointValueTarget(states_values); 
-        move_group.move(); 
+        auto moveit_success = move_group.move();
+        if(!moveit_success){
+            RCLCPP_ERROR_STREAM(LOGGER, moveit::core::errorCodeToString(moveit_success));
+            std::ofstream outputfile = helpers::create_file(LOGGER, header); 
+            json outputdata; 
+            outputdata ["info"]["valid_startstate"] = false;
+
+            outputfile << std::setw(4) <<outputdata <<std::endl; 
+
+            rclcpp::shutdown();
+            return -2;
+        } 
         move_group.setStartStateToCurrentState(); 
 
         // const geometry_msgs::msg::Pose initial_pose = move_group.getCurrentPose().pose;
@@ -374,7 +385,7 @@ int main(int argc, char** argv)
     solver.addNullspaceObjective(nst2, 0.5); 
     // solver.addNullspaceObjective(nst3, 0.5); 
 
-    solver.useJointLimitAvoidance(); 
+    // solver.useJointLimitAvoidance(); 
 
     solver.push_away_from_origin("elbow_roll_joint", 0.5); 
 
@@ -456,6 +467,8 @@ int main(int argc, char** argv)
 
     auto input_path_eval = evaluator::endeffector(waypoints, timesteps, LOGGER);
     outputdata["info"]["Endeffector_NJS"] = input_path_eval.get_NJS(); 
+    outputdata ["info"]["valid_startstate"] = true;
+
 
     outputfile << std::setw(4) <<outputdata <<std::endl; 
 

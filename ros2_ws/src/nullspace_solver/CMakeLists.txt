@@ -10,6 +10,11 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(pinocchio REQUIRED)
+include_directories(/opt/ros/jazzy/include/pinocchio/deprecated)
+add_compile_definitions(
+  BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
+  BOOST_MPL_LIMIT_LIST_SIZE=30
+)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -41,6 +46,7 @@ ament_target_dependencies(nullspace_solver_lib
 
 target_link_libraries(nullspace_solver_lib
   yaml-cpp
+  pinocchio::pinocchio
 )
 
 install(

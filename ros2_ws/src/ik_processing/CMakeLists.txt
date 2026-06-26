@@ -23,6 +23,7 @@ set(COMMON_DEPS
   moveit_core
   nullspace_solver
   yaml-cpp
+  pinocchio
 )
 
 find_package(rclcpp REQUIRED)
@@ -36,6 +37,12 @@ find_package(Eigen3 REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(nullspace_solver REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(pinocchio REQUIRED)
+include_directories(/opt/ros/jazzy/include/pinocchio/deprecated)
+add_compile_definitions(
+  BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
+  BOOST_MPL_LIMIT_LIST_SIZE=30
+)
 
 # -----------------------------
 # External: nlohmann/json
@@ -88,6 +95,7 @@ target_link_libraries(fullsim
   ik_evaluator
   nlohmann_json::nlohmann_json
   yaml-cpp
+  pinocchio::pinocchio
 )
 
 # -----------------------------
