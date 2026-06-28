@@ -96,7 +96,7 @@ try:
                     try:
                         subprocess.run(cmd, check=True)
                     except subprocess.CalledProcessError as e:
-                        if(e.returncode == -2):
+                        if(e.returncode == 12):
                             cleanup()
                         
                             moveit_proc = subprocess.Popen(

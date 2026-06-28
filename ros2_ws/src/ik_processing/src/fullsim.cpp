@@ -152,7 +152,7 @@ int main(int argc, char** argv)
             outputfile << std::setw(4) <<outputdata <<std::endl; 
 
             rclcpp::shutdown();
-            return -2;
+            return 12;
         } 
         move_group.setStartStateToCurrentState(); 
 
@@ -414,7 +414,7 @@ int main(int argc, char** argv)
     bool ik_ok= solver.solve(start_configuration, trajectory); 
 
     if(ik_ok){
-        if(display_path){
+        if(true){
             move_group.execute(trajectory);
             const geometry_msgs::msg::Pose ee_final_pose = move_group.getCurrentPose().pose;
             const geometry_msgs::msg::Pose ee_target_pose = waypoints.back(); 
